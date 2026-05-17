@@ -9,15 +9,11 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import axios from 'axios';
-import { useLibraryStore } from '../store/libraryStore';
+import { getBookById, getOrCreateProgress } from '../database/localDatabase';
 import { usePlayerStore } from '../store/playerStore';
-
-const BACKEND_URL = 'http://localhost:3000/api';
 
 const BookDetailScreen = ({ route, navigation }) => {
   const { bookId } = route.params;
-  const { books } = useLibraryStore();
   const { setCurrentBook, setCurrentChapter, setCurrentSentence } = usePlayerStore();
   
   const [book, setBook] = useState(null);
@@ -34,14 +30,14 @@ const BookDetailScreen = ({ route, navigation }) => {
   const loadBookDetails = async () => {
     try {
       setLoading(true);
-      const [bookResponse, progressResponse] = await Promise.all([
-        axios.get(`${BACKEND_URL}/books/${bookId}`),
-        axios.get(`${BACKEND_URL}/progress/${bookId}`).catch(() => ({ data: null })),
+      const [bookData, progressData] = await Promise.all([
+        getBookById(bookId),
+        getOrCreateProgress(bookId),
       ]);
       
-      setBook(bookResponse.data);
-      setChapters(bookResponse.data.chapters || []);
-      setProgress(progressResponse.data);
+      setBook(bookData);
+      setChapters(bookData?.chapters || []);
+      setProgress(progressData);
     } catch (error) {
       console.error('Failed to load book:', error);
       Alert.alert('Error', 'Failed to load book details.');

@@ -10,14 +10,12 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import DocumentPicker from 'react-native-document-picker';
-import RNFS from 'react-native-fs';
-import axios from 'axios';
+import { parseLocalBook } from '../utils/bookProcessor';
+import { addBook, getAllBooks, deleteBook } from '../database/localDatabase';
 import { useLibraryStore } from '../store/libraryStore';
 
-const BACKEND_URL = 'http://localhost:3000/api';
-
 const LibraryScreen = ({ navigation }) => {
-  const { books, setBooks, addBook, removeBook, isLoading, setLoading } = useLibraryStore();
+  const { books, setBooks, addBook: addBookToStore, removeBook, isLoading, setLoading } = useLibraryStore();
   const [importing, setImporting] = useState(false);
 
   useFocusEffect(
@@ -29,8 +27,8 @@ const LibraryScreen = ({ navigation }) => {
   const loadBooks = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${BACKEND_URL}/books`);
-      setBooks(response.data);
+      const localBooks = await getAllBooks();
+      setBooks(localBooks);
     } catch (error) {
       console.error('Failed to load books:', error);
     } finally {
@@ -50,27 +48,27 @@ const LibraryScreen = ({ navigation }) => {
       const file = result[0];
       setImporting(true);
 
-      const formData = new FormData();
-      formData.append('book', {
-        uri: file.uri,
-        name: file.name,
-        type: file.type || 'application/octet-stream',
+      const filePath = file.uri;
+      const fileName = file.name || 'Unknown';
+      const ext = fileName.split('.').pop().toLowerCase();
+      const fileType = ext === 'txt' ? 'txt' : ext;
+
+      const bookData = await parseLocalBook(filePath, fileType);
+      
+      const savedBook = await addBook(bookData);
+      
+      addBookToStore({
+        _id: savedBook._id,
+        title: savedBook.title,
+        author: savedBook.author,
+        coverImagePath: savedBook.coverImagePath,
+        fileType: savedBook.fileType,
+        totalChapters: savedBook.totalChapters,
+        addedAt: savedBook.addedAt.toISOString(),
+        isEmotionAnalyzed: true,
       });
 
-      const response = await axios.post(
-        `${BACKEND_URL}/books/import`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      if (response.data.success) {
-        addBook(response.data.book);
-        Alert.alert('Success', 'Book imported successfully!');
-      }
+      Alert.alert('Success', 'Book imported successfully!');
     } catch (error) {
       if (!DocumentPicker.isCancel(error)) {
         Alert.alert('Error', `Failed to import book: ${error.message}`);
@@ -92,10 +90,11 @@ const LibraryScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await axios.delete(`${BACKEND_URL}/books/${book._id}`);
+              await deleteBook(book._id);
               removeBook(book._id);
             } catch (error) {
               Alert.alert('Error', 'Failed to delete book.');
+              console.error('Delete error:', error);
             }
           },
         },

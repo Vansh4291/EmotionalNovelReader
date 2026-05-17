@@ -11,10 +11,9 @@ import {
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import Tts from 'react-native-tts';
-import axios from 'axios';
+import { getChapterWithSentences, updateProgress, getBookById } from '../database/localDatabase';
+import { processChapterText } from '../utils/chapterProcessor';
 import { usePlayerStore } from '../store/playerStore';
-
-const BACKEND_URL = 'http://localhost:3000/api';
 
 const EMOTION_COLORS = {
   joy: '#fbbf24',
@@ -25,13 +24,21 @@ const EMOTION_COLORS = {
   neutral: '#94a3b8',
 };
 
+const EMOTION_PROFILES = {
+  joy: { speed: 1.15, pitch: 1.10 },
+  sadness: { speed: 0.80, pitch: 0.90 },
+  anger: { speed: 1.10, pitch: 1.05 },
+  fear: { speed: 0.95, pitch: 1.05 },
+  surprise: { speed: 1.05, pitch: 1.15 },
+  neutral: { speed: 1.0, pitch: 1.0 },
+};
+
 const PlayerScreen = ({ route, navigation }) => {
   const { bookId, chapterIndex: initialChapterIndex, sentenceIndex: initialSentenceIndex } = route.params || {};
   
   const {
     currentBook,
     currentChapter: storeChapter,
-    currentSentence: storeSentence,
     speed,
     pitch,
     isPlaying,
@@ -48,14 +55,16 @@ const PlayerScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [sleepTimer, setSleepTimer] = useState(0);
   const [currentEmotion, setCurrentEmotion] = useState('neutral');
+  const [bookChapters, setBookChapters] = useState([]);
   
   const scrollViewRef = useRef(null);
   const sentenceRefs = useRef({});
   const sleepTimerRef = useRef(null);
+  const isSpeakingRef = useRef(false);
 
   useEffect(() => {
     initTTS();
-    loadChapter(currentChapterIndex);
+    loadBookAndChapter();
 
     return () => {
       stopSpeaking();
@@ -66,7 +75,7 @@ const PlayerScreen = ({ route, navigation }) => {
   }, []);
 
   useEffect(() => {
-    if (sentences.length > 0 && currentSentenceIndex < sentences.length) {
+    if (sentences.length > 0 && currentSentenceIndex < sentences.length && isSpeakingRef.current) {
       const sentence = sentences[currentSentenceIndex];
       setCurrentEmotion(sentence.emotion || 'neutral');
       speakSentence(sentence.text, sentence.emotion);
@@ -81,40 +90,60 @@ const PlayerScreen = ({ route, navigation }) => {
       await Tts.setDefaultPitch(1.0);
       
       Tts.addEventListener('tts-finish', handleSentenceComplete);
-      Tts.addEventListener('tts-cancel', () => setIsPlaying(false));
+      Tts.addEventListener('tts-cancel', () => {
+        isSpeakingRef.current = false;
+        setIsPlaying(false);
+      });
     } catch (error) {
       console.error('TTS init error:', error);
     }
   };
 
-  const loadChapter = async (chapterIdx) => {
+  const loadBookAndChapter = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${BACKEND_URL}/books/${bookId}/chapters/${chapterIdx}`
-      );
       
-      const chapterData = response.data;
-      setChapter(chapterData);
-      
-      const parsedSentences = chapterData.sentences || [];
-      setSentences(parsedSentences);
-      
-      if (chapterData.sentences && chapterData.sentences.length > 0) {
-        setCurrentSentenceIndex(0);
+      const book = await getBookById(bookId);
+      if (book) {
+        setBookChapters(book.chapters || []);
       }
+      
+      await loadChapter(currentChapterIndex);
     } catch (error) {
-      console.error('Failed to load chapter:', error);
-      Alert.alert('Error', 'Failed to load chapter.');
+      console.error('Failed to load book:', error);
+      Alert.alert('Error', 'Failed to load book.');
     } finally {
       setLoading(false);
     }
   };
 
+  const loadChapter = async (chapterIdx) => {
+    try {
+      const chapterData = await getChapterWithSentences(bookId, chapterIdx);
+      
+      if (chapterData) {
+        setChapter(chapterData);
+        
+        const processedSentences = processChapterText(chapterData.rawText);
+        setSentences(processedSentences);
+        
+        if (processedSentences.length > 0) {
+          const startIndex = chapterIdx === initialChapterIndex ? initialSentenceIndex : 0;
+          setCurrentSentenceIndex(0);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load chapter:', error);
+    }
+  };
+
   const handleSentenceComplete = () => {
     if (currentSentenceIndex < sentences.length - 1) {
-      setCurrentSentenceIndex(currentSentenceIndex + 1);
+      const nextIndex = currentSentenceIndex + 1;
+      setCurrentSentenceIndex(nextIndex);
+      saveProgress(currentChapterIndex, nextIndex);
     } else {
+      isSpeakingRef.current = false;
       setIsPlaying(false);
       nextChapter();
     }
@@ -122,34 +151,21 @@ const PlayerScreen = ({ route, navigation }) => {
 
   const speakSentence = async (text, emotion) => {
     try {
-      const voiceParams = await getVoiceParams(emotion);
-      await Tts.setDefaultRate(speed * voiceParams.speed);
-      await Tts.setDefaultPitch(pitch * voiceParams.pitch);
+      const emotionProfile = EMOTION_PROFILES[emotion] || EMOTION_PROFILES.neutral;
+      const finalSpeed = speed * emotionProfile.speed;
+      const finalPitch = pitch * emotionProfile.pitch;
+      
+      await Tts.setDefaultRate(Math.max(0.5, Math.min(2.0, finalSpeed)));
+      await Tts.setDefaultPitch(Math.max(0.5, Math.min(2.0, finalPitch)));
       await Tts.speak(text);
-      setIsPlaying(true);
     } catch (error) {
       console.error('Speak error:', error);
     }
   };
 
-  const getVoiceParams = async (emotion) => {
-    try {
-      const response = await axios.post(`${BACKEND_URL}/tts/voice-params`, {
-        emotion,
-      });
-      return response.data;
-    } catch (error) {
-      return {
-        speed: 1.0,
-        pitch: 1.0,
-        volume: 1.0,
-        pauseAfterMs: 200,
-      };
-    }
-  };
-
   const stopSpeaking = async () => {
     try {
+      isSpeakingRef.current = false;
       await Tts.stop();
       setIsPlaying(false);
     } catch (error) {
@@ -161,31 +177,35 @@ const PlayerScreen = ({ route, navigation }) => {
     if (isPlaying) {
       await stopSpeaking();
     } else {
+      isSpeakingRef.current = true;
+      setIsPlaying(true);
       if (sentences[currentSentenceIndex]) {
         speakSentence(sentences[currentSentenceIndex].text, sentences[currentSentenceIndex].emotion);
       }
     }
   };
 
-  const handlePreviousSentence = () => {
-    stopSpeaking();
+  const handlePreviousSentence = async () => {
+    await stopSpeaking();
     if (currentSentenceIndex > 0) {
       setCurrentSentenceIndex(currentSentenceIndex - 1);
     }
   };
 
-  const handleNextSentence = () => {
-    stopSpeaking();
+  const handleNextSentence = async () => {
+    await stopSpeaking();
     if (currentSentenceIndex < sentences.length - 1) {
       setCurrentSentenceIndex(currentSentenceIndex + 1);
     }
   };
 
   const nextChapter = async () => {
-    if (currentChapterIndex < (currentBook?.chapters?.length || 0) - 1) {
+    if (currentChapterIndex < bookChapters.length - 1) {
       const nextIdx = currentChapterIndex + 1;
       setCurrentChapterIndex(nextIdx);
+      setCurrentSentenceIndex(0);
       await loadChapter(nextIdx);
+      saveProgress(nextIdx, 0);
     }
   };
 
@@ -193,19 +213,23 @@ const PlayerScreen = ({ route, navigation }) => {
     if (currentChapterIndex > 0) {
       const prevIdx = currentChapterIndex - 1;
       setCurrentChapterIndex(prevIdx);
+      setCurrentSentenceIndex(0);
       await loadChapter(prevIdx);
+      saveProgress(prevIdx, 0);
     }
   };
 
   const scrollToCurrentSentence = () => {
-    if (sentenceRefs.current[currentSentenceIndex]) {
-      sentenceRefs.current[currentSentenceIndex].measureLayout(
-        scrollViewRef.current,
-        (x, y) => {
-          scrollViewRef.current.scrollTo({ y: y - 100, animated: true });
-        }
-      );
-    }
+    setTimeout(() => {
+      if (sentenceRefs.current[currentSentenceIndex]) {
+        sentenceRefs.current[currentSentenceIndex].measureLayout(
+          scrollViewRef.current,
+          (x, y) => {
+            scrollViewRef.current.scrollTo({ y: y - 100, animated: true });
+          }
+        );
+      }
+    }, 100);
   };
 
   const handleSleepTimer = (minutes) => {
@@ -223,12 +247,9 @@ const PlayerScreen = ({ route, navigation }) => {
     }
   };
 
-  const saveProgress = async () => {
+  const saveProgress = async (chapterIdx, sentenceIdx) => {
     try {
-      await axios.post(`${BACKEND_URL}/progress/${bookId}`, {
-        currentChapterIndex,
-        currentSentenceIndex,
-      });
+      await updateProgress(bookId, chapterIdx, sentenceIdx);
     } catch (error) {
       console.error('Failed to save progress:', error);
     }
@@ -248,8 +269,8 @@ const PlayerScreen = ({ route, navigation }) => {
           styles.sentenceContainer,
           { backgroundColor: bgColor, borderLeftColor: borderColor },
         ]}
-        onPress={() => {
-          stopSpeaking();
+        onPress={async () => {
+          await stopSpeaking();
           setCurrentSentenceIndex(index);
         }}
       >
@@ -329,7 +350,7 @@ const PlayerScreen = ({ route, navigation }) => {
           <Text style={styles.progressText}>
             {currentSentenceIndex + 1} / {sentences.length}
           </Text>
-          <Text style={styles.emotionText} style={{ color: EMOTION_COLORS[currentEmotion] }}>
+          <Text style={[styles.emotionText, { color: EMOTION_COLORS[currentEmotion] }]}>
             {currentEmotion}
           </Text>
         </View>
@@ -338,15 +359,17 @@ const PlayerScreen = ({ route, navigation }) => {
           <TouchableOpacity
             style={styles.controlButton}
             onPress={previousChapter}
+            disabled={currentChapterIndex === 0}
           >
-            <Text style={styles.controlIcon}>⏮</Text>
+            <Text style={[styles.controlIcon, currentChapterIndex === 0 && styles.disabledIcon]}>⏮</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.controlButton}
             onPress={handlePreviousSentence}
+            disabled={currentSentenceIndex === 0}
           >
-            <Text style={styles.controlIcon}>◀</Text>
+            <Text style={[styles.controlIcon, currentSentenceIndex === 0 && styles.disabledIcon]}>◀</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -361,15 +384,17 @@ const PlayerScreen = ({ route, navigation }) => {
           <TouchableOpacity
             style={styles.controlButton}
             onPress={handleNextSentence}
+            disabled={currentSentenceIndex >= sentences.length - 1}
           >
-            <Text style={styles.controlIcon}>▶</Text>
+            <Text style={[styles.controlIcon, currentSentenceIndex >= sentences.length - 1 && styles.disabledIcon]}>▶</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.controlButton}
             onPress={nextChapter}
+            disabled={currentChapterIndex >= bookChapters.length - 1}
           >
-            <Text style={styles.controlIcon}>⏭</Text>
+            <Text style={[styles.controlIcon, currentChapterIndex >= bookChapters.length - 1 && styles.disabledIcon]}>⏭</Text>
           </TouchableOpacity>
         </View>
 
@@ -516,6 +541,9 @@ const styles = StyleSheet.create({
   controlIcon: {
     fontSize: 20,
     color: '#a0aec0',
+  },
+  disabledIcon: {
+    color: '#4a5568',
   },
   playButton: {
     width: 64,
