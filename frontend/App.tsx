@@ -5,6 +5,8 @@ import AppNavigator from './src/navigation/AppNavigator';
 
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
+  '`new NativeEventEmitter()` was called with a non-null argument without the required `addListener` method.',
+  '`new NativeEventEmitter()` was called with a non-null argument without the required `removeListeners` method.',
 ]);
 
 function App(): React.JSX.Element {

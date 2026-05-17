@@ -1,4 +1,5 @@
 import RNFS from 'react-native-fs';
+import axios from 'axios';
 import { processChapterText } from './chapterProcessor';
 
 const CHAPTER_PATTERNS = [
@@ -120,11 +121,68 @@ function extractTitle(filePath, content) {
   return basename || 'Unknown Title';
 }
 
+async function parseRemoteBook(filePath, fileType) {
+  try {
+    const fileName = decodeURIComponent(filePath.split('/').pop()) || `book.${fileType}`;
+    const mimeType = fileType === 'pdf' ? 'application/pdf' : 'application/epub+zip';
+
+    const formData = new FormData();
+    formData.append('book', {
+      uri: filePath,
+      name: fileName,
+      type: mimeType,
+    });
+
+    const BACKEND_URL = 'http://localhost:3000/api';
+
+    // 1. Upload and parse file on the backend
+    const response = await axios.post(`${BACKEND_URL}/books/import`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    if (!response.data.success) {
+      throw new Error(response.data.error || 'Import failed');
+    }
+
+    const importedBook = response.data.book;
+
+    // 2. Fetch the full book with chapters
+    const fullBookResponse = await axios.get(`${BACKEND_URL}/books/${importedBook._id}`);
+    const fullBook = fullBookResponse.data;
+
+    // 3. Format the chapters to match the local database expectation
+    const formattedChapters = (fullBook.chapters || []).map((ch, i) => ({
+      index: ch.index !== undefined ? ch.index : i,
+      title: ch.title || `Chapter ${i + 1}`,
+      text: ch.text || '',
+      wordCount: ch.wordCount || (ch.text ? ch.text.split(/\s+/).length : 0),
+      sentences: [],
+      isAnalyzed: true,
+    }));
+
+    return {
+      title: fullBook.title || fileName.replace(/\.[^/.]+$/, ''),
+      author: fullBook.author || 'Unknown Author',
+      coverImagePath: fullBook.coverImagePath || null,
+      filePath,
+      fileType,
+      chapters: formattedChapters,
+    };
+  } catch (error) {
+    console.error(`Remote ${fileType.toUpperCase()} parse error:`, error);
+    throw new Error(error.response?.data?.error || error.message || `Failed to parse ${fileType.toUpperCase()}`);
+  }
+}
+
 export async function parseLocalBook(filePath, fileType) {
-  switch (fileType.toLowerCase()) {
+  const normalizedType = fileType.toLowerCase();
+  switch (normalizedType) {
     case 'txt':
     case 'text':
       return parseLocalTxt(filePath);
+    case 'pdf':
+    case 'epub':
+      return parseRemoteBook(filePath, normalizedType);
     default:
       throw new Error(`Unsupported file type: ${fileType}`);
   }
