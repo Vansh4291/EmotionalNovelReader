@@ -53,7 +53,6 @@ const AudioPlayer = ({
       }
       await Tts.setDefaultRate(0.5);
       await Tts.setDefaultPitch(1.0);
-      await Tts.setDefaultVolume(1.0);
 
       Tts.addEventListener('tts-start', () => {
         setIsPlaying(true);
@@ -97,7 +96,6 @@ const AudioPlayer = ({
       
       await Tts.setDefaultRate(speed * voiceParams.speed);
       await Tts.setDefaultPitch(pitch * voiceParams.pitch);
-      await Tts.setDefaultVolume(volume * voiceParams.volume);
       
       await Tts.speak(text);
     } catch (error) {

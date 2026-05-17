@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,10 @@ import DocumentPicker from 'react-native-document-picker';
 import { parseLocalBook } from '../utils/bookProcessor';
 import { addBook, getAllBooks, deleteBook } from '../database/localDatabase';
 import { useLibraryStore } from '../store/libraryStore';
+import { useTheme } from '../utils/themeContext';
 
 const LibraryScreen = ({ navigation }) => {
+  const theme = useTheme();
   const { books, setBooks, addBook: addBookToStore, removeBook, isLoading, setLoading } = useLibraryStore();
   const [importing, setImporting] = useState(false);
 
@@ -109,39 +111,41 @@ const LibraryScreen = ({ navigation }) => {
     });
   };
 
-  const renderBookCard = ({ item }) => (
+  const renderBookCard = useCallback(({ item }) => (
     <TouchableOpacity
-      style={styles.bookCard}
+      style={[styles.bookCard, { backgroundColor: theme.surface }]}
       onPress={() => handleBookPress(item)}
       onLongPress={() => handleDeleteBook(item)}
     >
-      <View style={styles.bookCover}>
-        <Text style={styles.bookInitial}>
+      <View style={[styles.bookCover, { backgroundColor: theme.surfaceLight }]}>
+        <Text style={[styles.bookInitial, { color: theme.primary }]}>
           {item.title ? item.title.charAt(0).toUpperCase() : '?'}
         </Text>
       </View>
-      <Text style={styles.bookTitle} numberOfLines={2}>
+      <Text style={[styles.bookTitle, { color: theme.text }]} numberOfLines={2}>
         {item.title || 'Untitled'}
       </Text>
-      <Text style={styles.bookAuthor} numberOfLines={1}>
+      <Text style={[styles.bookAuthor, { color: theme.textSecondary }]} numberOfLines={1}>
         {item.author || 'Unknown Author'}
       </Text>
     </TouchableOpacity>
-  );
+  ), [theme]);
 
   const renderEmptyLibrary = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>No books in your library</Text>
-      <Text style={styles.emptySubtext}>
+      <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No books in your library</Text>
+      <Text style={[styles.emptySubtext, { color: theme.textMuted }]}>
         Tap the + button to import a book
       </Text>
     </View>
   );
 
+  const keyExtractor = useCallback((item) => item._id, []);
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Library</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>My Library</Text>
         <TouchableOpacity
           style={styles.settingsButton}
           onPress={() => navigation.navigate('Settings')}
@@ -152,30 +156,33 @@ const LibraryScreen = ({ navigation }) => {
 
       {importing ? (
         <View style={styles.importingContainer}>
-          <ActivityIndicator size="large" color="#4ade80" />
-          <Text style={styles.importingText}>Importing book...</Text>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.importingText, { color: theme.textSecondary }]}>Importing book...</Text>
         </View>
       ) : isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4ade80" />
+          <ActivityIndicator size="large" color={theme.primary} />
         </View>
       ) : (
         <FlatList
           data={books}
           renderItem={renderBookCard}
-          keyExtractor={(item) => item._id}
+          keyExtractor={keyExtractor}
           numColumns={2}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={renderEmptyLibrary}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={5}
         />
       )}
 
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { backgroundColor: theme.primary }]}
         onPress={handleImportBook}
         disabled={importing}
       >
-        <Text style={styles.fabIcon}>+</Text>
+        <Text style={[styles.fabIcon, { color: theme.background }]}>+</Text>
       </TouchableOpacity>
     </View>
   );
@@ -184,7 +191,6 @@ const LibraryScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#16213e',
   },
   header: {
     flexDirection: 'row',
@@ -192,12 +198,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: '#1a1a2e',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#ffffff',
   },
   settingsButton: {
     padding: 8,
@@ -213,11 +217,12 @@ const styles = StyleSheet.create({
     flex: 1,
     margin: 8,
     maxWidth: '45%',
+    borderRadius: 12,
+    padding: 8,
   },
   bookCover: {
     width: '100%',
     aspectRatio: 0.7,
-    backgroundColor: '#2d3a5c',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -226,17 +231,14 @@ const styles = StyleSheet.create({
   bookInitial: {
     fontSize: 48,
     fontWeight: '700',
-    color: '#4ade80',
   },
   bookTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#ffffff',
     marginBottom: 4,
   },
   bookAuthor: {
     fontSize: 12,
-    color: '#a0aec0',
   },
   fab: {
     position: 'absolute',
@@ -245,18 +247,12 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#4ade80',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
   },
   fabIcon: {
     fontSize: 32,
-    color: '#1a1a2e',
     fontWeight: '300',
   },
   loadingContainer: {
@@ -272,7 +268,6 @@ const styles = StyleSheet.create({
   importingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#a0aec0',
   },
   emptyContainer: {
     flex: 1,
@@ -282,13 +277,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#a0aec0',
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#718096',
   },
 });
 
-export default LibraryScreen;
+export default React.memo(LibraryScreen);

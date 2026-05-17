@@ -42,7 +42,7 @@ export const addBook = async (bookData) => {
 
     if (bookData.chapters && bookData.chapters.length > 0) {
       bookData.chapters.forEach((chapter, index) => {
-        realm.create('Chapter', {
+        const createdChapter = realm.create('Chapter', {
           _id: `${newBook._id}_chapter_${index}`,
           bookId: newBook._id,
           chapterIndex: index,
@@ -51,6 +51,19 @@ export const addBook = async (bookData) => {
           isAnalyzed: true,
           wordCount: chapter.wordCount || 0,
         });
+
+        if (chapter.sentences && chapter.sentences.length > 0) {
+          chapter.sentences.forEach((sent) => {
+            createdChapter.sentences.push({
+              index: sent.index,
+              text: sent.text,
+              emotion: sent.emotion || 'neutral',
+              confidence: sent.confidence || 1.0,
+              startChar: sent.startChar || 0,
+              endChar: sent.endChar || sent.text.length,
+            });
+          });
+        }
       });
     }
   });
@@ -116,7 +129,14 @@ export const getChapterWithSentences = async (bookId, chapterIndex) => {
     rawText: chapter.rawText,
     isAnalyzed: chapter.isAnalyzed,
     wordCount: chapter.wordCount,
-    sentences: [],
+    sentences: chapter.sentences ? Array.from(chapter.sentences).map(s => ({
+      index: s.index,
+      text: s.text,
+      emotion: s.emotion,
+      confidence: s.confidence,
+      startChar: s.startChar,
+      endChar: s.endChar,
+    })) : [],
   };
 };
 
@@ -172,11 +192,15 @@ export const updateProgress = async (bookId, chapterIndex, sentenceIndex) => {
   
   realm.write(() => {
     let progress = realm.objects('UserProgress').filtered('bookId == $0', bookId)[0];
+    const book = realm.objectForPrimaryKey('Book', bookId);
     
     if (progress) {
       progress.currentChapterIndex = chapterIndex;
       progress.currentSentenceIndex = sentenceIndex;
       progress.lastUpdatedAt = new Date();
+      if (book && book.totalChapters > 0) {
+        progress.completionPercent = Math.min(100.0, Math.max(0.0, (chapterIndex / book.totalChapters) * 100));
+      }
     }
   });
 };

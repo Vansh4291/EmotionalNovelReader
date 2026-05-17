@@ -38,6 +38,7 @@ const PlayerScreen = ({ route, navigation }) => {
   
   const {
     currentBook,
+    setCurrentBook,
     currentChapter: storeChapter,
     speed,
     pitch,
@@ -61,6 +62,27 @@ const PlayerScreen = ({ route, navigation }) => {
   const sentenceRefs = useRef({});
   const sleepTimerRef = useRef(null);
   const isSpeakingRef = useRef(false);
+
+  const currentSentenceIndexRef = useRef(currentSentenceIndex);
+  const sentencesRef = useRef(sentences);
+  const currentChapterIndexRef = useRef(currentChapterIndex);
+  const bookChaptersRef = useRef(bookChapters);
+
+  useEffect(() => {
+    currentSentenceIndexRef.current = currentSentenceIndex;
+  }, [currentSentenceIndex]);
+
+  useEffect(() => {
+    sentencesRef.current = sentences;
+  }, [sentences]);
+
+  useEffect(() => {
+    currentChapterIndexRef.current = currentChapterIndex;
+  }, [currentChapterIndex]);
+
+  useEffect(() => {
+    bookChaptersRef.current = bookChapters;
+  }, [bookChapters]);
 
   useEffect(() => {
     initTTS();
@@ -86,7 +108,7 @@ const PlayerScreen = ({ route, navigation }) => {
   const initTTS = async () => {
     try {
       await Tts.setDefaultLanguage('en-US');
-      await Tts.setDefaultRate(0.5);
+      await Tts.setDefaultRate(1.0);
       await Tts.setDefaultPitch(1.0);
       
       Tts.addEventListener('tts-finish', handleSentenceComplete);
@@ -106,6 +128,7 @@ const PlayerScreen = ({ route, navigation }) => {
       const book = await getBookById(bookId);
       if (book) {
         setBookChapters(book.chapters || []);
+        setCurrentBook(book);
       }
       
       await loadChapter(currentChapterIndex);
@@ -124,12 +147,15 @@ const PlayerScreen = ({ route, navigation }) => {
       if (chapterData) {
         setChapter(chapterData);
         
-        const processedSentences = processChapterText(chapterData.rawText);
+        let processedSentences = chapterData.sentences;
+        if (!processedSentences || processedSentences.length === 0) {
+          processedSentences = processChapterText(chapterData.rawText);
+        }
         setSentences(processedSentences);
         
         if (processedSentences.length > 0) {
-          const startIndex = chapterIdx === initialChapterIndex ? initialSentenceIndex : 0;
-          setCurrentSentenceIndex(0);
+          const startIndex = chapterIdx === initialChapterIndex ? (initialSentenceIndex || 0) : 0;
+          setCurrentSentenceIndex(startIndex);
         }
       }
     } catch (error) {
@@ -138,10 +164,14 @@ const PlayerScreen = ({ route, navigation }) => {
   };
 
   const handleSentenceComplete = () => {
-    if (currentSentenceIndex < sentences.length - 1) {
-      const nextIndex = currentSentenceIndex + 1;
+    const currentIndex = currentSentenceIndexRef.current;
+    const currentSentences = sentencesRef.current;
+    const chapterIdx = currentChapterIndexRef.current;
+
+    if (currentIndex < currentSentences.length - 1) {
+      const nextIndex = currentIndex + 1;
       setCurrentSentenceIndex(nextIndex);
-      saveProgress(currentChapterIndex, nextIndex);
+      saveProgress(chapterIdx, nextIndex);
     } else {
       isSpeakingRef.current = false;
       setIsPlaying(false);
@@ -200,8 +230,10 @@ const PlayerScreen = ({ route, navigation }) => {
   };
 
   const nextChapter = async () => {
-    if (currentChapterIndex < bookChapters.length - 1) {
-      const nextIdx = currentChapterIndex + 1;
+    const chapterIdx = currentChapterIndexRef.current;
+    const chapters = bookChaptersRef.current;
+    if (chapterIdx < chapters.length - 1) {
+      const nextIdx = chapterIdx + 1;
       setCurrentChapterIndex(nextIdx);
       setCurrentSentenceIndex(0);
       await loadChapter(nextIdx);
@@ -210,8 +242,9 @@ const PlayerScreen = ({ route, navigation }) => {
   };
 
   const previousChapter = async () => {
-    if (currentChapterIndex > 0) {
-      const prevIdx = currentChapterIndex - 1;
+    const chapterIdx = currentChapterIndexRef.current;
+    if (chapterIdx > 0) {
+      const prevIdx = chapterIdx - 1;
       setCurrentChapterIndex(prevIdx);
       setCurrentSentenceIndex(0);
       await loadChapter(prevIdx);
