@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StatusBar, LogBox } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ThemeProvider, useTheme, THEMES } from './src/utils/themeContext';
+import { useSettingsStore } from './src/store/settingsStore';
+import { loadSettingsFromRealm, saveSettingsToRealm } from './src/database/localDatabase';
 
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
@@ -12,6 +14,46 @@ LogBox.ignoreLogs([
 
 function AppContent() {
   const theme = useTheme();
+  const settings = useSettingsStore();
+  const savedRef = useRef<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    loadSettingsFromRealm().then((saved) => {
+      if (saved) {
+        if (saved.defaultSpeed !== undefined) settings.setDefaultSpeed(saved.defaultSpeed);
+        if (saved.defaultPitch !== undefined) settings.setDefaultPitch(saved.defaultPitch);
+        if (saved.defaultVolume !== undefined) settings.setDefaultVolume(saved.defaultVolume);
+        if (saved.theme) settings.setTheme(saved.theme);
+        if (saved.emotionEffectsEnabled !== undefined) settings.setEmotionEffectsEnabled(saved.emotionEffectsEnabled);
+        if (saved.highlightSyncEnabled !== undefined) settings.setHighlightSyncEnabled(saved.highlightSyncEnabled);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const current = {
+      defaultVoiceEngine: settings.defaultVoiceEngine,
+      defaultSpeed: settings.defaultSpeed,
+      defaultPitch: settings.defaultPitch,
+      defaultVolume: settings.defaultVolume,
+      emotionEffectsEnabled: settings.emotionEffectsEnabled,
+      highlightSyncEnabled: settings.highlightSyncEnabled,
+      sleepTimerMinutes: settings.sleepTimerMinutes,
+      theme: settings.theme,
+    };
+    if (savedRef.current === null) {
+      savedRef.current = current;
+      saveSettingsToRealm(current);
+      return;
+    }
+    if (JSON.stringify(current) === JSON.stringify(savedRef.current)) return;
+    savedRef.current = current;
+    saveSettingsToRealm(current);
+  }, [
+    settings.defaultSpeed, settings.defaultPitch, settings.defaultVolume,
+    settings.emotionEffectsEnabled, settings.highlightSyncEnabled,
+    settings.theme, settings.defaultVoiceEngine, settings.sleepTimerMinutes,
+  ]);
   
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}>

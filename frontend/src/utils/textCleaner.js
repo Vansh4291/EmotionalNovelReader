@@ -1,8 +1,7 @@
-function cleanText(text) {
+export function cleanText(text) {
   if (!text || typeof text !== 'string') {
     return '';
   }
-
   return text
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
@@ -15,11 +14,10 @@ function cleanText(text) {
     .trim();
 }
 
-function removeHtmlTags(html) {
+export function removeHtmlTags(html) {
   if (!html || typeof html !== 'string') {
     return '';
   }
-
   return html
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -35,9 +33,8 @@ function removeHtmlTags(html) {
     .trim();
 }
 
-function normalizeWhitespace(text) {
+export function normalizeWhitespace(text) {
   if (!text) return '';
-  
   return text
     .split('\n')
     .map(line => line.trim())
@@ -45,27 +42,17 @@ function normalizeWhitespace(text) {
     .join('\n');
 }
 
-function removeAdsAndMetadata(text) {
+export function removeAdsAndMetadata(text) {
   if (!text) return '';
-  
   const adPatterns = [
     /advertisement/i,
     /chapter\s*\d+\s*of\s*\d+/i,
     /page\s*\d+\s*of\s*\d+/i,
     /^\s*\[.*?\]\s*$/m,
   ];
-
   let cleaned = text;
   adPatterns.forEach(pattern => {
     cleaned = cleaned.replace(pattern, '');
   });
-
   return cleaned.trim();
 }
-
-module.exports = {
-  cleanText,
-  removeHtmlTags,
-  normalizeWhitespace,
-  removeAdsAndMetadata,
-};

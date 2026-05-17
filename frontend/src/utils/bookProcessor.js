@@ -1,6 +1,7 @@
 import RNFS from 'react-native-fs';
 import axios from 'axios';
 import { processChapterText } from './chapterProcessor';
+import { API_BASE_URL } from '../config/api';
 
 const CHAPTER_PATTERNS = [
   /^Chapter\s+(\d+)/i,
@@ -133,10 +134,8 @@ async function parseRemoteBook(filePath, fileType) {
       type: mimeType,
     });
 
-    const BACKEND_URL = 'http://localhost:3000/api';
-
     // 1. Upload and parse file on the backend
-    const response = await axios.post(`${BACKEND_URL}/books/import`, formData, {
+    const response = await axios.post(`${API_BASE_URL}/books/import`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
 
@@ -147,18 +146,22 @@ async function parseRemoteBook(filePath, fileType) {
     const importedBook = response.data.book;
 
     // 2. Fetch the full book with chapters
-    const fullBookResponse = await axios.get(`${BACKEND_URL}/books/${importedBook._id}`);
+    const fullBookResponse = await axios.get(`${API_BASE_URL}/books/${importedBook._id}`);
     const fullBook = fullBookResponse.data;
 
-    // 3. Format the chapters to match the local database expectation
-    const formattedChapters = (fullBook.chapters || []).map((ch, i) => ({
-      index: ch.index !== undefined ? ch.index : i,
-      title: ch.title || `Chapter ${i + 1}`,
-      text: ch.text || '',
-      wordCount: ch.wordCount || (ch.text ? ch.text.split(/\s+/).length : 0),
-      sentences: [],
-      isAnalyzed: true,
-    }));
+    // 3. Format the chapters with emotion analysis for each chapter
+    const formattedChapters = (fullBook.chapters || []).map((ch, i) => {
+      const text = ch.text || '';
+      const sentences = processChapterText(text);
+      return {
+        index: ch.index !== undefined ? ch.index : i,
+        title: ch.title || `Chapter ${i + 1}`,
+        text,
+        wordCount: ch.wordCount || text.split(/\s+/).length,
+        sentences,
+        isAnalyzed: true,
+      };
+    });
 
     return {
       title: fullBook.title || fileName.replace(/\.[^/.]+$/, ''),

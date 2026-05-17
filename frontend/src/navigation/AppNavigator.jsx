@@ -6,26 +6,29 @@ import LibraryScreen from '../screens/LibraryScreen';
 import BookDetailScreen from '../screens/BookDetailScreen';
 import PlayerScreen from '../screens/PlayerScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import { useTheme } from '../utils/themeContext';
 
 const Stack = createStackNavigator();
 
-const screenOptions = {
-  headerStyle: {
-    backgroundColor: '#1a1a2e',
-    shadowColor: 'transparent',
-    elevation: 0,
-  },
-  headerTintColor: '#ffffff',
-  headerTitleStyle: {
-    fontWeight: '600',
-    fontSize: 18,
-  },
-  cardStyle: {
-    backgroundColor: '#16213e',
-  },
-};
-
 function AppNavigator() {
+  const theme = useTheme();
+
+  const screenOptions = {
+    headerStyle: {
+      backgroundColor: theme.surface,
+      shadowColor: 'transparent',
+      elevation: 0,
+    },
+    headerTintColor: theme.text,
+    headerTitleStyle: {
+      fontWeight: '600',
+      fontSize: 18,
+    },
+    cardStyle: {
+      backgroundColor: theme.background,
+    },
+  };
+
   return (
     <NavigationContainer>
       <Stack.Navigator

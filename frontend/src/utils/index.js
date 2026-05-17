@@ -1,3 +1,3 @@
-export * from './sentenceSplitter';
-export * from './textCleaner';
-export * from './chapterDetector';
+export { splitIntoSentences, splitBySentenceDelimiters } from './sentenceSplitter';
+export { cleanText, removeHtmlTags, normalizeWhitespace, removeAdsAndMetadata } from './textCleaner';
+export { detectChapterHeading, splitIntoChapters, estimateChapterCount } from './chapterDetector';

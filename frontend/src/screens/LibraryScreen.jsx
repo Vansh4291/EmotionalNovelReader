@@ -57,6 +57,15 @@ const LibraryScreen = ({ navigation }) => {
 
       const bookData = await parseLocalBook(filePath, fileType);
       
+      const existing = books.find(b => 
+        b.title === bookData.title && b.author === bookData.author
+      );
+      if (existing) {
+        setImporting(false);
+        Alert.alert('Duplicate', `"${bookData.title}" is already in your library.`);
+        return;
+      }
+      
       const savedBook = await addBook(bookData);
       
       addBookToStore({
@@ -128,6 +137,14 @@ const LibraryScreen = ({ navigation }) => {
       <Text style={[styles.bookAuthor, { color: theme.textSecondary }]} numberOfLines={1}>
         {item.author || 'Unknown Author'}
       </Text>
+      {item.progress && item.progress.completionPercent > 0 && (
+        <View style={styles.progressRow}>
+          <View style={[styles.progressBarSmall, { backgroundColor: theme.surfaceLight }]}>
+            <View style={[styles.progressFillSmall, { backgroundColor: theme.primary, width: `${Math.min(100, item.progress.completionPercent)}%` }]} />
+          </View>
+          <Text style={[styles.progressPercent, { color: theme.textMuted }]}>{Math.round(item.progress.completionPercent)}%</Text>
+        </View>
+      )}
     </TouchableOpacity>
   ), [theme]);
 
@@ -281,6 +298,27 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     fontSize: 14,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  progressBarSmall: {
+    flex: 1,
+    height: 3,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFillSmall: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  progressPercent: {
+    fontSize: 10,
+    marginLeft: 4,
+    minWidth: 28,
+    textAlign: 'right',
   },
 });
 

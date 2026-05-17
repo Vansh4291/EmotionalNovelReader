@@ -11,10 +11,12 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { getBookById, getOrCreateProgress } from '../database/localDatabase';
 import { usePlayerStore } from '../store/playerStore';
+import { useTheme } from '../utils/themeContext';
 
 const BookDetailScreen = ({ route, navigation }) => {
   const { bookId } = route.params;
   const { setCurrentBook, setCurrentChapter, setCurrentSentence } = usePlayerStore();
+  const theme = useTheme();
   
   const [book, setBook] = useState(null);
   const [chapters, setChapters] = useState([]);
@@ -76,14 +78,14 @@ const BookDetailScreen = ({ route, navigation }) => {
 
   const renderChapterItem = ({ item, index }) => (
     <TouchableOpacity
-      style={styles.chapterItem}
+      style={[styles.chapterItem, { backgroundColor: theme.surface }]}
       onPress={() => handleChapterPress(item, index)}
     >
-      <Text style={styles.chapterNumber}>Ch {index + 1}</Text>
-      <Text style={styles.chapterTitle} numberOfLines={2}>
+      <Text style={[styles.chapterNumber, { color: theme.primary }]}>Ch {index + 1}</Text>
+      <Text style={[styles.chapterTitle, { color: theme.text }]} numberOfLines={2}>
         {item.title || `Chapter ${index + 1}`}
       </Text>
-      <Text style={styles.chapterWordCount}>
+      <Text style={[styles.chapterWordCount, { color: theme.textMuted }]}>
         {item.wordCount || 0} words
       </Text>
     </TouchableOpacity>
@@ -91,16 +93,16 @@ const BookDetailScreen = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4ade80" />
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
 
   if (!book) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Book not found</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <Text style={[styles.errorText, { color: theme.textSecondary }]}>Book not found</Text>
       </View>
     );
   }
@@ -108,18 +110,18 @@ const BookDetailScreen = ({ route, navigation }) => {
   const completionPercent = progress?.completionPercent || 0;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.surface }]}>
         <View style={styles.bookInfo}>
-          <View style={styles.bookCover}>
-            <Text style={styles.bookInitial}>
+          <View style={[styles.bookCover, { backgroundColor: theme.surfaceLight }]}>
+            <Text style={[styles.bookInitial, { color: theme.primary }]}>
               {book.title ? book.title.charAt(0).toUpperCase() : '?'}
             </Text>
           </View>
           <View style={styles.bookDetails}>
-            <Text style={styles.bookTitle}>{book.title}</Text>
-            <Text style={styles.bookAuthor}>{book.author || 'Unknown Author'}</Text>
-            <Text style={styles.bookStats}>
+            <Text style={[styles.bookTitle, { color: theme.text }]}>{book.title}</Text>
+            <Text style={[styles.bookAuthor, { color: theme.textSecondary }]}>{book.author || 'Unknown Author'}</Text>
+            <Text style={[styles.bookStats, { color: theme.textMuted }]}>
               {chapters.length} chapters
             </Text>
           </View>
@@ -127,24 +129,24 @@ const BookDetailScreen = ({ route, navigation }) => {
 
         {completionPercent > 0 && (
           <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${completionPercent}%` }]} />
+            <View style={[styles.progressBar, { backgroundColor: theme.surfaceLight }]}>
+              <View style={[styles.progressFill, { width: `${completionPercent}%`, backgroundColor: theme.primary }]} />
             </View>
-            <Text style={styles.progressText}>
+            <Text style={[styles.progressText, { color: theme.textSecondary }]}>
               {Math.round(completionPercent)}% complete
             </Text>
           </View>
         )}
 
         <TouchableOpacity
-          style={styles.listenButton}
+          style={[styles.listenButton, { backgroundColor: theme.primary }]}
           onPress={handleStartListening}
         >
-          <Text style={styles.listenButtonText}>🎧 Start Listening</Text>
+          <Text style={[styles.listenButtonText, { color: theme.background }]}>🎧 Start Listening</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>Chapters</Text>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>Chapters</Text>
 
       <FlatList
         data={chapters}
@@ -159,26 +161,16 @@ const BookDetailScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#16213e',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#16213e',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#16213e',
   },
   errorText: {
     fontSize: 18,
-    color: '#a0aec0',
   },
   header: {
-    backgroundColor: '#1a1a2e',
     padding: 16,
     paddingTop: 8,
   },
@@ -189,7 +181,6 @@ const styles = StyleSheet.create({
   bookCover: {
     width: 80,
     height: 120,
-    backgroundColor: '#2d3a5c',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -197,7 +188,6 @@ const styles = StyleSheet.create({
   bookInitial: {
     fontSize: 36,
     fontWeight: '700',
-    color: '#4ade80',
   },
   bookDetails: {
     flex: 1,
@@ -207,39 +197,32 @@ const styles = StyleSheet.create({
   bookTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#ffffff',
     marginBottom: 4,
   },
   bookAuthor: {
     fontSize: 14,
-    color: '#a0aec0',
     marginBottom: 8,
   },
   bookStats: {
     fontSize: 12,
-    color: '#718096',
   },
   progressContainer: {
     marginBottom: 16,
   },
   progressBar: {
     height: 6,
-    backgroundColor: '#2d3a5c',
     borderRadius: 3,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#4ade80',
     borderRadius: 3,
   },
   progressText: {
     fontSize: 12,
-    color: '#a0aec0',
     marginTop: 4,
   },
   listenButton: {
-    backgroundColor: '#4ade80',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
@@ -247,12 +230,10 @@ const styles = StyleSheet.create({
   listenButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a2e',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#ffffff',
     padding: 16,
     paddingBottom: 8,
   },
@@ -261,25 +242,21 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   chapterItem: {
-    backgroundColor: '#1a1a2e',
     borderRadius: 12,
     padding: 16,
     marginBottom: 8,
   },
   chapterNumber: {
     fontSize: 12,
-    color: '#4ade80',
     fontWeight: '600',
     marginBottom: 4,
   },
   chapterTitle: {
     fontSize: 16,
-    color: '#ffffff',
     marginBottom: 4,
   },
   chapterWordCount: {
     fontSize: 12,
-    color: '#718096',
   },
 });
 

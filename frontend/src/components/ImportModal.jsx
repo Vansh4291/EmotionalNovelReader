@@ -6,13 +6,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  ProgressBar,
 } from 'react-native';
 import DocumentPicker from 'react-native-document-picker';
 import RNFS from 'react-native-fs';
 import axios from 'axios';
-
-const BACKEND_URL = 'http://localhost:3000/api';
+import { API_BASE_URL } from '../config/api';
 
 const ImportModal = ({ visible, onClose, onImportSuccess }) => {
   const [step, setStep] = useState('idle');
@@ -65,7 +63,7 @@ const ImportModal = ({ visible, onClose, onImportSuccess }) => {
       setStatusText('Parsing book...');
 
       const response = await axios.post(
-        `${BACKEND_URL}/books/import`,
+        `${API_BASE_URL}/books/import`,
         formData,
         {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -102,7 +100,7 @@ const ImportModal = ({ visible, onClose, onImportSuccess }) => {
 
   const analyzeBookEmotions = async (bookId) => {
     try {
-      const chaptersResponse = await axios.get(`${BACKEND_URL}/books/${bookId}/chapters`);
+      const chaptersResponse = await axios.get(`${API_BASE_URL}/books/${bookId}/chapters`);
       const chapters = chaptersResponse.data.chapters || [];
       
       for (let i = 0; i < chapters.length; i++) {
@@ -110,7 +108,7 @@ const ImportModal = ({ visible, onClose, onImportSuccess }) => {
         const progressPercent = 0.6 + (i / chapters.length) * 0.3;
         setProgress(progressPercent);
         
-        await axios.post(`${BACKEND_URL}/emotion/analyze`, {
+        await axios.post(`${API_BASE_URL}/emotion/analyze`, {
           bookId,
           chapterIndex: i,
         });

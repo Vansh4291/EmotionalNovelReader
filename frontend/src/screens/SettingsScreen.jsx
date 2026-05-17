@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,26 +10,52 @@ import {
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useSettingsStore } from '../store/settingsStore';
+import { useTheme } from '../utils/themeContext';
+import { getRealm } from '../database/localDatabase';
+
+function formatTime(seconds) {
+  if (!seconds || seconds <= 0) return '0 min';
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins} min`;
+}
 
 const SettingsScreen = ({ navigation }) => {
+  const settings = useSettingsStore();
+  const theme = useTheme();
+  const [listeningTime, setListeningTime] = useState(0);
   const {
     defaultSpeed,
     defaultPitch,
     defaultVolume,
     emotionEffectsEnabled,
     highlightSyncEnabled,
-    theme,
+    theme: themeName,
     setDefaultSpeed,
     setDefaultPitch,
     setDefaultVolume,
     setEmotionEffectsEnabled,
     setHighlightSyncEnabled,
     setTheme,
-  } = useSettingsStore();
+  } = settings;
 
   const [localSpeed, setLocalSpeed] = useState(defaultSpeed);
   const [localPitch, setLocalPitch] = useState(defaultPitch);
   const [localVolume, setLocalVolume] = useState(defaultVolume);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const realm = await getRealm();
+        const progresses = realm.objects('UserProgress');
+        const total = progresses.reduce((sum, p) => sum + p.listeningTimeSeconds, 0);
+        setListeningTime(total);
+      } catch (e) {
+        console.error('Failed to load stats:', e);
+      }
+    })();
+  }, []);
 
   const handleClearCache = () => {
     Alert.alert(
@@ -49,26 +75,26 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   const renderSettingRow = (title, value, onValueChange, isSwitch = false) => (
-    <View style={styles.settingRow}>
-      <Text style={styles.settingTitle}>{title}</Text>
+    <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
+      <Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text>
       {isSwitch ? (
         <Switch
           value={value}
           onValueChange={onValueChange}
-          trackColor={{ false: '#2d3a5c', true: '#4ade80' }}
-          thumbColor={value ? '#ffffff' : '#a0aec0'}
+          trackColor={{ false: theme.surfaceLight, true: theme.primary }}
+          thumbColor={value ? theme.text : theme.textSecondary}
         />
       ) : null}
     </View>
   );
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Voice Settings</Text>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.primary }]}>Voice Settings</Text>
         
         <View style={styles.settingItem}>
-          <Text style={styles.settingLabel}>Default Speed: {localSpeed.toFixed(1)}x</Text>
+          <Text style={[styles.settingLabel, { color: theme.textSecondary }]}>Default Speed: {localSpeed.toFixed(1)}x</Text>
           <Slider
             style={styles.slider}
             minimumValue={0.5}
@@ -79,14 +105,14 @@ const SettingsScreen = ({ navigation }) => {
               setLocalSpeed(value);
               setDefaultSpeed(value);
             }}
-            minimumTrackTintColor="#4ade80"
-            maximumTrackTintColor="#2d3a5c"
-            thumbTintColor="#4ade80"
+            minimumTrackTintColor={theme.primary}
+            maximumTrackTintColor={theme.surfaceLight}
+            thumbTintColor={theme.primary}
           />
         </View>
 
         <View style={styles.settingItem}>
-          <Text style={styles.settingLabel}>Default Pitch: {localPitch.toFixed(1)}</Text>
+          <Text style={[styles.settingLabel, { color: theme.textSecondary }]}>Default Pitch: {localPitch.toFixed(1)}</Text>
           <Slider
             style={styles.slider}
             minimumValue={0.5}
@@ -97,14 +123,14 @@ const SettingsScreen = ({ navigation }) => {
               setLocalPitch(value);
               setDefaultPitch(value);
             }}
-            minimumTrackTintColor="#4ade80"
-            maximumTrackTintColor="#2d3a5c"
-            thumbTintColor="#4ade80"
+            minimumTrackTintColor={theme.primary}
+            maximumTrackTintColor={theme.surfaceLight}
+            thumbTintColor={theme.primary}
           />
         </View>
 
         <View style={styles.settingItem}>
-          <Text style={styles.settingLabel}>Default Volume: {Math.round(localVolume * 100)}%</Text>
+          <Text style={[styles.settingLabel, { color: theme.textSecondary }]}>Default Volume: {Math.round(localVolume * 100)}%</Text>
           <Slider
             style={styles.slider}
             minimumValue={0}
@@ -115,15 +141,15 @@ const SettingsScreen = ({ navigation }) => {
               setLocalVolume(value);
               setDefaultVolume(value);
             }}
-            minimumTrackTintColor="#4ade80"
-            maximumTrackTintColor="#2d3a5c"
-            thumbTintColor="#4ade80"
+            minimumTrackTintColor={theme.primary}
+            maximumTrackTintColor={theme.surfaceLight}
+            thumbTintColor={theme.primary}
           />
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Features</Text>
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.primary }]}>Features</Text>
         
         {renderSettingRow(
           'Emotion Effects',
@@ -140,54 +166,64 @@ const SettingsScreen = ({ navigation }) => {
         )}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Theme</Text>
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.primary }]}>Theme</Text>
         
         <View style={styles.themeOptions}>
           <TouchableOpacity
             style={[
               styles.themeOption,
-              theme === 'dark' && styles.themeOptionActive,
+              { backgroundColor: theme.surfaceLight },
+              themeName === 'dark' && { backgroundColor: theme.primary },
             ]}
             onPress={() => setTheme('dark')}
           >
-            <Text style={styles.themeOptionText}>🌙 Dark</Text>
+            <Text style={[styles.themeOptionText, { color: theme.text }]}>🌙 Dark</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
             style={[
               styles.themeOption,
-              theme === 'light' && styles.themeOptionActive,
+              { backgroundColor: theme.surfaceLight },
+              themeName === 'light' && { backgroundColor: theme.primary },
             ]}
             onPress={() => setTheme('light')}
           >
-            <Text style={styles.themeOptionText}>☀️ Light</Text>
+            <Text style={[styles.themeOptionText, { color: theme.text }]}>☀️ Light</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
             style={[
               styles.themeOption,
-              theme === 'sepia' && styles.themeOptionActive,
+              { backgroundColor: theme.surfaceLight },
+              themeName === 'sepia' && { backgroundColor: theme.primary },
             ]}
             onPress={() => setTheme('sepia')}
           >
-            <Text style={styles.themeOptionText}>📖 Sepia</Text>
+            <Text style={[styles.themeOptionText, { color: theme.text }]}>📖 Sepia</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Data</Text>
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.primary }]}>Data</Text>
         
-        <TouchableOpacity style={styles.dangerButton} onPress={handleClearCache}>
+        <TouchableOpacity style={[styles.dangerButton, { backgroundColor: theme.danger }]} onPress={handleClearCache}>
           <Text style={styles.dangerButtonText}>Clear Cache</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
-        <Text style={styles.aboutText}>Emotional Light Novel Reader</Text>
-        <Text style={styles.versionText}>Version 1.0.0</Text>
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.primary }]}>Reading Stats</Text>
+        <Text style={[styles.statText, { color: theme.text }]}>
+          Total listening time: {formatTime(listeningTime)}
+        </Text>
+      </View>
+
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.primary }]}>About</Text>
+        <Text style={[styles.aboutText, { color: theme.text }]}>Emotional Light Novel Reader</Text>
+        <Text style={[styles.versionText, { color: theme.textMuted }]}>Version 1.0.0</Text>
       </View>
     </ScrollView>
   );
@@ -196,10 +232,8 @@ const SettingsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#16213e',
   },
   section: {
-    backgroundColor: '#1a1a2e',
     marginTop: 16,
     marginHorizontal: 16,
     borderRadius: 12,
@@ -208,7 +242,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#4ade80',
     marginBottom: 16,
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -219,18 +252,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d3a5c',
   },
   settingTitle: {
     fontSize: 16,
-    color: '#ffffff',
   },
   settingItem: {
     marginBottom: 16,
   },
   settingLabel: {
     fontSize: 14,
-    color: '#a0aec0',
     marginBottom: 8,
   },
   slider: {
@@ -245,18 +275,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: '#2d3a5c',
-  },
-  themeOptionActive: {
-    backgroundColor: '#4ade80',
   },
   themeOptionText: {
     fontSize: 14,
-    color: '#ffffff',
     fontWeight: '600',
   },
   dangerButton: {
-    backgroundColor: '#ef4444',
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
@@ -266,15 +290,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ffffff',
   },
+  statText: {
+    fontSize: 16,
+    textAlign: 'center',
+    paddingVertical: 8,
+  },
   aboutText: {
     fontSize: 16,
-    color: '#ffffff',
     textAlign: 'center',
     marginBottom: 8,
   },
   versionText: {
     fontSize: 14,
-    color: '#718096',
     textAlign: 'center',
   },
 });

@@ -74,17 +74,24 @@ export const addBook = async (bookData) => {
 export const getAllBooks = async () => {
   const realm = await getRealm();
   const books = realm.objects('Book').sorted('addedAt', true);
-  return books.map(book => ({
-    _id: book._id,
-    title: book.title,
-    author: book.author,
-    coverImagePath: book.coverImagePath,
-    filePath: book.filePath,
-    fileType: book.fileType,
-    totalChapters: book.totalChapters,
-    addedAt: book.addedAt.toISOString(),
-    isEmotionAnalyzed: book.isEmotionAnalyzed,
-  }));
+  return books.map(book => {
+    const progress = realm.objects('UserProgress').filtered('bookId == $0', book._id)[0];
+    return {
+      _id: book._id,
+      title: book.title,
+      author: book.author,
+      coverImagePath: book.coverImagePath,
+      filePath: book.filePath,
+      fileType: book.fileType,
+      totalChapters: book.totalChapters,
+      addedAt: book.addedAt.toISOString(),
+      isEmotionAnalyzed: book.isEmotionAnalyzed,
+      progress: progress ? {
+        currentChapterIndex: progress.currentChapterIndex,
+        completionPercent: progress.completionPercent,
+      } : null,
+    };
+  });
 };
 
 export const getBookById = async (bookId) => {
@@ -187,7 +194,7 @@ export const getOrCreateProgress = async (bookId) => {
   };
 };
 
-export const updateProgress = async (bookId, chapterIndex, sentenceIndex) => {
+export const updateProgress = async (bookId, chapterIndex, sentenceIndex, listeningTimeSeconds = 0) => {
   const realm = await getRealm();
   
   realm.write(() => {
@@ -198,11 +205,117 @@ export const updateProgress = async (bookId, chapterIndex, sentenceIndex) => {
       progress.currentChapterIndex = chapterIndex;
       progress.currentSentenceIndex = sentenceIndex;
       progress.lastUpdatedAt = new Date();
+      if (listeningTimeSeconds > 0) {
+        progress.listeningTimeSeconds += listeningTimeSeconds;
+      }
       if (book && book.totalChapters > 0) {
-        progress.completionPercent = Math.min(100.0, Math.max(0.0, (chapterIndex / book.totalChapters) * 100));
+        progress.completionPercent = Math.min(100.0, Math.max(0.0, ((chapterIndex + 1) / book.totalChapters) * 100));
       }
     }
   });
+};
+
+export const getBookmarks = async (bookId) => {
+  const realm = await getRealm();
+  const bookmarks = realm.objects('Bookmark').filtered('bookId == $0', bookId).sorted('createdAt', true);
+  return Array.from(bookmarks).map(b => ({
+    _id: b._id,
+    bookId: b.bookId,
+    chapterIndex: b.chapterIndex,
+    sentenceIndex: b.sentenceIndex,
+    note: b.note,
+    createdAt: b.createdAt.toISOString(),
+  }));
+};
+
+export const addBookmark = async (bookId, chapterIndex, sentenceIndex, note = '') => {
+  const realm = await getRealm();
+  let newBookmark;
+  realm.write(() => {
+    newBookmark = realm.create('Bookmark', {
+      _id: `bm_${bookId}_${chapterIndex}_${sentenceIndex}_${Date.now()}`,
+      bookId,
+      chapterIndex,
+      sentenceIndex,
+      note,
+      createdAt: new Date(),
+    });
+  });
+  return newBookmark ? {
+    _id: newBookmark._id,
+    bookId: newBookmark.bookId,
+    chapterIndex: newBookmark.chapterIndex,
+    sentenceIndex: newBookmark.sentenceIndex,
+    note: newBookmark.note,
+    createdAt: newBookmark.createdAt.toISOString(),
+  } : null;
+};
+
+export const deleteBookmark = async (bookmarkId) => {
+  const realm = await getRealm();
+  realm.write(() => {
+    const bookmark = realm.objectForPrimaryKey('Bookmark', bookmarkId);
+    if (bookmark) {
+      realm.delete(bookmark);
+    }
+  });
+};
+
+export const loadSettingsFromRealm = async () => {
+  try {
+    const realm = await getRealm();
+    const existing = realm.objects('UserSettings');
+    if (existing.length > 0) {
+      const s = existing[0];
+      return {
+        defaultVoiceEngine: s.defaultVoiceEngine,
+        defaultSpeed: s.defaultSpeed,
+        defaultPitch: s.defaultPitch,
+        defaultVolume: s.defaultVolume,
+        emotionEffectsEnabled: s.emotionEffectsEnabled,
+        highlightSyncEnabled: s.highlightSyncEnabled,
+        sleepTimerMinutes: s.sleepTimerMinutes,
+        theme: s.theme,
+      };
+    }
+  } catch (e) {
+    console.error('Failed to load settings:', e);
+  }
+  return null;
+};
+
+export const saveSettingsToRealm = async (settings) => {
+  try {
+    const realm = await getRealm();
+    realm.write(() => {
+      const existing = realm.objects('UserSettings');
+      if (existing.length > 0) {
+        const s = existing[0];
+        s.defaultVoiceEngine = settings.defaultVoiceEngine || 'android';
+        s.defaultSpeed = settings.defaultSpeed ?? 1.0;
+        s.defaultPitch = settings.defaultPitch ?? 1.0;
+        s.defaultVolume = settings.defaultVolume ?? 1.0;
+        s.emotionEffectsEnabled = settings.emotionEffectsEnabled ?? true;
+        s.highlightSyncEnabled = settings.highlightSyncEnabled ?? true;
+        s.sleepTimerMinutes = settings.sleepTimerMinutes ?? 0;
+        s.theme = settings.theme || 'dark';
+      } else {
+        realm.create('UserSettings', {
+          _id: 'user_settings',
+          defaultVoiceEngine: settings.defaultVoiceEngine || 'android',
+          defaultSpeed: settings.defaultSpeed ?? 1.0,
+          defaultPitch: settings.defaultPitch ?? 1.0,
+          defaultVolume: settings.defaultVolume ?? 1.0,
+          emotionEffectsEnabled: settings.emotionEffectsEnabled ?? true,
+          highlightSyncEnabled: settings.highlightSyncEnabled ?? true,
+          sleepTimerMinutes: settings.sleepTimerMinutes ?? 0,
+          theme: settings.theme || 'dark',
+        });
+      }
+    });
+  } catch (e) {
+    console.error('Failed to save settings:', e);
+  }
 };
 
 export default {
@@ -215,4 +328,9 @@ export default {
   deleteBook,
   getOrCreateProgress,
   updateProgress,
+  getBookmarks,
+  addBookmark,
+  deleteBookmark,
+  loadSettingsFromRealm,
+  saveSettingsToRealm,
 };

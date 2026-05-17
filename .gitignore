@@ -24,3 +24,13 @@ yarn-error.log*
 *.aab
 *.ipa
 build/
+
+# Claude Code / Flow / Swarm
+.claude/
+.claude-flow/
+.swarm/
+.mcp.json
+
+# Local Databases and assets
+*.db
+ruvector.db
