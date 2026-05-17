@@ -5,8 +5,8 @@ export class Bookmark extends Realm.Object {
     name: 'Bookmark',
     primaryKey: '_id',
     properties: {
-      _id: 'objectId',
-      bookId: 'objectId',
+      _id: 'string',
+      bookId: 'string',
       chapterIndex: 'int',
       sentenceIndex: 'int',
       note: { type: 'string', optional: true },

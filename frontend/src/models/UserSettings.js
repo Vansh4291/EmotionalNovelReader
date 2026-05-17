@@ -5,7 +5,7 @@ export class UserSettings extends Realm.Object {
     name: 'UserSettings',
     primaryKey: '_id',
     properties: {
-      _id: 'objectId',
+      _id: 'string',
       defaultVoiceEngine: { type: 'string', default: 'android' },
       defaultSpeed: { type: 'float', default: 1.0 },
       defaultPitch: { type: 'float', default: 1.0 },

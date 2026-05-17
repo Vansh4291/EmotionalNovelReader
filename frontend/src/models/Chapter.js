@@ -6,8 +6,8 @@ export class Chapter extends Realm.Object {
     name: 'Chapter',
     primaryKey: '_id',
     properties: {
-      _id: 'objectId',
-      bookId: 'objectId',
+      _id: 'string',
+      bookId: 'string',
       chapterIndex: 'int',
       title: { type: 'string', optional: true },
       rawText: 'string',

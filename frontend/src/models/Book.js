@@ -5,7 +5,7 @@ export class Book extends Realm.Object {
     name: 'Book',
     primaryKey: '_id',
     properties: {
-      _id: 'objectId',
+      _id: 'string',
       title: 'string',
       author: { type: 'string', default: 'Unknown' },
       coverImagePath: { type: 'string', optional: true },

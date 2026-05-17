@@ -5,8 +5,8 @@ export class UserProgress extends Realm.Object {
     name: 'UserProgress',
     primaryKey: '_id',
     properties: {
-      _id: 'objectId',
-      bookId: 'objectId',
+      _id: 'string',
+      bookId: 'string',
       currentChapterIndex: { type: 'int', default: 0 },
       currentSentenceIndex: { type: 'int', default: 0 },
       currentCharPosition: { type: 'int', default: 0 },

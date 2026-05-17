@@ -1,39 +1,62 @@
-function splitIntoSentences(text) {
+export function splitIntoSentences(text) {
   if (!text || typeof text !== 'string') {
     return [];
   }
 
-  const sentences = text
-    .replace(/([.!?])\s+(?=[A-Z])/g, '$1|')
-    .replace(/(\.\.\.)\s+(?=[A-Z])/g, '$1|')
-    .replace(/"\s*(?=[A-Z])/g, '"|')
-    .replace(/"\s*$/g, '"')
-    .split('|')
-    .map(s => s.trim())
-    .filter(s => s.length > 5);
-
+  const sentences = [];
+  
+  let current = '';
+  let inQuote = false;
+  let quoteChar = '';
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+    
+    if ((char === '"' || char === "'" || char === '"' || char === '"') && 
+        (i === 0 || text[i - 1] === ' ' || text[i - 1] === '\n')) {
+      if (!inQuote) {
+        inQuote = true;
+        quoteChar = char;
+      } else if (char === quoteChar) {
+        inQuote = false;
+        quoteChar = '';
+      }
+    }
+    
+    if (!inQuote) {
+      if (char === '.' || char === '!' || char === '?') {
+        if (nextChar === ' ' || nextChar === '\n' || nextChar === '"' || nextChar === "'") {
+          const trimmed = current.trim();
+          if (trimmed.length > 5) {
+            sentences.push(trimmed);
+          }
+          current = '';
+          continue;
+        }
+      }
+    }
+    
+    current += char;
+  }
+  
+  const trimmed = current.trim();
+  if (trimmed.length > 5) {
+    sentences.push(trimmed);
+  }
+  
   return sentences;
 }
 
-function splitIntoSentencesWithPositions(text) {
-  const sentences = splitIntoSentences(text);
-  let currentPosition = 0;
-  
-  return sentences.map((sentence, index) => {
-    const startChar = text.indexOf(sentence, currentPosition);
-    const endChar = startChar + sentence.length;
-    currentPosition = endChar;
-    
-    return {
-      index,
-      text: sentence,
-      startChar,
-      endChar,
-    };
-  });
+export function splitBySentenceDelimiters(text) {
+  if (!text || typeof text !== 'string') {
+    return [];
+  }
+
+  return text
+    .split(/(?<=[.!?])\s+(?=[A-Z"])/)
+    .map(s => s.trim())
+    .filter(s => s.length > 5);
 }
 
-module.exports = {
-  splitIntoSentences,
-  splitIntoSentencesWithPositions,
-};
+export default { splitIntoSentences, splitBySentenceDelimiters };
