@@ -2,11 +2,11 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import LibraryScreen from '../screens/LibraryScreen';
-import BookDetailScreen from '../screens/BookDetailScreen';
-import PlayerScreen from '../screens/PlayerScreen';
-import SettingsScreen from '../screens/SettingsScreen';
-import { useTheme } from '../utils/themeContext';
+import LibraryScreen from '../screens/LibraryScreen.jsx';
+import BookDetailScreen from '../screens/BookDetailScreen.jsx';
+import PlayerScreen from '../screens/PlayerScreen.jsx';
+import SettingsScreen from '../screens/SettingsScreen.jsx';
+import { useTheme } from '../utils/themeContext.js';
 
 const Stack = createNativeStackNavigator();
 

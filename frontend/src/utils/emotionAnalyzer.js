@@ -35,6 +35,13 @@ const EMOTION_KEYWORDS = {
   ],
 };
 
+const makeRegExp = (keyword) => new RegExp(`\\b${keyword}\\b`, 'i');
+
+const EMOTION_REGEXES = {};
+for (const [emotion, keywords] of Object.entries(EMOTION_KEYWORDS)) {
+  EMOTION_REGEXES[emotion] = keywords.map(makeRegExp);
+}
+
 export function analyzeSentence(text) {
   if (!text || typeof text !== 'string' || text.trim().length === 0) {
     return { emotion: 'neutral', confidence: 1.0 };
@@ -43,10 +50,10 @@ export function analyzeSentence(text) {
   const lower = text.toLowerCase();
   const scores = {};
 
-  for (const [emotion, keywords] of Object.entries(EMOTION_KEYWORDS)) {
+  for (const [emotion, regexes] of Object.entries(EMOTION_REGEXES)) {
     let score = 0;
-    for (const keyword of keywords) {
-      if (lower.includes(keyword)) {
+    for (const regex of regexes) {
+      if (regex.test(lower)) {
         score += 1;
       }
     }

@@ -1,10 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { StatusBar, LogBox } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import AppNavigator from './src/navigation/AppNavigator';
-import { ThemeProvider, useTheme, THEMES } from './src/utils/themeContext';
-import { useSettingsStore } from './src/store/settingsStore';
-import { loadSettingsFromRealm, saveSettingsToRealm } from './src/database/localDatabase';
+import AppNavigator from './src/navigation/AppNavigator.jsx';
+import { ThemeProvider, useTheme, THEMES } from './src/utils/themeContext.js';
+import { useSettingsStore } from './src/store/settingsStore.js';
+import { loadSettingsFromRealm, saveSettingsToRealm } from './src/database/localDatabase.js';
 
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',

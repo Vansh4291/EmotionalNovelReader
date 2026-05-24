@@ -3,22 +3,22 @@ import { useSettingsStore } from '../store/settingsStore';
 
 const THEMES = {
   dark: {
-    background: '#16213e',
-    surface: '#1a1a2e',
-    surfaceLight: '#2d3a5c',
-    primary: '#4ade80',
-    text: '#ffffff',
-    textSecondary: '#a0aec0',
-    textMuted: '#718096',
-    border: '#2d3a5c',
-    danger: '#ef4444',
-    warning: '#f59e0b',
-    emotionJoy: '#fbbf24',
-    emotionSadness: '#60a5fa',
-    emotionAnger: '#f87171',
-    emotionFear: '#a78bfa',
-    emotionSurprise: '#34d399',
-    emotionNeutral: '#94a3b8',
+    background: '#0A0A0A', // Deep OLED Black
+    surface: '#171717',    // Sleek Charcoal
+    surfaceLight: '#262626', // Elevated Card
+    primary: '#00E5FF',    // Vibrant Cyan Neon
+    text: '#FFFFFF',
+    textSecondary: '#A3A3A3',
+    textMuted: '#525252',
+    border: '#262626',
+    danger: '#FF2A5F',     // Neon Pink/Red
+    warning: '#FFD700',
+    emotionJoy: '#FFD700',     // Bright Gold
+    emotionSadness: '#00BFFF', // Deep Sky Blue
+    emotionAnger: '#FF2A5F',   // Neon Red
+    emotionFear: '#9D00FF',    // Neon Purple
+    emotionSurprise: '#00FF7F', // Spring Green
+    emotionNeutral: '#A3A3A3',
   },
   light: {
     background: '#f7fafc',
