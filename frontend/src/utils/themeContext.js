@@ -60,9 +60,11 @@ const THEMES = {
 
 const ThemeContext = createContext(THEMES.dark);
 
+console.log('ThemeProvider loaded');
 export const ThemeProvider = ({ children }) => {
   const theme = useSettingsStore((state) => state.theme);
   const currentTheme = THEMES[theme] || THEMES.dark;
+  console.log('ThemeProvider render, theme:', theme, 'currentTheme:', currentTheme?.background);
   
   return (
     <ThemeContext.Provider value={currentTheme}>

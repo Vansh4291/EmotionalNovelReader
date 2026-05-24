@@ -164,7 +164,7 @@ router.get('/:id/chapters/:chapterIndex', async (req, res) => {
   if (chapterCache.has(cacheKey)) {
     sentences = chapterCache.get(cacheKey);
   } else {
-    sentences = await enqueueAnalysis(processChapterText(chapter.text));
+    sentences = await processChapterText(chapter.text);
     chapterCache.set(cacheKey, sentences);
     chapter.isAnalyzed = true;
     booksDb.set(req.params.id, book);

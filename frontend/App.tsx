@@ -12,10 +12,12 @@ LogBox.ignoreLogs([
   '`new NativeEventEmitter()` was called with a non-null argument without the required `removeListeners` method.',
 ]);
 
+console.log('AppContent starting');
 function AppContent() {
   const theme = useTheme();
   const settings = useSettingsStore();
   const savedRef = useRef<Record<string, unknown> | null>(null);
+  console.log('AppContent rendered, theme:', theme?.background);
 
   useEffect(() => {
     loadSettingsFromRealm().then((saved) => {
@@ -66,7 +68,9 @@ function AppContent() {
   );
 }
 
+console.log('App module loaded');
 function App(): React.JSX.Element {
+  console.log('App render');
   return (
     <ThemeProvider>
       <AppContent />

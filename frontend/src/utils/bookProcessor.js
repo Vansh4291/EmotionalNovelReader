@@ -123,20 +123,25 @@ function extractTitle(filePath, content) {
 
 async function parseRemoteBook(filePath, fileType) {
   try {
+    let uploadPath = filePath;
+    if (filePath.startsWith('content://')) {
+      const tempPath = `${RNFS.CachesDirectoryPath}/upload_${Date.now()}.${fileType}`;
+      await RNFS.copyFile(filePath, tempPath);
+      uploadPath = `file://${tempPath}`;
+    }
+
     const fileName = decodeURIComponent(filePath.split('/').pop()) || `book.${fileType}`;
     const mimeType = fileType === 'pdf' ? 'application/pdf' : 'application/epub+zip';
 
     const formData = new FormData();
     formData.append('book', {
-      uri: filePath,
+      uri: uploadPath,
       name: fileName,
       type: mimeType,
     });
 
     // 1. Upload and parse file on the backend
-    const response = await api.post('/books/import', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.post('/books/import', formData);
 
     if (!response.data.success) {
       throw new Error(response.data.error || 'Import failed');
