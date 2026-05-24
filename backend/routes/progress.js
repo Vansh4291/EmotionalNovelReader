@@ -1,8 +1,20 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+
+const { loadMapFromJson, saveMapToJson, validateId } = require('../utils/db');
 
 const progressDb = new Map();
 const bookmarksDb = new Map();
+
+const PROGRESS_PATH = path.join(__dirname, '..', 'progress_db.json');
+const BOOKMARKS_PATH = path.join(__dirname, '..', 'bookmarks_db.json');
+
+async function loadDbs() {
+  await loadMapFromJson(PROGRESS_PATH, progressDb);
+  await loadMapFromJson(BOOKMARKS_PATH, bookmarksDb);
+}
+loadDbs();
 
 router.get('/:bookId', (req, res) => {
   const { bookId } = req.params;
@@ -18,26 +30,31 @@ router.get('/:bookId', (req, res) => {
   res.json(progress);
 });
 
-router.post('/:bookId', (req, res) => {
-  try {
-    const { bookId } = req.params;
-    const { currentChapterIndex, currentSentenceIndex, currentCharPosition, listeningTimeSeconds, completionPercent } = req.body;
+router.post('/:bookId', async (req, res) => {
+  const { bookId } = req.params;
+  const { currentChapterIndex, currentSentenceIndex, currentCharPosition, listeningTimeSeconds, completionPercent } = req.body;
 
-    const progress = {
-      bookId,
-      currentChapterIndex: currentChapterIndex ?? 0,
-      currentSentenceIndex: currentSentenceIndex ?? 0,
-      currentCharPosition: currentCharPosition ?? 0,
-      listeningTimeSeconds: listeningTimeSeconds ?? 0,
-      completionPercent: completionPercent ?? 0.0,
-      lastUpdatedAt: new Date().toISOString()
-    };
-
-    progressDb.set(bookId, progress);
-    res.json({ success: true, progress });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  if (currentChapterIndex != null && (!Number.isInteger(currentChapterIndex) || currentChapterIndex < 0)) {
+    return res.status(400).json({ error: 'Invalid chapterIndex' });
   }
+  if (currentSentenceIndex != null && (!Number.isInteger(currentSentenceIndex) || currentSentenceIndex < 0)) {
+    return res.status(400).json({ error: 'Invalid sentenceIndex' });
+  }
+
+  const existing = progressDb.get(bookId) || {};
+  const progress = {
+    bookId,
+    currentChapterIndex: currentChapterIndex ?? existing.currentChapterIndex ?? 0,
+    currentSentenceIndex: currentSentenceIndex ?? existing.currentSentenceIndex ?? 0,
+    currentCharPosition: currentCharPosition ?? existing.currentCharPosition ?? 0,
+    listeningTimeSeconds: listeningTimeSeconds ?? existing.listeningTimeSeconds ?? 0,
+    completionPercent: completionPercent ?? existing.completionPercent ?? 0.0,
+    lastUpdatedAt: new Date().toISOString()
+  };
+
+  progressDb.set(bookId, progress);
+  await saveMapToJson(PROGRESS_PATH, progressDb);
+  res.json({ success: true, progress });
 });
 
 router.get('/:bookId/bookmarks', (req, res) => {
@@ -46,33 +63,35 @@ router.get('/:bookId/bookmarks', (req, res) => {
   res.json(bookmarks);
 });
 
-router.post('/:bookId/bookmarks', (req, res) => {
-  try {
-    const { bookId } = req.params;
-    const { chapterIndex, sentenceIndex, note } = req.body;
+router.post('/:bookId/bookmarks', async (req, res) => {
+  const { bookId } = req.params;
+  const { chapterIndex, sentenceIndex, note } = req.body;
 
-    const bookmark = {
-      _id: `bm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      bookId,
-      chapterIndex: chapterIndex ?? 0,
-      sentenceIndex: sentenceIndex ?? 0,
-      note: note || null,
-      createdAt: new Date().toISOString()
-    };
-
-    bookmarksDb.set(bookmark._id, bookmark);
-    res.json({ success: true, bookmark });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  if (chapterIndex != null && (!Number.isInteger(chapterIndex) || chapterIndex < 0)) {
+    return res.status(400).json({ error: 'Invalid chapterIndex' });
   }
+
+  const bookmark = {
+    _id: `bm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    bookId,
+    chapterIndex: chapterIndex ?? 0,
+    sentenceIndex: sentenceIndex ?? 0,
+    note: note ? String(note).slice(0, 500) : null,
+    createdAt: new Date().toISOString()
+  };
+
+  bookmarksDb.set(bookmark._id, bookmark);
+  await saveMapToJson(BOOKMARKS_PATH, bookmarksDb);
+  res.json({ success: true, bookmark });
 });
 
-router.delete('/bookmarks/:bookmarkId', (req, res) => {
+router.delete('/bookmarks/:bookmarkId', async (req, res) => {
   const { bookmarkId } = req.params;
   if (!bookmarksDb.has(bookmarkId)) {
     return res.status(404).json({ error: 'Bookmark not found' });
   }
   bookmarksDb.delete(bookmarkId);
+  await saveMapToJson(BOOKMARKS_PATH, bookmarksDb);
   res.json({ success: true });
 });
 

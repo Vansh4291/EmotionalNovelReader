@@ -3,26 +3,24 @@ const router = express.Router();
 const { getVoiceParams, emotionProfiles } = require('../tts/voiceMapper');
 
 router.post('/speak', (req, res) => {
-  try {
-    const { text, emotion, userDefaults } = req.body;
-    
-    if (!text) {
-      return res.status(400).json({ error: 'text required' });
-    }
+  const { text, emotion, userDefaults } = req.body;
 
-    const voiceParams = getVoiceParams(emotion || 'neutral', userDefaults || {});
-    
-    res.json({
-      success: true,
-      text,
-      emotion: emotion || 'neutral',
-      voiceParams,
-      profile: emotionProfiles[emotion || 'neutral']
-    });
-  } catch (error) {
-    console.error('TTS speak error:', error);
-    res.status(500).json({ error: error.message });
+  if (!text) {
+    return res.status(400).json({ error: 'text required' });
   }
+
+  if (typeof text !== 'string' || text.length > 10000) {
+    return res.status(400).json({ error: 'Invalid text (max 10000 chars)' });
+  }
+
+  const voiceParams = getVoiceParams(emotion || 'neutral', userDefaults || {});
+
+  res.json({
+    success: true,
+    emotion: emotion || 'neutral',
+    voiceParams,
+    profile: emotionProfiles[emotion || 'neutral']
+  });
 });
 
 router.get('/voices', (req, res) => {
@@ -44,19 +42,12 @@ router.get('/profiles', (req, res) => {
 });
 
 router.post('/voice-params', (req, res) => {
-  try {
-    const { emotion, userDefaults } = req.body;
-    
-    const voiceParams = getVoiceParams(emotion || 'neutral', userDefaults || {});
-    
-    res.json({
-      success: true,
-      ...voiceParams
-    });
-  } catch (error) {
-    console.error('Voice params error:', error);
-    res.status(500).json({ error: error.message });
-  }
+  const { emotion, userDefaults } = req.body;
+  const voiceParams = getVoiceParams(emotion || 'neutral', userDefaults || {});
+  res.json({
+    success: true,
+    ...voiceParams
+  });
 });
 
 router.post('/pause', (req, res) => {

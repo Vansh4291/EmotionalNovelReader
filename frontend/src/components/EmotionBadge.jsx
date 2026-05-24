@@ -1,37 +1,44 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../utils/themeContext';
 
-const EMOTION_COLORS = {
-  joy: '#fbbf24',
-  sadness: '#60a5fa',
-  anger: '#f87171',
-  fear: '#a78bfa',
-  surprise: '#34d399',
-  neutral: '#94a3b8',
-};
+const EmotionBadge = ({ emotion = 'neutral' }) => {
+  const theme = useTheme();
 
-const EmotionBadge = ({ emotion = 'neutral', showLabel = true }) => {
-  const backgroundColor = EMOTION_COLORS[emotion] || EMOTION_COLORS.neutral;
+  const getColor = (e) => {
+    const map = {
+      joy: theme.emotionJoy,
+      sadness: theme.emotionSadness,
+      anger: theme.emotionAnger,
+      fear: theme.emotionFear,
+      surprise: theme.emotionSurprise,
+      neutral: theme.emotionNeutral,
+    };
+    return map[e] || theme.emotionNeutral;
+  };
+
+  const backgroundColor = getColor(emotion);
 
   return (
     <View style={[styles.badge, { backgroundColor }]}>
-      <Text style={styles.badgeText}>{emotion}</Text>
+      <Text style={[styles.badgeText, { color: theme.background }]}>{emotion}</Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginLeft: 8,
+    alignSelf: 'center',
   },
   badgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#1a1a2e',
-    textTransform: 'capitalize',
+    fontSize: 10,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
   },
 });
 
-export default EmotionBadge;
+export default React.memo(EmotionBadge);

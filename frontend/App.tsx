@@ -28,7 +28,7 @@ function AppContent() {
         if (saved.highlightSyncEnabled !== undefined) settings.setHighlightSyncEnabled(saved.highlightSyncEnabled);
       }
     });
-  }, []);
+  }, [settings.setDefaultSpeed, settings.setDefaultPitch, settings.setDefaultVolume, settings.setTheme, settings.setEmotionEffectsEnabled, settings.setHighlightSyncEnabled]);
 
   useEffect(() => {
     const current = {
@@ -38,7 +38,6 @@ function AppContent() {
       defaultVolume: settings.defaultVolume,
       emotionEffectsEnabled: settings.emotionEffectsEnabled,
       highlightSyncEnabled: settings.highlightSyncEnabled,
-      sleepTimerMinutes: settings.sleepTimerMinutes,
       theme: settings.theme,
     };
     if (savedRef.current === null) {

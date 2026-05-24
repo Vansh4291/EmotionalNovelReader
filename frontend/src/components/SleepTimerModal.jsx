@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useReducer } from 'react';
 import {
   View,
   Text,
   Modal,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
 } from 'react-native';
 import { usePlayerStore } from '../store/playerStore';
@@ -18,23 +18,33 @@ const TIMER_OPTIONS = [
 
 const SleepTimerModal = ({ visible, onClose }) => {
   const { sleepTimerMinutes, setSleepTimer, isPlaying } = usePlayerStore();
-  const [remainingTime, setRemainingTime] = useState(0);
+  const [remainingTime, dispatchRemaining] = useReducer(
+    (state, action) => {
+      switch (action.type) {
+        case 'SET':
+          return action.value;
+        case 'TICK':
+          if (state <= 1) return 0;
+          return state - 1;
+        default:
+          return state;
+      }
+    }, 0
+  );
   const intervalRef = useRef(null);
+  const timerActiveRef = useRef(false);
 
   useEffect(() => {
     if (sleepTimerMinutes > 0) {
-      setRemainingTime(sleepTimerMinutes * 60);
-      
+      dispatchRemaining({ type: 'SET', value: sleepTimerMinutes * 60 });
+      timerActiveRef.current = true;
+
       intervalRef.current = setInterval(() => {
-        setRemainingTime((prev) => {
-          if (prev <= 1) {
-            clearInterval(intervalRef.current);
-            setSleepTimer(0);
-            return 0;
-          }
-          return prev - 1;
-        });
+        dispatchRemaining({ type: 'TICK' });
       }, 1000);
+    } else {
+      timerActiveRef.current = false;
+      dispatchRemaining({ type: 'SET', value: 0 });
     }
 
     return () => {
@@ -42,16 +52,27 @@ const SleepTimerModal = ({ visible, onClose }) => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [sleepTimerMinutes]);
+  }, [sleepTimerMinutes, setSleepTimer]);
 
   const handleSelectTimer = (minutes) => {
     setSleepTimer(minutes);
     onClose();
   };
 
+  useEffect(() => {
+    if (remainingTime <= 0 && timerActiveRef.current) {
+      timerActiveRef.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      setSleepTimer(0);
+    }
+  }, [remainingTime, setSleepTimer]);
+
   const handleCancelTimer = () => {
     setSleepTimer(0);
-    setRemainingTime(0);
+    dispatchRemaining({ type: 'SET', value: 0 });
     onClose();
   };
 
@@ -77,12 +98,12 @@ const SleepTimerModal = ({ visible, onClose }) => {
               <Text style={styles.timerText}>
                 Time remaining: {formatTime(remainingTime)}
               </Text>
-              <TouchableOpacity
-                style={styles.cancelButton}
+              <Pressable
+                style={({ pressed }) => [styles.cancelButton, pressed && { opacity: 0.7 }]}
                 onPress={handleCancelTimer}
               >
                 <Text style={styles.cancelButtonText}>Cancel Timer</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           ) : (
             <>
@@ -90,21 +111,21 @@ const SleepTimerModal = ({ visible, onClose }) => {
               
               <View style={styles.options}>
                 {TIMER_OPTIONS.map((option) => (
-                  <TouchableOpacity
+                  <Pressable
                     key={option.value}
-                    style={styles.optionButton}
+                    style={({ pressed }) => [styles.optionButton, pressed && { opacity: 0.7 }]}
                     onPress={() => handleSelectTimer(option.value)}
                   >
                     <Text style={styles.optionText}>{option.label}</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 ))}
               </View>
             </>
           )}
 
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Pressable style={({ pressed }) => [styles.closeButton, pressed && { opacity: 0.7 }]} onPress={onClose}>
             <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </Modal>

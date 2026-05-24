@@ -1,3 +1,6 @@
+const { spawn } = require('child_process');
+const path = require('path');
+
 const emotionKeywords = {
   joy: [
     'laugh', 'smile', 'happy', 'joy', 'excited', 'wonderful', 'amazing',
@@ -82,4 +85,58 @@ function analyzeChapter(sentences) {
   });
 }
 
-module.exports = { analyzeChapter, analyzeSentence, emotionKeywords };
+async function analyzeChapterAsync(sentences) {
+  if (!Array.isArray(sentences) || sentences.length === 0) return [];
+
+  return new Promise((resolve) => {
+    try {
+      const scriptPath = path.join(__dirname, 'python_emotion_model.py');
+      const pyProcess = spawn('python', [scriptPath]);
+
+      let dataString = '';
+      let errorString = '';
+
+      pyProcess.stdout.on('data', (data) => {
+        dataString += data.toString();
+      });
+
+      pyProcess.stderr.on('data', (data) => {
+        errorString += data.toString();
+      });
+
+      pyProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.error(`Python script exited with code ${code}`, errorString);
+          resolve(analyzeChapter(sentences));
+          return;
+        }
+
+        try {
+          const results = JSON.parse(dataString);
+          if (Array.isArray(results) && results.length > 0) {
+            resolve(results);
+          } else {
+            resolve(analyzeChapter(sentences));
+          }
+        } catch (e) {
+          console.error("Failed to parse Python output", e);
+          resolve(analyzeChapter(sentences));
+        }
+      });
+
+      pyProcess.on('error', (err) => {
+        console.error("Python spawn error", err);
+        resolve(analyzeChapter(sentences));
+      });
+
+      pyProcess.stdin.write(JSON.stringify({ sentences }));
+      pyProcess.stdin.end();
+
+    } catch (e) {
+      console.error("Failed to setup Python process", e);
+      resolve(analyzeChapter(sentences));
+    }
+  });
+}
+
+module.exports = { analyzeChapter, analyzeChapterAsync, analyzeSentence, emotionKeywords };

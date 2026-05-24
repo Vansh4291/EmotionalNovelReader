@@ -3,7 +3,7 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   Switch,
   StyleSheet,
   Alert,
@@ -20,6 +20,20 @@ function formatTime(seconds) {
   if (hours > 0) return `${hours}h ${mins}m`;
   return `${mins} min`;
 }
+
+const SettingRow = ({ title, value, onValueChange, isSwitch, theme }) => (
+  <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
+    <Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text>
+    {isSwitch ? (
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ false: theme.surfaceLight, true: theme.primary }}
+        thumbColor={value ? theme.text : theme.textSecondary}
+      />
+    ) : null}
+  </View>
+);
 
 const SettingsScreen = ({ navigation }) => {
   const settings = useSettingsStore();
@@ -73,20 +87,6 @@ const SettingsScreen = ({ navigation }) => {
       ]
     );
   };
-
-  const renderSettingRow = (title, value, onValueChange, isSwitch = false) => (
-    <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
-      <Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text>
-      {isSwitch ? (
-        <Switch
-          value={value}
-          onValueChange={onValueChange}
-          trackColor={{ false: theme.surfaceLight, true: theme.primary }}
-          thumbColor={value ? theme.text : theme.textSecondary}
-        />
-      ) : null}
-    </View>
-  );
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -151,66 +151,71 @@ const SettingsScreen = ({ navigation }) => {
       <View style={[styles.section, { backgroundColor: theme.surface }]}>
         <Text style={[styles.sectionTitle, { color: theme.primary }]}>Features</Text>
         
-        {renderSettingRow(
-          'Emotion Effects',
-          emotionEffectsEnabled,
-          setEmotionEffectsEnabled,
-          true
-        )}
+        <SettingRow
+          title="Emotion Effects"
+          value={emotionEffectsEnabled}
+          onValueChange={setEmotionEffectsEnabled}
+          isSwitch
+          theme={theme}
+        />
         
-        {renderSettingRow(
-          'Text Highlight Sync',
-          highlightSyncEnabled,
-          setHighlightSyncEnabled,
-          true
-        )}
+        <SettingRow
+          title="Text Highlight Sync"
+          value={highlightSyncEnabled}
+          onValueChange={setHighlightSyncEnabled}
+          isSwitch
+          theme={theme}
+        />
       </View>
 
       <View style={[styles.section, { backgroundColor: theme.surface }]}>
         <Text style={[styles.sectionTitle, { color: theme.primary }]}>Theme</Text>
         
         <View style={styles.themeOptions}>
-          <TouchableOpacity
-            style={[
+          <Pressable
+            style={({ pressed }) => [
               styles.themeOption,
               { backgroundColor: theme.surfaceLight },
               themeName === 'dark' && { backgroundColor: theme.primary },
+              pressed && { opacity: 0.7 },
             ]}
             onPress={() => setTheme('dark')}
           >
             <Text style={[styles.themeOptionText, { color: theme.text }]}>🌙 Dark</Text>
-          </TouchableOpacity>
+          </Pressable>
           
-          <TouchableOpacity
-            style={[
+          <Pressable
+            style={({ pressed }) => [
               styles.themeOption,
               { backgroundColor: theme.surfaceLight },
               themeName === 'light' && { backgroundColor: theme.primary },
+              pressed && { opacity: 0.7 },
             ]}
             onPress={() => setTheme('light')}
           >
             <Text style={[styles.themeOptionText, { color: theme.text }]}>☀️ Light</Text>
-          </TouchableOpacity>
+          </Pressable>
           
-          <TouchableOpacity
-            style={[
+          <Pressable
+            style={({ pressed }) => [
               styles.themeOption,
               { backgroundColor: theme.surfaceLight },
               themeName === 'sepia' && { backgroundColor: theme.primary },
+              pressed && { opacity: 0.7 },
             ]}
             onPress={() => setTheme('sepia')}
           >
             <Text style={[styles.themeOptionText, { color: theme.text }]}>📖 Sepia</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
       <View style={[styles.section, { backgroundColor: theme.surface }]}>
         <Text style={[styles.sectionTitle, { color: theme.primary }]}>Data</Text>
         
-        <TouchableOpacity style={[styles.dangerButton, { backgroundColor: theme.danger }]} onPress={handleClearCache}>
+        <Pressable style={({ pressed }) => [styles.dangerButton, { backgroundColor: theme.danger }, pressed && { opacity: 0.7 }]} onPress={handleClearCache}>
           <Text style={styles.dangerButtonText}>Clear Cache</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <View style={[styles.section, { backgroundColor: theme.surface }]}>

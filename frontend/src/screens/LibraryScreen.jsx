@@ -2,8 +2,9 @@ import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
+  TextInput,
   FlatList,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   Alert,
   ActivityIndicator,
@@ -14,19 +15,15 @@ import { parseLocalBook } from '../utils/bookProcessor';
 import { addBook, getAllBooks, deleteBook } from '../database/localDatabase';
 import { useLibraryStore } from '../store/libraryStore';
 import { useTheme } from '../utils/themeContext';
+import BookCard from '../components/BookCard';
 
 const LibraryScreen = ({ navigation }) => {
   const theme = useTheme();
   const { books, setBooks, addBook: addBookToStore, removeBook, isLoading, setLoading } = useLibraryStore();
   const [importing, setImporting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  useFocusEffect(
-    useCallback(() => {
-      loadBooks();
-    }, [])
-  );
-
-  const loadBooks = async () => {
+  const loadBooks = useCallback(async () => {
     try {
       setLoading(true);
       const localBooks = await getAllBooks();
@@ -36,7 +33,22 @@ const LibraryScreen = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, setBooks]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadBooks();
+    }, [loadBooks])
+  );
+
+  const filteredBooks = useMemo(() => {
+    if (!searchQuery.trim()) return books;
+    const query = searchQuery.toLowerCase().trim();
+    return books.filter(b =>
+      (b.title && b.title.toLowerCase().includes(query)) ||
+      (b.author && b.author.toLowerCase().includes(query))
+    );
+  }, [books, searchQuery]);
 
   const handleImportBook = async () => {
     try {
@@ -56,8 +68,8 @@ const LibraryScreen = ({ navigation }) => {
       const fileType = ext === 'txt' ? 'txt' : ext;
 
       const bookData = await parseLocalBook(filePath, fileType);
-      
-      const existing = books.find(b => 
+
+      const existing = books.find(b =>
         b.title === bookData.title && b.author === bookData.author
       );
       if (existing) {
@@ -65,9 +77,9 @@ const LibraryScreen = ({ navigation }) => {
         Alert.alert('Duplicate', `"${bookData.title}" is already in your library.`);
         return;
       }
-      
+
       const savedBook = await addBook(bookData);
-      
+
       addBookToStore({
         _id: savedBook._id,
         title: savedBook.title,
@@ -90,7 +102,7 @@ const LibraryScreen = ({ navigation }) => {
     }
   };
 
-  const handleDeleteBook = (book) => {
+  const handleDeleteBook = useCallback((book) => {
     Alert.alert(
       'Delete Book',
       `Are you sure you want to delete "${book.title}"?`,
@@ -111,96 +123,110 @@ const LibraryScreen = ({ navigation }) => {
         },
       ]
     );
-  };
+  }, [removeBook]);
 
-  const handleBookPress = (book) => {
+  const handleBookPress = useCallback((book) => {
     navigation.navigate('BookDetail', {
       bookId: book._id,
       bookTitle: book.title,
     });
-  };
+  }, [navigation]);
 
   const renderBookCard = useCallback(({ item }) => (
-    <TouchableOpacity
-      style={[styles.bookCard, { backgroundColor: theme.surface }]}
+    <BookCard
+      book={item}
       onPress={() => handleBookPress(item)}
       onLongPress={() => handleDeleteBook(item)}
-    >
-      <View style={[styles.bookCover, { backgroundColor: theme.surfaceLight }]}>
-        <Text style={[styles.bookInitial, { color: theme.primary }]}>
-          {item.title ? item.title.charAt(0).toUpperCase() : '?'}
-        </Text>
-      </View>
-      <Text style={[styles.bookTitle, { color: theme.text }]} numberOfLines={2}>
-        {item.title || 'Untitled'}
-      </Text>
-      <Text style={[styles.bookAuthor, { color: theme.textSecondary }]} numberOfLines={1}>
-        {item.author || 'Unknown Author'}
-      </Text>
-      {item.progress && item.progress.completionPercent > 0 && (
-        <View style={styles.progressRow}>
-          <View style={[styles.progressBarSmall, { backgroundColor: theme.surfaceLight }]}>
-            <View style={[styles.progressFillSmall, { backgroundColor: theme.primary, width: `${Math.min(100, item.progress.completionPercent)}%` }]} />
-          </View>
-          <Text style={[styles.progressPercent, { color: theme.textMuted }]}>{Math.round(item.progress.completionPercent)}%</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  ), [theme]);
+    />
+  ), [handleBookPress, handleDeleteBook]);
 
   const renderEmptyLibrary = () => (
     <View style={styles.emptyContainer}>
-      <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No books in your library</Text>
-      <Text style={[styles.emptySubtext, { color: theme.textMuted }]}>
-        Tap the + button to import a book
+      <View style={[styles.emptyIconContainer, { backgroundColor: theme.surfaceLight }]}>
+        <Text style={[styles.emptyIcon, { color: theme.textMuted }]}>+</Text>
+      </View>
+      <Text style={[styles.emptyTitle, { color: theme.text }]}>No books yet</Text>
+      <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
+        Tap the + button to import your first book
+      </Text>
+    </View>
+  );
+
+  const renderEmptySearch = () => (
+    <View style={styles.emptyContainer}>
+      <Text style={[styles.emptyTitle, { color: theme.text }]}>No results found</Text>
+      <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
+        Try a different search term
       </Text>
     </View>
   );
 
   const keyExtractor = useCallback((item) => item._id, []);
 
+  const showLoadingOverlay = importing || isLoading;
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.header, { backgroundColor: theme.surface }]}>
         <Text style={[styles.headerTitle, { color: theme.text }]}>My Library</Text>
-        <TouchableOpacity
-          style={styles.settingsButton}
+        <Pressable
+          style={({ pressed }) => [styles.settingsButton, pressed && { opacity: 0.6 }]}
           onPress={() => navigation.navigate('Settings')}
         >
-          <Text style={styles.settingsIcon}>⚙️</Text>
-        </TouchableOpacity>
+          <Text style={[styles.settingsIcon, { color: theme.textSecondary }]}>{'\u2699'}</Text>
+        </Pressable>
       </View>
 
-      {importing ? (
-        <View style={styles.importingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-          <Text style={[styles.importingText, { color: theme.textSecondary }]}>Importing book...</Text>
+      <View style={[styles.searchContainer, { backgroundColor: theme.surface }]}>
+        <View style={[styles.searchBar, { backgroundColor: theme.surfaceLight }]}>
+          <Text style={[styles.searchIcon, { color: theme.textMuted }]}>
+            {'\u2315'}
+          </Text>
+          <TextInput
+            style={[styles.searchInput, { color: theme.text }]}
+            placeholder="Search by title or author..."
+            placeholderTextColor={theme.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+          />
         </View>
-      ) : isLoading ? (
+      </View>
+
+      {showLoadingOverlay ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.primary} />
+          {importing && (
+            <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+              Importing book\u2026
+            </Text>
+          )}
         </View>
       ) : (
         <FlatList
-          data={books}
+          data={filteredBooks}
           renderItem={renderBookCard}
           keyExtractor={keyExtractor}
-          numColumns={2}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={renderEmptyLibrary}
+          contentContainerStyle={[
+            styles.listContent,
+            filteredBooks.length === 0 && styles.listContentEmpty,
+          ]}
+          ListEmptyComponent={searchQuery ? renderEmptySearch : renderEmptyLibrary}
+          showsVerticalScrollIndicator={false}
           removeClippedSubviews={true}
           maxToRenderPerBatch={10}
           windowSize={5}
         />
       )}
 
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.primary }]}
+      <Pressable
+        style={({ pressed }) => [styles.fab, { backgroundColor: theme.primary }, pressed && !importing && { opacity: 0.85 }]}
         onPress={handleImportBook}
         disabled={importing}
       >
-        <Text style={[styles.fabIcon, { color: theme.background }]}>+</Text>
-      </TouchableOpacity>
+        <Text style={[styles.fabIcon, { color: theme.surface }]}>+</Text>
+      </Pressable>
     </View>
   );
 };
@@ -213,112 +239,104 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
+    letterSpacing: -0.3,
   },
   settingsButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   settingsIcon: {
     fontSize: 24,
   },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 44,
+  },
+  searchIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    paddingVertical: 0,
+  },
   listContent: {
-    padding: 16,
+    paddingTop: 4,
     paddingBottom: 100,
   },
-  bookCard: {
-    flex: 1,
-    margin: 8,
-    maxWidth: '45%',
-    borderRadius: 12,
-    padding: 8,
-  },
-  bookCover: {
-    width: '100%',
-    aspectRatio: 0.7,
-    borderRadius: 12,
+  listContentEmpty: {
+    flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  bookInitial: {
-    fontSize: 48,
-    fontWeight: '700',
-  },
-  bookTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  bookAuthor: {
-    fontSize: 12,
   },
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 20,
+    bottom: 24,
     width: 60,
     height: 60,
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
+    boxShadow: '0 4px 8px rgba(0,0,0,0.25)',
   },
   fabIcon: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: '300',
+    lineHeight: 36,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  importingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  importingText: {
+  loadingText: {
     marginTop: 16,
-    fontSize: 16,
+    fontSize: 15,
   },
   emptyContainer: {
-    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 100,
+    marginBottom: 20,
   },
-  emptyText: {
-    fontSize: 18,
+  emptyIcon: {
+    fontSize: 40,
+    fontWeight: '300',
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '600',
     marginBottom: 8,
+    textAlign: 'center',
   },
   emptySubtext: {
     fontSize: 14,
-  },
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  progressBarSmall: {
-    flex: 1,
-    height: 3,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFillSmall: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  progressPercent: {
-    fontSize: 10,
-    marginLeft: 4,
-    minWidth: 28,
-    textAlign: 'right',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 

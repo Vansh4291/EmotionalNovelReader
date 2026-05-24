@@ -1,13 +1,13 @@
 const { splitBySentenceDelimiters } = require('../utils/sentenceSplitter');
-const { analyzeChapter } = require('../emotion/emotionAnalyzer');
+const { analyzeChapterAsync } = require('../emotion/emotionAnalyzer');
 
-function processChapterText(text) {
+async function processChapterText(text) {
   if (!text || typeof text !== 'string') {
     return [];
   }
 
   const sentences = splitBySentenceDelimiters(text);
-  const analyzedSentences = analyzeChapter(sentences);
+  const analyzedSentences = await analyzeChapterAsync(sentences);
 
   return analyzedSentences.map((result, index) => ({
     index,

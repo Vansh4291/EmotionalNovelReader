@@ -1,7 +1,6 @@
 import RNFS from 'react-native-fs';
-import axios from 'axios';
 import { processChapterText } from './chapterProcessor';
-import { API_BASE_URL } from '../config/api';
+import api from '../config/api';
 
 const CHAPTER_PATTERNS = [
   /^Chapter\s+(\d+)/i,
@@ -135,7 +134,7 @@ async function parseRemoteBook(filePath, fileType) {
     });
 
     // 1. Upload and parse file on the backend
-    const response = await axios.post(`${API_BASE_URL}/books/import`, formData, {
+    const response = await api.post('/books/import', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
 
@@ -146,7 +145,7 @@ async function parseRemoteBook(filePath, fileType) {
     const importedBook = response.data.book;
 
     // 2. Fetch the full book with chapters
-    const fullBookResponse = await axios.get(`${API_BASE_URL}/books/${importedBook._id}`);
+    const fullBookResponse = await api.get(`/books/${importedBook._id}`);
     const fullBook = fullBookResponse.data;
 
     // 3. Format the chapters with emotion analysis for each chapter

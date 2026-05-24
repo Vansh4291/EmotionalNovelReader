@@ -1,3 +1,5 @@
+const QUOTE_CANDIDATES = new Set(['"', "'", '\u201C', '\u201D', '\u2018', '\u2019', '\u300C', '\u300D', '\u300E', '\u300F']);
+
 export function splitIntoSentences(text) {
   if (!text || typeof text !== 'string') {
     return [];
@@ -57,8 +59,7 @@ export function splitIntoSentences(text) {
       continue;
     }
 
-    const quoteCandidates = ['"', "'", '\u201C', '\u201D', '\u2018', '\u2019', '\u300C', '\u300D', '\u300E', '\u300F'];
-    if (quoteCandidates.includes(char)) {
+    if (QUOTE_CANDIDATES.has(char)) {
       const prevChar = i > 0 ? text[i - 1] : ' ';
       if (!inQuote && (prevChar === ' ' || prevChar === '\n' || prevChar === '—' || prevChar === undefined)) {
         inQuote = true;

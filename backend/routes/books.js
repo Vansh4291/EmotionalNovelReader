@@ -2,40 +2,52 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs').promises;
+const { LRUCache } = require('lru-cache');
 
 const { parseEpub } = require('../parsers/epubParser');
 const { parsePdf } = require('../parsers/pdfParser');
 const { parseTxt } = require('../parsers/txtParser');
 const { processChapterText } = require('../services/chapterProcessor');
+const { uploadDir } = require('../middleware/upload');
+const { upload } = require('../middleware/upload');
+const { importLimiter } = require('../middleware/rateLimiter');
+const { enqueueAnalysis } = require('../utils/analysisQueue');
+const { loadMapFromJson, saveMapToJson, validateId } = require('../utils/db');
 
 const booksDb = new Map();
-const chapterCache = new Map();
+const chapterCache = new LRUCache({ max: 500, ttl: 1000 * 60 * 60 });
 
-router.post('/import', async (req, res) => {
+const DB_PATH = path.join(__dirname, '..', 'books_db.json');
+const CACHE_PATH = path.join(__dirname, '..', 'chapter_cache.json');
+
+async function loadDb() {
+  await loadMapFromJson(DB_PATH, booksDb);
   try {
-    let filePath;
-    let fileType;
-    let fileName;
+    const cacheData = await fs.readFile(CACHE_PATH, 'utf-8');
+    const parsedCache = JSON.parse(cacheData);
+    parsedCache.forEach(([k, v]) => chapterCache.set(k, v));
+  } catch (e) { }
+}
 
-    if (req.file) {
-      filePath = req.file.path;
-      fileName = req.file.originalname;
-      const ext = path.extname(fileName).toLowerCase().replace('.', '');
-      fileType = ext === 'txt' ? 'txt' : ext;
-    } else if (req.body.filePath && req.body.fileType) {
-      filePath = req.body.filePath;
-      fileType = req.body.fileType;
-      fileName = req.body.fileName;
-    } else {
-      return res.status(400).json({ error: 'File or filePath required' });
-    }
+loadDb();
 
-    if (!filePath || !fileType) {
-      return res.status(400).json({ error: 'filePath and fileType required' });
-    }
+router.post('/import', importLimiter, upload.single('book'), async (req, res) => {
+  let filePath;
+  let fileType;
+  let fileName;
 
-    let bookData;
-    switch (fileType.toLowerCase()) {
+  if (!req.file) {
+    return res.status(400).json({ error: 'Book file is required' });
+  }
+
+  filePath = req.file.path;
+  fileName = req.file.originalname;
+  const ext = path.extname(fileName).toLowerCase().replace('.', '');
+  fileType = ext === 'txt' ? 'txt' : ext;
+
+  let bookData;
+  try {
+    switch (fileType) {
       case 'epub':
         bookData = await parseEpub(filePath);
         break;
@@ -47,41 +59,45 @@ router.post('/import', async (req, res) => {
         bookData = await parseTxt(filePath);
         break;
       default:
+        await fs.unlink(filePath).catch(() => {});
         return res.status(400).json({ error: 'Unsupported file type: ' + fileType });
     }
-
-    const bookId = `book_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const book = {
-      _id: bookId,
-      title: bookData.title || fileName || 'Unknown Title',
-      author: bookData.author || 'Unknown Author',
-      coverImagePath: bookData.coverImagePath || null,
-      filePath,
-      fileType: fileType.toLowerCase(),
-      totalChapters: bookData.chapters?.length || 0,
-      chapters: bookData.chapters || [],
-      addedAt: new Date().toISOString(),
-      isEmotionAnalyzed: false,
-    };
-
-    booksDb.set(bookId, book);
-
-    res.json({
-      success: true,
-      book: {
-        _id: book._id,
-        title: book.title,
-        author: book.author,
-        coverImagePath: book.coverImagePath,
-        fileType: book.fileType,
-        totalChapters: book.totalChapters,
-        addedAt: book.addedAt,
-      }
-    });
-  } catch (error) {
-    console.error('Import error:', error);
-    res.status(500).json({ error: error.message });
+  } catch (parseError) {
+    await fs.unlink(filePath).catch(() => {});
+    console.error('Parse error:', parseError);
+    return res.status(422).json({ error: 'Failed to parse file. Ensure it is a valid ' + fileType.toUpperCase() + ' file.' });
   }
+
+  const bookId = `book_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const book = {
+    _id: bookId,
+    title: bookData.title || fileName || 'Unknown Title',
+    author: bookData.author || 'Unknown Author',
+    coverImagePath: bookData.coverImagePath || null,
+    fileType: fileType.toLowerCase(),
+    totalChapters: bookData.chapters?.length || 0,
+    chapters: bookData.chapters || [],
+    addedAt: new Date().toISOString(),
+    isEmotionAnalyzed: false,
+  };
+
+  booksDb.set(bookId, book);
+  await saveMapToJson(DB_PATH, booksDb);
+
+  await fs.unlink(filePath).catch(() => {});
+
+  res.json({
+    success: true,
+    book: {
+      _id: book._id,
+      title: book.title,
+      author: book.author,
+      coverImagePath: book.coverImagePath,
+      fileType: book.fileType,
+      totalChapters: book.totalChapters,
+      addedAt: book.addedAt,
+    }
+  });
 });
 
 router.get('/', (req, res) => {
@@ -104,14 +120,16 @@ router.get('/:id', (req, res) => {
   if (!book) {
     return res.status(404).json({ error: 'Book not found' });
   }
-  res.json(book);
+  const { chapters, ...safe } = book;
+  res.json(safe);
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   if (!booksDb.has(req.params.id)) {
     return res.status(404).json({ error: 'Book not found' });
   }
   booksDb.delete(req.params.id);
+  await saveMapToJson(DB_PATH, booksDb);
   res.json({ success: true });
 });
 
@@ -120,7 +138,7 @@ router.get('/:id/chapters', (req, res) => {
   if (!book) {
     return res.status(404).json({ error: 'Book not found' });
   }
-  const chapters = book.chapters.map((c, i) => ({
+  const chapters = (book.chapters || []).map((c, i) => ({
     index: i,
     title: c.title || `Chapter ${i + 1}`,
     wordCount: c.wordCount,
@@ -129,13 +147,13 @@ router.get('/:id/chapters', (req, res) => {
   res.json(chapters);
 });
 
-router.get('/:id/chapters/:chapterIndex', (req, res) => {
+router.get('/:id/chapters/:chapterIndex', async (req, res) => {
   const book = booksDb.get(req.params.id);
   if (!book) {
     return res.status(404).json({ error: 'Book not found' });
   }
   const chapterIndex = parseInt(req.params.chapterIndex, 10);
-  if (chapterIndex < 0 || chapterIndex >= book.chapters.length) {
+  if (isNaN(chapterIndex) || chapterIndex < 0 || chapterIndex >= (book.chapters || []).length) {
     return res.status(404).json({ error: 'Chapter not found' });
   }
 
@@ -146,13 +164,17 @@ router.get('/:id/chapters/:chapterIndex', (req, res) => {
   if (chapterCache.has(cacheKey)) {
     sentences = chapterCache.get(cacheKey);
   } else {
-    sentences = processChapterText(chapter.text);
+    sentences = await enqueueAnalysis(processChapterText(chapter.text));
     chapterCache.set(cacheKey, sentences);
     chapter.isAnalyzed = true;
+    booksDb.set(req.params.id, book);
+    await saveMapToJson(DB_PATH, booksDb);
   }
 
   res.json({
-    ...chapter,
+    title: chapter.title,
+    chapterIndex: chapterIndex,
+    wordCount: chapter.wordCount,
     sentences
   });
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import LibraryScreen from '../screens/LibraryScreen';
 import BookDetailScreen from '../screens/BookDetailScreen';
@@ -8,7 +8,7 @@ import PlayerScreen from '../screens/PlayerScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { useTheme } from '../utils/themeContext';
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 
 function AppNavigator() {
   const theme = useTheme();

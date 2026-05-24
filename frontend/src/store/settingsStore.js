@@ -7,7 +7,6 @@ export const useSettingsStore = create((set) => ({
   defaultVolume: 1.0,
   emotionEffectsEnabled: true,
   highlightSyncEnabled: true,
-  sleepTimerMinutes: 0,
   theme: 'dark',
 
   setDefaultVoiceEngine: (engine) => set({ defaultVoiceEngine: engine }),
@@ -16,6 +15,5 @@ export const useSettingsStore = create((set) => ({
   setDefaultVolume: (volume) => set({ defaultVolume: volume }),
   setEmotionEffectsEnabled: (enabled) => set({ emotionEffectsEnabled: enabled }),
   setHighlightSyncEnabled: (enabled) => set({ highlightSyncEnabled: enabled }),
-  setSleepTimerMinutes: (minutes) => set({ sleepTimerMinutes: minutes }),
   setTheme: (theme) => set({ theme }),
 }));
