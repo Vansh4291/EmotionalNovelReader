@@ -1,0 +1,14 @@
+[
+  [
+    "test-book",
+    {
+      "bookId": "test-book",
+      "currentChapterIndex": 1,
+      "currentSentenceIndex": 0,
+      "currentCharPosition": 0,
+      "listeningTimeSeconds": 0,
+      "completionPercent": 0.5,
+      "lastUpdatedAt": "2026-05-24T13:12:09.056Z"
+    }
+  ]
+]

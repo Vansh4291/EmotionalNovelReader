@@ -12,7 +12,7 @@ const { uploadDir } = require('../middleware/upload');
 const { upload } = require('../middleware/upload');
 const { importLimiter } = require('../middleware/rateLimiter');
 const { enqueueAnalysis } = require('../utils/analysisQueue');
-const { loadMapFromJson, saveMapToJson, validateId } = require('../utils/db');
+const { loadMapFromJson, saveMapToJson } = require('../utils/db');
 
 const booksDb = new Map();
 const chapterCache = new LRUCache({ max: 500, ttl: 1000 * 60 * 60 });

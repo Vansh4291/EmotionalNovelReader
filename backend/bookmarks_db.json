@@ -1,0 +1,35 @@
+[
+  [
+    "bm_1779628177061_kto6o049h",
+    {
+      "_id": "bm_1779628177061_kto6o049h",
+      "bookId": "test-book",
+      "chapterIndex": 0,
+      "sentenceIndex": 0,
+      "note": "test bookmark",
+      "createdAt": "2026-05-24T13:09:37.061Z"
+    }
+  ],
+  [
+    "bm_1779628297786_8zpmwdx5g",
+    {
+      "_id": "bm_1779628297786_8zpmwdx5g",
+      "bookId": "test-book",
+      "chapterIndex": 0,
+      "sentenceIndex": 0,
+      "note": "test bookmark",
+      "createdAt": "2026-05-24T13:11:37.786Z"
+    }
+  ],
+  [
+    "bm_1779628329103_e7tfim53u",
+    {
+      "_id": "bm_1779628329103_e7tfim53u",
+      "bookId": "test-book",
+      "chapterIndex": 0,
+      "sentenceIndex": 0,
+      "note": "test bookmark",
+      "createdAt": "2026-05-24T13:12:09.103Z"
+    }
+  ]
+]

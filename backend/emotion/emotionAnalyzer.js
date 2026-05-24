@@ -1,42 +1,6 @@
 const { spawn } = require('child_process');
 const path = require('path');
-
-const emotionKeywords = {
-  joy: [
-    'laugh', 'smile', 'happy', 'joy', 'excited', 'wonderful', 'amazing',
-    'love', 'beautiful', 'celebrate', 'cheer', 'delight', 'glad', 'thrilled',
-    'giggle', 'haha', 'yay', 'hooray', 'bliss', 'elated', 'grin',
-    'delighted', 'ecstatic', 'euphoric', 'content', 'pleased', 'grateful',
-    'optimistic', 'hopeful', 'bright', 'cheerful', 'merry', 'jolly'
-  ],
-  sadness: [
-    'cry', 'sob', 'tears', 'sad', 'grief', 'sorrow', 'mourn', 'weep',
-    'lonely', 'miss', 'lost', 'pain', 'hurt', 'heartbreak', 'despair',
-    'hollow', 'empty', 'silent tears', 'trembling lips', 'couldn\'t stop crying',
-    'gloomy', 'depressed', 'miserable', 'unfortunate', 'tragic', 'devastated',
-    'anguish', 'melancholy', 'weeping', 'heartache', 'loveless', 'abandoned'
-  ],
-  anger: [
-    'angry', 'rage', 'furious', 'shout', 'yell', 'scream', 'hate',
-    'frustrat', 'annoy', 'slam', 'clench', 'growl', 'roar', 'explode',
-    'damn', 'stupid', 'idiot', 'crush', 'smash', 'glare', 'bitter',
-    'enraged', 'irritated', 'infuriated', 'livid', 'hostile', 'wrath',
-    'scold', 'rebuke', 'resent', 'bitterly', 'outraged'
-  ],
-  fear: [
-    'afraid', 'fear', 'terrif', 'horror', 'dread', 'panic', 'tremble',
-    'shake', 'shiver', 'cower', 'flee', 'nightmare', 'monster', 'danger',
-    'heart pounding', 'cold sweat', 'frozen', 'paralyzed', 'gulp',
-    'terrified', 'scared', 'frightened', 'petrified', 'anxious', 'worried',
-    'nervous', 'apprehensive', 'uneasy', 'worst', 'threat', 'suspicious'
-  ],
-  surprise: [
-    'surprise', 'shock', 'sudden', 'unexpected', 'gasp', 'unbelievable',
-    'impossible', 'what?!', 'no way', 'suddenly', 'out of nowhere',
-    'eyes wide', 'jaw dropped', 'couldn\'t believe', 'astonished', 'stunned',
-    'startled', 'bewildered', 'amazed', 'astounded', 'incredible', 'unexpectedly'
-  ],
-};
+const { EMOTION_KEYWORDS } = require('../../shared/emotionKeywords');
 
 function analyzeSentence(text) {
   if (!text || typeof text !== 'string' || text.trim().length === 0) {
@@ -46,7 +10,7 @@ function analyzeSentence(text) {
   const lower = text.toLowerCase();
   const scores = {};
 
-  for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
+  for (const [emotion, keywords] of Object.entries(EMOTION_KEYWORDS)) {
     let score = 0;
     for (const keyword of keywords) {
       if (lower.includes(keyword)) {
@@ -139,4 +103,4 @@ async function analyzeChapterAsync(sentences) {
   });
 }
 
-module.exports = { analyzeChapter, analyzeChapterAsync, analyzeSentence, emotionKeywords };
+module.exports = { analyzeChapter, analyzeChapterAsync, analyzeSentence, emotionKeywords: EMOTION_KEYWORDS };

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 
-const { loadMapFromJson, saveMapToJson, validateId } = require('../utils/db');
+const { loadMapFromJson, saveMapToJson } = require('../utils/db');
 
 const progressDb = new Map();
 const bookmarksDb = new Map();
