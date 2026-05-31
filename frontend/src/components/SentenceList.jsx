@@ -1,89 +1,58 @@
 import React, { forwardRef, useImperativeHandle, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  FlatList,
-} from 'react-native';
-import EmotionBadge from './EmotionBadge';
+import { Text, Pressable, StyleSheet, FlatList } from 'react-native';
 import { useTheme } from '../utils/themeContext';
 
-const SentenceList = forwardRef(({
-  sentences,
-  currentSentenceIndex,
-  onSentencePress,
-  emotionColors,
-  theme: themeProp,
-}, ref) => {
+const SentenceList = forwardRef(({ sentences, currentSentenceIndex, onSentencePress, theme: themeProp }, ref) => {
   const contextTheme = useTheme();
   const theme = themeProp || contextTheme;
   const flatListRef = useRef(null);
 
-  const getColor = (emotion) => {
-    if (emotionColors) return emotionColors(emotion);
+  const getAccent = (emotion) => {
     const map = {
-      joy: theme.emotionJoy,
-      sadness: theme.emotionSadness,
-      anger: theme.emotionAnger,
-      fear: theme.emotionFear,
-      surprise: theme.emotionSurprise,
-      neutral: theme.emotionNeutral,
+      joy: theme.emotionJoy, sadness: theme.emotionSadness, anger: theme.emotionAnger,
+      fear: theme.emotionFear, surprise: theme.emotionSurprise, neutral: theme.textMuted,
     };
-    return map[emotion] || theme.emotionNeutral;
+    return map[emotion] || theme.textMuted;
   };
 
   useImperativeHandle(ref, () => ({
     scrollToSentence: (index) => {
       setTimeout(() => {
         if (flatListRef.current && sentences.length > 0) {
-          try {
-            flatListRef.current.scrollToIndex({
-              index,
-              animated: true,
-              viewPosition: 0.3,
-            });
-          } catch (e) {}
+          try { flatListRef.current.scrollToIndex({ index, animated: true, viewPosition: 0.3 }); } catch (e) {}
         }
       }, 100);
     },
   }));
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (currentSentenceIndex >= 0 && flatListRef.current && sentences.length > 0) {
-        try {
-          flatListRef.current.scrollToIndex({
-            index: currentSentenceIndex,
-            animated: true,
-            viewPosition: 0.3,
-          });
-        } catch (e) {}
-      }
-    }, 100);
-    return () => clearTimeout(timer);
+    if (currentSentenceIndex >= 0 && flatListRef.current && sentences.length > 0) {
+      setTimeout(() => {
+        try { flatListRef.current?.scrollToIndex({ index: currentSentenceIndex, animated: true, viewPosition: 0.3 }); } catch (e) {}
+      }, 100);
+    }
   }, [currentSentenceIndex, sentences]);
 
   const renderSentence = ({ item: sentence, index }) => {
     const isActive = index === currentSentenceIndex;
-    const emotion = sentence.emotion || 'neutral';
-    const emotionColor = getColor(emotion);
-    const bgColor = isActive ? emotionColor + '30' : 'transparent';
-    const borderColor = isActive ? emotionColor : 'transparent';
-
+    const accent = getAccent(sentence.emotion || 'neutral');
     return (
       <Pressable
         style={({ pressed }) => [
           styles.sentenceContainer,
-          { backgroundColor: bgColor, borderLeftColor: borderColor },
-          pressed && { opacity: 0.7 },
+          isActive && { borderLeftColor: accent, borderLeftWidth: 1 },
+          pressed && { opacity: 0.6 },
         ]}
         onPress={() => onSentencePress(index)}
       >
-        <Text style={[styles.sentenceText, { color: theme.textSecondary }, isActive && { color: theme.text }]}>
+        <Text style={[
+          styles.sentenceText,
+          { color: isActive ? theme.text : theme.textSecondary, fontFamily: theme.narrativeFont },
+          isActive && { color: theme.text },
+        ]}>
           {sentence.text}
         </Text>
-        {isActive && <EmotionBadge emotion={emotion} />}
+        {isActive && <Text style={[styles.activeDot, { backgroundColor: accent }]} />}
       </Pressable>
     );
   };
@@ -91,17 +60,14 @@ const SentenceList = forwardRef(({
   return (
     <FlatList
       ref={flatListRef}
-      style={styles.textContainer}
-      contentContainerStyle={styles.textContent}
+      style={styles.list}
+      contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
       data={sentences}
       renderItem={renderSentence}
-      keyExtractor={(item, index) => `sentence_${index}`}
+      keyExtractor={(item, index) => `s_${index}`}
       onScrollToIndexFailed={(info) => {
-        const timer = setTimeout(() => {
-          flatListRef.current?.scrollToIndex({ index: info.index, animated: true });
-        }, 500);
-        return () => clearTimeout(timer);
+        setTimeout(() => { flatListRef.current?.scrollToIndex({ index: info.index, animated: true }); }, 500);
       }}
       initialNumToRender={20}
     />
@@ -111,22 +77,30 @@ const SentenceList = forwardRef(({
 SentenceList.displayName = 'SentenceList';
 
 const styles = StyleSheet.create({
-  textContainer: {
-    flex: 1,
-  },
-  textContent: {
-    padding: 16,
-    paddingBottom: 40,
+  list: { flex: 1 },
+  content: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   sentenceContainer: {
-    padding: 12,
-    marginBottom: 8,
-    borderRadius: 8,
-    borderLeftWidth: 3,
+    paddingVertical: 6,
+    paddingLeft: 16,
+    marginBottom: 2,
+    position: 'relative',
   },
   sentenceText: {
     fontSize: 18,
-    lineHeight: 28,
+    lineHeight: 30,
+    letterSpacing: 0.2,
+  },
+  activeDot: {
+    position: 'absolute',
+    left: 0,
+    top: 14,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
 });
 

@@ -1,6 +1,6 @@
 import RNFS from 'react-native-fs';
 import { processChapterText } from './chapterProcessor';
-import api from '../config/api';
+import { API_BASE_URL } from '../config/api';
 
 const CHAPTER_PATTERNS = [
   /^Chapter\s+(\d+)/i,
@@ -124,10 +124,20 @@ function extractTitle(filePath, content) {
 async function parseRemoteBook(filePath, fileType) {
   try {
     let uploadPath = filePath;
+
     if (filePath.startsWith('content://')) {
       const tempPath = `${RNFS.CachesDirectoryPath}/upload_${Date.now()}.${fileType}`;
-      await RNFS.copyFile(filePath, tempPath);
-      uploadPath = `file://${tempPath}`;
+      try {
+        await RNFS.copyFile(filePath, tempPath);
+        uploadPath = `file://${tempPath}`;
+      } catch (copyError) {
+        console.log('Copy failed, trying RNFS.readFile:', copyError.message);
+        const base64 = await RNFS.readFile(filePath, 'base64');
+        await RNFS.writeFile(tempPath, base64, 'base64');
+        uploadPath = `file://${tempPath}`;
+      }
+    } else if (!filePath.startsWith('file://')) {
+      uploadPath = `file://${filePath}`;
     }
 
     const fileName = decodeURIComponent(filePath.split('/').pop()) || `book.${fileType}`;
@@ -140,25 +150,85 @@ async function parseRemoteBook(filePath, fileType) {
       type: mimeType,
     });
 
-    // 1. Upload and parse file on the backend
-    const response = await api.post('/books/import', formData);
+    console.log('[UPLOAD] Starting upload to:', `/books/import`, 'file:', fileName, 'uri:', uploadPath);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || 'Import failed');
+    const uploadUrl = `${API_BASE_URL}/books/import`;
+
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'x-api-key': 'dev-key-change-in-production',
+      },
+    });
+
+    console.log('[UPLOAD] Response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log('[UPLOAD] Error response:', errorText);
+      throw new Error(`Upload failed: ${response.status} ${errorText}`);
     }
 
-    const importedBook = response.data.book;
+    const data = await response.json();
+    console.log('[UPLOAD] Response data:', data);
 
-    // 2. Fetch the full book with chapters
-    const fullBookResponse = await api.get(`/books/${importedBook._id}`);
-    const fullBook = fullBookResponse.data;
+    if (!data.success) {
+      throw new Error(data.error || 'Import failed');
+    }
 
-    // 3. Format the chapters with emotion analysis for each chapter
-    const formattedChapters = (fullBook.chapters || []).map((ch, i) => {
+    const importedBook = data.book;
+
+    const fullBookResponse = await fetch(`${API_BASE_URL}/books/${importedBook._id}`, {
+      headers: {
+        'x-api-key': 'dev-key-change-in-production',
+      },
+    });
+    const fullBook = await fullBookResponse.json();
+
+const FRONTMATTER_PATTERNS = [
+  /copyright/i, /all rights reserved/i, /isbn/i, /published by/i,
+  /library of congress/i, /printed in/i, /manufactured in/i,
+  /no part of (this|this book|this publication)/i,
+  /reproduced in any form/i, /written permission/i,
+  /acknowledgements/i, /acknowledgments/i, /foreword/i,
+  /introduction/i, /preface/i, /prologue/i,
+  /table of contents/i, /contents/i,
+  /this (is|book is|novel is) (a work of )?fiction/i,
+  /the characters and events/i, /incidental/i,
+  /edition notice/i, /first (published|edition|printing)/i,
+  /10 9 8 7 6 5 4 3 2 1/i, /^[ivxlcdm]+\.\s/i,
+];
+
+function isFrontmatter(chapter) {
+  const text = (chapter.text || chapter.title || '').trim().slice(0, 200);
+  if (!text) return false;
+  const matchCount = FRONTMATTER_PATTERNS.reduce((count, re) => {
+    return count + (re.test(text) ? 1 : 0);
+  }, 0);
+  return matchCount >= 2;
+}
+
+function detectNarrativeStart(chapters) {
+  const firstNarrativeIdx = chapters.findIndex((ch) => {
+    if (isFrontmatter(ch)) return false;
+    const text = (ch.text || '').trim().slice(0, 500);
+    if (!text || text.length < 100) return false;
+    const hasDialogue = /["\u201C\u201D]/.test(text);
+    const wordCount = text.split(/\s+/).length;
+    const sentenceCount = (text.match(/[.!?]/g) || []).length;
+    const density = wordCount / Math.max(sentenceCount, 1);
+    return hasDialogue || (density > 5 && wordCount > 50);
+  }, -1);
+  return firstNarrativeIdx >= 0 ? firstNarrativeIdx : 0;
+}
+
+    const narrativeStartIdx = detectNarrativeStart(fullBook.chapters || []);
+    const formattedChapters = (fullBook.chapters || []).slice(narrativeStartIdx).map((ch, i) => {
       const text = ch.text || '';
       const sentences = processChapterText(text);
       return {
-        index: ch.index !== undefined ? ch.index : i,
+        index: i,
         title: ch.title || `Chapter ${i + 1}`,
         text,
         wordCount: ch.wordCount || text.split(/\s+/).length,
@@ -176,8 +246,8 @@ async function parseRemoteBook(filePath, fileType) {
       chapters: formattedChapters,
     };
   } catch (error) {
-    console.error(`Remote ${fileType.toUpperCase()} parse error:`, error);
-    throw new Error(error.response?.data?.error || error.message || `Failed to parse ${fileType.toUpperCase()}`);
+    console.error(`Remote ${fileType.toUpperCase()} parse error:`, error.message);
+    throw new Error(error.message || `Failed to parse ${fileType.toUpperCase()}`);
   }
 }
 

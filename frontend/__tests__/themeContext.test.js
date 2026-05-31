@@ -5,21 +5,21 @@ import { THEMES } from '../src/utils/themeContext.js';
 describe('THEMES', () => {
   test('has dark theme with required properties', () => {
     expect(THEMES.dark).toBeDefined();
-    expect(THEMES.dark.background).toBe('#0A0A0A');
-    expect(THEMES.dark.primary).toBe('#00E5FF');
-    expect(THEMES.dark.text).toBe('#FFFFFF');
+    expect(THEMES.dark.background).toBe('#090909');
+    expect(THEMES.dark.primary).toBe('#C9A86C');
+    expect(THEMES.dark.text).toBe('#EAEAEA');
   });
 
   test('has light theme with required properties', () => {
     expect(THEMES.light).toBeDefined();
-    expect(THEMES.light.background).toBe('#f7fafc');
-    expect(THEMES.light.text).toBe('#1a202c');
+    expect(THEMES.light.background).toBe('#F5F0EB');
+    expect(THEMES.light.text).toBe('#1C1914');
   });
 
   test('has sepia theme with required properties', () => {
     expect(THEMES.sepia).toBeDefined();
-    expect(THEMES.sepia.background).toBe('#f4ecd8');
-    expect(THEMES.sepia.text).toBe('#3d2914');
+    expect(THEMES.sepia.background).toBe('#F4ECD8');
+    expect(THEMES.sepia.text).toBe('#3D2914');
   });
 
   test('all themes have same emotion color keys', () => {

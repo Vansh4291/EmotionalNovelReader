@@ -1,0 +1,24 @@
+[
+  [
+    "bm_1780225466556_7gqwti33z",
+    {
+      "_id": "bm_1780225466556_7gqwti33z",
+      "bookId": "test-book",
+      "chapterIndex": 0,
+      "sentenceIndex": 0,
+      "note": "test bookmark",
+      "createdAt": "2026-05-31T11:04:26.556Z"
+    }
+  ],
+  [
+    "bm_1780235304247_dc09vr9or",
+    {
+      "_id": "bm_1780235304247_dc09vr9or",
+      "bookId": "test-book",
+      "chapterIndex": 0,
+      "sentenceIndex": 0,
+      "note": "test bookmark",
+      "createdAt": "2026-05-31T13:48:24.247Z"
+    }
+  ]
+]

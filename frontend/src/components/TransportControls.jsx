@@ -1,177 +1,73 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import Slider from '@react-native-community/slider';
 import { useTheme } from '../utils/themeContext';
 
 const TransportControls = ({
-  isPlaying,
-  currentSentenceIndex,
-  totalSentences,
-  currentEmotion,
-  speed,
-  onPlayPause,
-  onPrevSentence,
-  onNextSentence,
-  onPrevChapter,
-  onNextChapter,
-  onBookmark,
-  onSpeedChange,
-  theme: themeProp,
-  isFirstChapter,
-  isLastChapter,
+  isPlaying, currentSentenceIndex, totalSentences, speed,
+  onPlayPause, onPrevSentence, onNextSentence,
+  onPrevChapter, onNextChapter, onSpeedChange,
+  theme: themeProp, isFirstChapter, isLastChapter,
 }) => {
   const contextTheme = useTheme();
   const theme = themeProp || contextTheme;
-
-  const getColor = (emotion) => {
-    const map = {
-      joy: theme.emotionJoy,
-      sadness: theme.emotionSadness,
-      anger: theme.emotionAnger,
-      fear: theme.emotionFear,
-      surprise: theme.emotionSurprise,
-      neutral: theme.emotionNeutral,
-    };
-    return map[emotion] || theme.emotionNeutral;
-  };
+  const [showSpeed, setShowSpeed] = React.useState(false);
 
   return (
-    <View style={[styles.controls, { backgroundColor: theme.surface }]}>
-      <View style={styles.progressInfo}>
-        <Text style={[styles.progressText, { color: theme.textSecondary }]}>
-          {currentSentenceIndex + 1} / {totalSentences}
+    <View style={styles.container}>
+      <View style={styles.controls}>
+        <Pressable style={({pressed}) => [styles.btn, pressed && styles.pressed]} onPress={onPrevChapter} disabled={isFirstChapter}>
+          <Text style={[styles.btnText, {color: theme.textMuted}, isFirstChapter && styles.disabled]}>⏮</Text>
+        </Pressable>
+        <Pressable style={({pressed}) => [styles.btn, pressed && styles.pressed]} onPress={onPrevSentence} disabled={currentSentenceIndex <= 0}>
+          <Text style={[styles.btnText, {color: theme.textMuted}, currentSentenceIndex <= 0 && styles.disabled]}>◀</Text>
+        </Pressable>
+        <Pressable style={({pressed}) => [styles.playBtn, {backgroundColor: theme.primary + '20'}, pressed && {backgroundColor: theme.primary + '40'}]} onPress={onPlayPause}>
+          <Text style={[styles.playIcon, {color: theme.text}]}>{isPlaying ? '⏸' : '▶'}</Text>
+        </Pressable>
+        <Pressable style={({pressed}) => [styles.btn, pressed && styles.pressed]} onPress={onNextSentence} disabled={currentSentenceIndex >= totalSentences - 1}>
+          <Text style={[styles.btnText, {color: theme.textMuted}, currentSentenceIndex >= totalSentences - 1 && styles.disabled]}>▶</Text>
+        </Pressable>
+        <Pressable style={({pressed}) => [styles.btn, pressed && styles.pressed]} onPress={onNextChapter} disabled={isLastChapter}>
+          <Text style={[styles.btnText, {color: theme.textMuted}, isLastChapter && styles.disabled]}>⏭</Text>
+        </Pressable>
+      </View>
+      <View style={styles.bottomRow}>
+        <Text style={[styles.counter, {color: theme.textMuted}]}>
+          {totalSentences > 0 ? `${currentSentenceIndex + 1} / ${totalSentences}` : ''}
         </Text>
-        <Text style={[styles.emotionText, { color: getColor(currentEmotion) }]}>
-          {currentEmotion}
-        </Text>
-      </View>
-
-      <View style={styles.mainControls}>
-        <Pressable
-          style={({ pressed }) => [styles.controlButton, isFirstChapter && styles.controlButtonDisabled, pressed && !isFirstChapter && { opacity: 0.7 }]}
-          onPress={onPrevChapter}
-          disabled={isFirstChapter}
-        >
-          <Text style={[styles.controlIcon, { color: theme.textSecondary }, isFirstChapter && { color: theme.textMuted }]}>⏮</Text>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.controlButton, currentSentenceIndex === 0 && styles.controlButtonDisabled, pressed && currentSentenceIndex !== 0 && { opacity: 0.7 }]}
-          onPress={onPrevSentence}
-          disabled={currentSentenceIndex === 0}
-        >
-          <Text style={[styles.controlIcon, { color: theme.textSecondary }, currentSentenceIndex === 0 && { color: theme.textMuted }]}>◀</Text>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.playButton, { backgroundColor: theme.primary }, pressed && { opacity: 0.7 }]}
-          onPress={onPlayPause}
-        >
-          <Text style={[styles.playButtonText, { color: theme.background }]}>
-            {isPlaying ? '⏸' : '▶'}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.controlButton, currentSentenceIndex >= totalSentences - 1 && styles.controlButtonDisabled, pressed && currentSentenceIndex < totalSentences - 1 && { opacity: 0.7 }]}
-          onPress={onNextSentence}
-          disabled={currentSentenceIndex >= totalSentences - 1}
-        >
-          <Text style={[styles.controlIcon, { color: theme.textSecondary }, currentSentenceIndex >= totalSentences - 1 && { color: theme.textMuted }]}>▶</Text>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.controlButton, isLastChapter && styles.controlButtonDisabled, pressed && !isLastChapter && { opacity: 0.7 }]}
-          onPress={onNextChapter}
-          disabled={isLastChapter}
-        >
-          <Text style={[styles.controlIcon, { color: theme.textSecondary }, isLastChapter && { color: theme.textMuted }]}>⏭</Text>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.controlButton, pressed && { opacity: 0.7 }]}
-          onPress={onBookmark}
-        >
-          <Text style={[styles.controlIcon, { color: theme.textSecondary }]}>🔖</Text>
+        <Pressable style={({pressed}) => [styles.speedBtn, pressed && {opacity: 0.5}]} onPress={() => setShowSpeed(!showSpeed)}>
+          <Text style={[styles.speedLabel, {color: theme.primary}]}>{speed.toFixed(1)}x</Text>
         </Pressable>
       </View>
-
-      <View style={styles.speedControl}>
-        <Text style={[styles.speedLabel, { color: theme.textSecondary }]}>Speed: {speed.toFixed(1)}x</Text>
-        <Slider
-          style={styles.speedSlider}
-          minimumValue={0.5}
-          maximumValue={2.0}
-          step={0.1}
-          value={speed}
-          onValueChange={onSpeedChange}
-          minimumTrackTintColor={theme.primary}
-          maximumTrackTintColor={theme.surfaceLight}
-          thumbTintColor={theme.primary}
-        />
-      </View>
+      {showSpeed && (
+        <View style={[styles.speedBar, {backgroundColor: theme.surfaceElevated}]}>
+          {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((v) => (
+            <Pressable key={v} style={[styles.speedOption, v === speed && {backgroundColor: theme.primary + '30'}]} onPress={() => { onSpeedChange(v); setShowSpeed(false); }}>
+              <Text style={[styles.speedOptionText, {color: v === speed ? theme.primary : theme.textMuted}]}>{v}x</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  controls: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 32,
-  },
-  progressInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  progressText: {
-    fontSize: 14,
-  },
-  emotionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  mainControls: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  controlButton: {
-    padding: 12,
-    marginHorizontal: 8,
-  },
-  controlButtonDisabled: {
-    opacity: 0.4,
-  },
-  controlIcon: {
-    fontSize: 20,
-  },
-  playButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 16,
-  },
-  playButtonText: {
-    fontSize: 28,
-  },
-  speedControl: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  speedLabel: {
-    fontSize: 14,
-    width: 80,
-  },
-  speedSlider: {
-    flex: 1,
-    height: 40,
-  },
+  container: { paddingBottom: 16 },
+  controls: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 8 },
+  btn: { padding: 8, marginHorizontal: 6 },
+  btnText: { fontSize: 14 },
+  playBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginHorizontal: 16 },
+  playIcon: { fontSize: 18 },
+  pressed: { opacity: 0.5 },
+  disabled: { opacity: 0.3 },
+  bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24 },
+  counter: { fontSize: 10, letterSpacing: 1 },
+  speedBtn: { padding: 4 },
+  speedLabel: { fontSize: 11, letterSpacing: 0.5 },
+  speedBar: { flexDirection: 'row', justifyContent: 'center', marginHorizontal: 24, marginTop: 8, borderRadius: 8, padding: 4 },
+  speedOption: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, marginHorizontal: 2 },
+  speedOptionText: { fontSize: 12 },
 });
 
 export default TransportControls;

@@ -120,8 +120,21 @@ router.get('/:id', (req, res) => {
   if (!book) {
     return res.status(404).json({ error: 'Book not found' });
   }
-  const { chapters, ...safe } = book;
-  res.json(safe);
+  res.json({
+    _id: book._id,
+    title: book.title,
+    author: book.author,
+    coverImagePath: book.coverImagePath,
+    fileType: book.fileType,
+    totalChapters: book.totalChapters,
+    addedAt: book.addedAt,
+    chapters: (book.chapters || []).map((c, i) => ({
+      index: i,
+      title: c.title || `Chapter ${i + 1}`,
+      text: c.text,
+      wordCount: c.wordCount,
+    })),
+  });
 });
 
 router.delete('/:id', async (req, res) => {

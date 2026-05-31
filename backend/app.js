@@ -20,9 +20,14 @@ if (!fs.existsSync(uploadDir)) {
 
 const app = express();
 
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.url} from ${req.ip}`);
+  next();
+});
+
 const corsOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
-  : ['http://localhost:3000'];
+  : true;
 
 app.use(cors({
   origin: corsOrigins,
