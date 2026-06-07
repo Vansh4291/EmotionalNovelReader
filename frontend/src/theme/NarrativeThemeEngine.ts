@@ -1,5 +1,22 @@
 import { EmotionType } from '../core/types';
 import { NarrativeArc } from '../core/narration/NarrativeContextManager';
+import {
+  spacing as spacingTokens,
+  fontSize,
+  lineHeight,
+  letterSpacing,
+  duration,
+  easing,
+  motion as motionTokens,
+  atmosphereOpacity,
+  semanticRadii,
+  borderWidth,
+  semanticSpacing,
+  emotionalInk,
+  dialogue,
+  measure,
+  narrative as narrativeInk,
+} from '../design';
 
 export interface NarrativeColors {
   background: string;
@@ -15,6 +32,7 @@ export interface NarrativeColors {
   emotion: EmotionType;
   emotionGlow: string;
   emotionMuted: string;
+  emotionalInk: string;
 }
 
 export interface NarrativeTheme {
@@ -23,6 +41,7 @@ export interface NarrativeTheme {
   typography: TypographyScale;
   spacing: SpacingScale;
   animation: AnimationConfig;
+  measure: MeasureConfig;
 }
 
 export interface TypographyScale {
@@ -31,12 +50,14 @@ export interface TypographyScale {
   storySize: number;
   storyLineHeight: number;
   storyLetterSpacing: number;
+  display: number;
   h1: number;
   h2: number;
   h3: number;
   body: number;
+  secondary: number;
   caption: number;
-  tiny: number;
+  micro: number;
 }
 
 export interface SpacingScale {
@@ -46,8 +67,11 @@ export interface SpacingScale {
   lg: number;
   xl: number;
   xxl: number;
+  cinematic: number;
   storyPadding: number;
   controlPadding: number;
+  pageGutter: number;
+  sectionGap: number;
 }
 
 export interface AnimationConfig {
@@ -55,7 +79,19 @@ export interface AnimationConfig {
   durationNormal: number;
   durationSlow: number;
   durationAtmospheric: number;
+  durationBreath: number;
   easing: string;
+  easingBreath: string;
+  breathPeriodMs: number;
+  focusIdleMs: number;
+  lastLineHoldMs: number;
+}
+
+export interface MeasureConfig {
+  proseMaxWidthPx: number;
+  proseMinWidthPx: number;
+  proseMinChars: number;
+  proseMaxChars: number;
 }
 
 const EMOTION_PALETTES: Record<EmotionType, {
@@ -64,48 +100,55 @@ const EMOTION_PALETTES: Record<EmotionType, {
   accent: string;
   glow: string;
   muted: string;
+  ink: string;
 }> = {
   joy: {
-    background: '#1a1812',
-    surface: '#2a2620',
-    accent: '#d4a853',
-    glow: 'rgba(212, 168, 83, 0.12)',
-    muted: 'rgba(212, 168, 83, 0.06)',
+    background: '#18160F',
+    surface: '#1F1C14',
+    accent: '#D4A853',
+    glow: 'rgba(212, 168, 83, 0.10)',
+    muted: 'rgba(212, 168, 83, 0.04)',
+    ink: emotionalInk.warmth,
   },
   sadness: {
-    background: '#14161e',
-    surface: '#1e2030',
-    accent: '#6b7db3',
-    glow: 'rgba(107, 125, 179, 0.10)',
-    muted: 'rgba(107, 125, 179, 0.05)',
+    background: '#13151C',
+    surface: '#181B24',
+    accent: '#7C8AA5',
+    glow: 'rgba(124, 138, 165, 0.08)',
+    muted: 'rgba(124, 138, 165, 0.04)',
+    ink: emotionalInk.sadness,
   },
   anger: {
-    background: '#1c1412',
-    surface: '#2a1c18',
-    accent: '#c47a5a',
-    glow: 'rgba(196, 122, 90, 0.10)',
-    muted: 'rgba(196, 122, 90, 0.05)',
+    background: '#1A1412',
+    surface: '#221A18',
+    accent: '#B07A60',
+    glow: 'rgba(176, 122, 96, 0.08)',
+    muted: 'rgba(176, 122, 96, 0.04)',
+    ink: emotionalInk.anger,
   },
   fear: {
-    background: '#141618',
-    surface: '#1c1e24',
-    accent: '#7a8fa0',
-    glow: 'rgba(122, 143, 160, 0.10)',
-    muted: 'rgba(122, 143, 160, 0.05)',
+    background: '#131418',
+    surface: '#1A1B20',
+    accent: '#8A95A2',
+    glow: 'rgba(138, 149, 162, 0.07)',
+    muted: 'rgba(138, 149, 162, 0.03)',
+    ink: emotionalInk.fear,
   },
   surprise: {
-    background: '#18161e',
-    surface: '#222030',
-    accent: '#a08cc0',
-    glow: 'rgba(160, 140, 192, 0.12)',
-    muted: 'rgba(160, 140, 192, 0.06)',
+    background: '#16151C',
+    surface: '#1F1D26',
+    accent: '#A89AB8',
+    glow: 'rgba(168, 154, 184, 0.08)',
+    muted: 'rgba(168, 154, 184, 0.03)',
+    ink: emotionalInk.awe,
   },
   neutral: {
-    background: '#181818',
-    surface: '#222222',
-    accent: '#a0a0a0',
-    glow: 'rgba(160, 160, 160, 0.06)',
-    muted: 'rgba(160, 160, 160, 0.03)',
+    background: '#131211',
+    surface: '#1A1817',
+    accent: '#C9BFAE',
+    glow: 'rgba(201, 191, 174, 0.05)',
+    muted: 'rgba(201, 191, 174, 0.03)',
+    ink: emotionalInk.neutral,
   },
 };
 
@@ -113,31 +156,37 @@ const ARC_MODIFIERS: Record<NarrativeArc['arcPosition'], {
   brightnessShift: number;
   saturationShift: number;
   tensionOverlay: string;
+  vignetteEdge: string;
 }> = {
   beginning: {
     brightnessShift: 0,
     saturationShift: 0,
     tensionOverlay: 'transparent',
+    vignetteEdge: 'transparent',
   },
   rising: {
     brightnessShift: -0.02,
     saturationShift: 0.05,
-    tensionOverlay: 'rgba(180, 60, 40, 0.02)',
+    tensionOverlay: 'rgba(180, 100, 80, 0.02)',
+    vignetteEdge: 'rgba(0, 0, 0, 0.18)',
   },
   peak: {
     brightnessShift: -0.04,
     saturationShift: 0.08,
-    tensionOverlay: 'rgba(200, 50, 30, 0.04)',
+    tensionOverlay: 'rgba(200, 90, 70, 0.04)',
+    vignetteEdge: 'rgba(0, 0, 0, 0.32)',
   },
   falling: {
     brightnessShift: 0.01,
     saturationShift: -0.03,
     tensionOverlay: 'rgba(80, 100, 140, 0.02)',
+    vignetteEdge: 'rgba(0, 0, 0, 0.20)',
   },
   resolution: {
     brightnessShift: 0.02,
     saturationShift: -0.05,
     tensionOverlay: 'transparent',
+    vignetteEdge: 'rgba(0, 0, 0, 0.08)',
   },
 };
 
@@ -214,16 +263,17 @@ export class NarrativeThemeEngine {
       background: adjustBrightness(palette.background, brightnessMod),
       surface: adjustBrightness(palette.surface, brightnessMod),
       surfaceElevated: adjustBrightness(palette.surface, brightnessMod + 0.03),
-      text: '#e8e4de',
-      textSecondary: '#b0a89c',
-      textMuted: '#787068',
+      text: narrativeInk.text,
+      textSecondary: narrativeInk.textSecondary,
+      textMuted: narrativeInk.textMuted,
       accent: palette.accent,
       accentSubtle: palette.muted,
-      border: `rgba(255, 255, 255, ${0.04 + tensionIntensity * 0.03})`,
-      borderSubtle: 'rgba(255, 255, 255, 0.02)',
+      border: `rgba(231, 226, 218, ${atmosphereOpacity.bordersDefault + tensionIntensity * 0.04})`,
+      borderSubtle: `rgba(231, 226, 218, ${atmosphereOpacity.bordersSubtle})`,
       emotion,
       emotionGlow: palette.glow,
       emotionMuted: palette.muted,
+      emotionalInk: palette.ink,
     };
 
     return {
@@ -232,6 +282,7 @@ export class NarrativeThemeEngine {
       typography: this.buildTypography(arc),
       spacing: this.buildSpacing(arc),
       animation: this.buildAnimation(arc),
+      measure: this.buildMeasure(),
     };
   }
 
@@ -242,15 +293,17 @@ export class NarrativeThemeEngine {
     return {
       storyFont: 'Cormorant Garamond',
       uiFont: 'Inter',
-      storySize: isHighTension ? 19 : 20,
-      storyLineHeight: isHighTension ? 1.65 : 1.75,
-      storyLetterSpacing: isHighTension ? 0.2 : 0.3,
-      h1: 28,
-      h2: 22,
-      h3: 18,
-      body: 16,
-      caption: 13,
-      tiny: 11,
+      storySize: isHighTension ? fontSize.body : fontSize.body,
+      storyLineHeight: isHighTension ? lineHeight.body : lineHeight.body + 0.05,
+      storyLetterSpacing: isHighTension ? letterSpacing.wide : letterSpacing.wide + 0.05,
+      display: fontSize.display,
+      h1: fontSize.chapterTitle,
+      h2: fontSize.sectionTitle,
+      h3: fontSize.body,
+      body: fontSize.body,
+      secondary: fontSize.secondary,
+      caption: fontSize.micro,
+      micro: fontSize.micro,
     };
   }
 
@@ -258,14 +311,17 @@ export class NarrativeThemeEngine {
     const isDialogue = arc?.dialogueActive;
 
     return {
-      xs: 4,
-      sm: 8,
-      md: 16,
-      lg: 24,
-      xl: 32,
-      xxl: 48,
-      storyPadding: isDialogue ? 28 : 32,
-      controlPadding: 20,
+      xs: spacingTokens.xs,
+      sm: spacingTokens.sm,
+      md: spacingTokens.md,
+      lg: spacingTokens.lg,
+      xl: spacingTokens.xl,
+      xxl: spacingTokens.xxl,
+      cinematic: spacingTokens.cinematic,
+      storyPadding: isDialogue ? spacingTokens.lg : spacingTokens.xl,
+      controlPadding: spacingTokens.lg,
+      pageGutter: semanticSpacing.pageGutter,
+      sectionGap: semanticSpacing.sectionGap,
     };
   }
 
@@ -274,11 +330,25 @@ export class NarrativeThemeEngine {
     const speedFactor = 1 - tension * 0.3;
 
     return {
-      durationFast: Math.round(150 * speedFactor),
-      durationNormal: Math.round(300 * speedFactor),
-      durationSlow: Math.round(600 * speedFactor),
-      durationAtmospheric: Math.round(1200 * speedFactor),
-      easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+      durationFast: Math.round(duration.fast * speedFactor),
+      durationNormal: Math.round(duration.normal * speedFactor),
+      durationSlow: Math.round(duration.slow * speedFactor),
+      durationAtmospheric: Math.round(duration.cinematic * speedFactor),
+      durationBreath: motionTokens.breathPeriodMs,
+      easing: easing.standard,
+      easingBreath: easing.breath,
+      breathPeriodMs: motionTokens.breathPeriodMs,
+      focusIdleMs: motionTokens.focusIdleMs,
+      lastLineHoldMs: motionTokens.lastLineHoldMs,
+    };
+  }
+
+  private buildMeasure(): MeasureConfig {
+    return {
+      proseMaxWidthPx: measure.proseColumnPx,
+      proseMinWidthPx: measure.proseMin,
+      proseMinChars: measure.proseMin,
+      proseMaxChars: measure.proseMax,
     };
   }
 
@@ -311,3 +381,22 @@ export class NarrativeThemeEngine {
     this.themeCache.clear();
   }
 }
+
+export const _internal = {
+  EMOTION_PALETTES,
+  ARC_MODIFIERS,
+  spacingTokens,
+  fontSize,
+  lineHeight,
+  letterSpacing,
+  duration,
+  easing,
+  motionTokens,
+  atmosphereOpacity,
+  semanticRadii,
+  borderWidth,
+  dialogue,
+  measure,
+  narrativeInk,
+  emotionalInk,
+};

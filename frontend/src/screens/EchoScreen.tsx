@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,18 @@ import {
   Platform,
 } from 'react-native';
 import { NarrativeThemeEngine, NarrativeTheme } from '../theme/NarrativeThemeEngine';
-import { buildTypography, NarrativeTypography } from '../theme/NarrativeTypography';
-import { NarrativeMemoryPersistence, NarrativeMemory } from '../core/narration/NarrativeMemoryPersistence';
-import { NarrativeIdentityEngine, NarrativeFingerprint } from '../core/narration/NarrativeIdentityEngine';
+import { buildTypography } from '../theme/NarrativeTypography';
+import {
+  NarrativeMemory,
+  NarrativeMemoryPersistence,
+} from '../core/narration/NarrativeMemoryPersistence';
+import {
+  NarrativeFingerprint,
+  NarrativeIdentityEngine,
+} from '../core/narration/NarrativeIdentityEngine';
 import { EmotionType } from '../core/types';
 import { EventGovernor } from '../core/events/EventGovernor';
+import { spacing, atmosphereOpacity, emotionalInk } from '../design';
 
 interface EchoScreenProps {
   navigation: any;
@@ -21,66 +28,77 @@ interface EchoScreenProps {
 
 const GOVERNOR = new EventGovernor();
 
-const ECHO_MESSAGES: Record<EmotionType, {
-  immediate: string[];
-  fading: string[];
-  distant: string[];
-}> = {
-  joy: {
-    immediate: ['The warmth still radiates.', 'Light lingers in these pages.'],
-    fading: ['The glow softens gently.', 'A gentle warmth remains.'],
-    distant: ['An echo of light.', 'Something bright was felt here.'],
-  },
-  sadness: {
-    immediate: ['The weight still rests here.', 'Sorrow breathes softly.'],
-    fading: ['The ache grows gentler.', 'Quiet sadness settles.'],
-    distant: ['A distant echo of grief.', 'Something heavy was carried here.'],
-  },
-  anger: {
-    immediate: ['The fire still smolders.', 'Heat remains in these words.'],
-    fading: ['The flames dim slowly.', 'Embers cool gently.'],
-    distant: ['A faint warmth remains.', 'Something burned here once.'],
-  },
-  fear: {
-    immediate: ['The shadows still stir.', 'Dread lingers at the edges.'],
-    fading: ['The darkness softens.', 'Shadows retreat slowly.'],
-    distant: ['A memory of shadow.', 'Something watched from here.'],
-  },
-  surprise: {
-    immediate: ['Wonder still echoes.', 'The world still holds its breath.'],
-    fading: ['The echo fades gently.', 'A soft echo remains.'],
-    distant: ['A distant wonder.', 'Something shifted here once.'],
-  },
-  neutral: {
-    immediate: ['The quiet remains.', 'Stillness settles here.'],
-    fading: ['The silence deepens.', 'Quiet grows quieter.'],
-    distant: ['A distant quiet.', 'Something was felt here.'],
-  },
+const FAREWELL_OPENINGS = [
+  'Some stories leave quietly.',
+  'Some stories leave quietly. Others linger.',
+];
+
+const FAREWELL_CLOSINGS = [
+  'It rests now, in the place you keep such things.',
+  'You may return, or you may not. Either is right.',
+  'The story has folded itself away.',
+  'It will be there, in the part of you it touched.',
+];
+
+const EMOTION_RESONANCE: Record<EmotionType, string> = {
+  joy: 'a warmth you can still feel',
+  sadness: 'a quiet weight, gentler now',
+  anger: 'an ember, cooling slowly',
+  fear: 'a shadow, lighter at the edges',
+  surprise: 'a turning, still resonating',
+  neutral: 'a stillness, complete',
 };
 
-function getEchoPhase(timestamp: number): 'immediate' | 'fading' | 'distant' {
-  const age = Date.now() - timestamp;
-  const hours = age / 3600000;
+const EMOTION_INK: Record<EmotionType, string> = {
+  joy: emotionalInk.warmth,
+  sadness: emotionalInk.sadness,
+  anger: emotionalInk.anger,
+  fear: emotionalInk.fear,
+  surprise: emotionalInk.awe,
+  neutral: emotionalInk.neutral,
+};
 
-  if (hours < 24) return 'immediate';
-  if (hours < 168) return 'fading';
-  return 'distant';
+function pickOpening(): string {
+  return FAREWELL_OPENINGS[Math.floor(Math.random() * FAREWELL_OPENINGS.length)];
 }
 
-function getEchoMessage(emotion: EmotionType, phase: 'immediate' | 'fading' | 'distant'): string {
-  const messages = ECHO_MESSAGES[emotion]?.[phase] || ECHO_MESSAGES.neutral[phase];
-  return messages[Math.floor(Date.now() / 120000) % messages.length];
+function pickClosing(): string {
+  return FAREWELL_CLOSINGS[Math.floor(Math.random() * FAREWELL_CLOSINGS.length)];
 }
 
-function formatTimeSince(timestamp: number): string {
-  const diff = Date.now() - timestamp;
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
+function formatEmotionalFingerprint(fp: NarrativeFingerprint): string {
+  const es = fp.emotionalSignature;
+  const presence: string[] = [];
+  if (es.warmthIndex > 0.25) presence.push('warmth');
+  if (es.melancholyIndex > 0.25) presence.push('melancholy');
+  if (es.tensionIndex > 0.25) presence.push('tension');
+  if (es.volatility > 0.25) presence.push('shifting currents');
 
-  if (hours < 1) return 'just finished';
-  if (hours < 24) return `${hours} hours ago`;
-  if (days === 1) return 'yesterday';
-  return `${days} days ago`;
+  if (presence.length === 0) return 'A quiet presence. The story moved gently.';
+  return `Carries ${presence.join(', ')}.`;
+}
+
+function formatRelationshipArc(memory: NarrativeMemory): string {
+  const sessions = memory.listening.sessionCount;
+  if (sessions === 1) return 'You arrived once, and stayed until the end.';
+  if (sessions === 2) return 'You came back, twice, to finish what was started.';
+  if (sessions <= 4) return `${sessions} visits, each one a return.`;
+  return `${sessions} visits. You came back often.`;
+}
+
+function deriveBookName(bookId: string): string {
+  const cleaned = bookId
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\.[^/.]+$/, '')
+    .trim();
+  if (!cleaned) return 'The Untitled World';
+  return cleaned.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function pickLingeringSentence(memory: NarrativeMemory): string {
+  const resonance = EMOTION_RESONANCE[memory.emotion] || EMOTION_RESONANCE.neutral;
+  return `What remains: ${resonance}.`;
 }
 
 export const EchoScreen: React.FC<EchoScreenProps> = ({
@@ -95,20 +113,20 @@ export const EchoScreen: React.FC<EchoScreenProps> = ({
 
   const [memory, setMemory] = useState<NarrativeMemory | null>(null);
   const [fingerprint, setFingerprint] = useState<NarrativeFingerprint | null>(null);
-  const [echoPhase, setEchoPhase] = useState<'immediate' | 'fading' | 'distant'>('immediate');
-  const [echoMessage, setEchoMessage] = useState('');
 
   useEffect(() => {
-    loadEcho();
+    const load = async () => {
+      try {
+        const persistence = new NarrativeMemoryPersistence(GOVERNOR);
+        const identity = new NarrativeIdentityEngine(GOVERNOR);
+        setMemory(await persistence.getMemory(bookId));
+        setFingerprint(identity.getFingerprint(bookId));
+      } catch (e) {
+        console.error('Failed to load echo:', e);
+      }
+    };
+    load();
   }, [bookId]);
-
-  useEffect(() => {
-    if (memory) {
-      const phase = getEchoPhase(memory.timestamp);
-      setEchoPhase(phase);
-      setEchoMessage(getEchoMessage(memory.emotion, phase));
-    }
-  }, [memory]);
 
   const loadEcho = async () => {
     try {
@@ -122,14 +140,23 @@ export const EchoScreen: React.FC<EchoScreenProps> = ({
     }
   };
 
+  const opening = useMemo(() => pickOpening(), []);
+  const closing = useMemo(() => pickClosing(), []);
+
   if (!memory) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.centerContent}>
-          <Text style={[typography.story, { color: theme.colors.textMuted }]}>
+          <Text
+            style={[
+              typography.story,
+              styles.silenceText,
+              { color: theme.colors.textMuted, fontStyle: 'italic' },
+            ]}
+          >
             No echo remains.
           </Text>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 24 }}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.silenceReturn}>
             <Text style={[typography.ui.caption, { color: theme.colors.accent }]}>
               Return
             </Text>
@@ -139,6 +166,9 @@ export const EchoScreen: React.FC<EchoScreenProps> = ({
     );
   }
 
+  const accentInk = EMOTION_INK[memory.emotion] || emotionalInk.neutral;
+  const bookName = deriveBookName(bookId);
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView
@@ -146,44 +176,128 @@ export const EchoScreen: React.FC<EchoScreenProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={[typography.ui.caption, { color: theme.colors.accent }]}>
-              Back
-            </Text>
-          </TouchableOpacity>
+        <View style={styles.openingSection}>
+          <Text
+            style={[
+              typography.ui.label,
+              styles.openingLabel,
+              { color: theme.colors.textMuted },
+            ]}
+          >
+            Farewell
+          </Text>
+          <Text
+            style={[
+              typography.story,
+              styles.openingText,
+              { color: theme.colors.text, fontStyle: 'italic' },
+            ]}
+          >
+            {opening}
+          </Text>
+          <Text
+            style={[
+              typography.ui.label,
+              styles.bookAttribution,
+              { color: accentInk },
+            ]}
+          >
+            {bookName}
+          </Text>
         </View>
 
-        <View style={styles.echoSection}>
-          <Text style={[typography.ui.label, { color: theme.colors.textMuted, marginBottom: theme.spacing.lg }]}>
-            Echo
+        <View style={styles.fingerprintSection}>
+          <Text
+            style={[
+              typography.ui.label,
+              styles.sectionLabel,
+              { color: theme.colors.textMuted },
+            ]}
+          >
+            Emotional Fingerprint
           </Text>
-          <Text style={[typography.story, styles.echoMessage, { color: theme.colors.textSecondary }]}>
-            {echoMessage}
-          </Text>
-          <Text style={[typography.ui.tiny, { color: theme.colors.textMuted, marginTop: theme.spacing.md }]}>
-            {formatTimeSince(memory.timestamp)}
+          <Text
+            style={[
+              typography.story,
+              styles.sectionText,
+              { color: theme.colors.textSecondary, fontStyle: 'italic' },
+            ]}
+          >
+            {fingerprint
+              ? formatEmotionalFingerprint(fingerprint)
+              : 'A presence that did not announce itself.'}
           </Text>
         </View>
 
-        {fingerprint && (
-          <View style={[styles.identityCard, { backgroundColor: theme.colors.surface }]}>
-            <Text style={[typography.ui.label, { color: theme.colors.textMuted, marginBottom: theme.spacing.md }]}>
-              Emotional Signature
-            </Text>
-            <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>
-              {formatEmotionalSignature(fingerprint)}
-            </Text>
-          </View>
-        )}
+        <View style={styles.relationshipSection}>
+          <Text
+            style={[
+              typography.ui.label,
+              styles.sectionLabel,
+              { color: theme.colors.textMuted },
+            ]}
+          >
+            Relationship
+          </Text>
+          <Text
+            style={[
+              typography.story,
+              styles.sectionText,
+              { color: theme.colors.textSecondary },
+            ]}
+          >
+            {formatRelationshipArc(memory)}
+          </Text>
+        </View>
+
+        <View style={styles.lingeringSection}>
+          <Text
+            style={[
+              typography.ui.label,
+              styles.sectionLabel,
+              { color: theme.colors.textMuted },
+            ]}
+          >
+            What Lingers
+          </Text>
+          <Text
+            style={[
+              typography.story,
+              styles.sectionText,
+              { color: theme.colors.text, fontStyle: 'italic' },
+            ]}
+          >
+            {pickLingeringSentence(memory)}
+          </Text>
+        </View>
+
+        <View style={styles.closingSection}>
+          <Text
+            style={[
+              typography.story,
+              styles.closingText,
+              { color: theme.colors.textMuted, fontStyle: 'italic' },
+            ]}
+          >
+            {closing}
+          </Text>
+        </View>
 
         <View style={styles.actionsSection}>
           <TouchableOpacity
-            style={[styles.revisitButton, { borderColor: theme.colors.accent }]}
             onPress={() => navigation.navigate('Player', { bookId })}
+            style={styles.returnLink}
           >
-            <Text style={[typography.ui.caption, { color: theme.colors.accent }]}>
+            <Text style={[typography.ui.micro, { color: theme.colors.textMuted }]}>
               Return to this world
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Home')}
+            style={styles.returnLink}
+          >
+            <Text style={[typography.ui.micro, { color: theme.colors.accent }]}>
+              Return to the foyer
             </Text>
           </TouchableOpacity>
         </View>
@@ -191,20 +305,6 @@ export const EchoScreen: React.FC<EchoScreenProps> = ({
     </View>
   );
 };
-
-function formatEmotionalSignature(fp: NarrativeFingerprint): string {
-  const es = fp.emotionalSignature;
-  const parts: string[] = [];
-
-  if (es.warmthIndex > 0.3) parts.push('warmth');
-  if (es.melancholyIndex > 0.3) parts.push('melancholy');
-  if (es.tensionIndex > 0.3) parts.push('tension');
-  if (es.volatility > 0.3) parts.push('shifting');
-
-  return parts.length > 0
-    ? `Carries ${parts.join(' and ')}.`
-    : 'A quiet presence.';
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -214,43 +314,65 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 48,
-    paddingBottom: 40,
-    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'ios' ? spacing.cinematic : spacing.xxl,
+    paddingBottom: spacing.cinematic,
+    paddingHorizontal: spacing.xl,
   },
   centerContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: spacing.xl,
   },
-  header: {
-    marginBottom: 32,
-  },
-  backButton: {
-    padding: 8,
-  },
-  echoSection: {
-    marginBottom: 32,
-  },
-  echoMessage: {
+  silenceText: {
     textAlign: 'center',
-    fontSize: 22,
-    lineHeight: 34,
   },
-  identityCard: {
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 32,
+  silenceReturn: {
+    marginTop: spacing.xl,
+    padding: spacing.sm,
+  },
+  openingSection: {
+    marginBottom: spacing.cinematic,
+  },
+  openingLabel: {
+    marginBottom: spacing.lg,
+  },
+  openingText: {
+    marginBottom: spacing.lg,
+    lineHeight: 32,
+  },
+  bookAttribution: {
+    marginTop: spacing.sm,
+  },
+  fingerprintSection: {
+    marginBottom: spacing.xxl,
+  },
+  relationshipSection: {
+    marginBottom: spacing.xxl,
+  },
+  lingeringSection: {
+    marginBottom: spacing.xxl,
+  },
+  sectionLabel: {
+    marginBottom: spacing.md,
+  },
+  sectionText: {
+    opacity: atmosphereOpacity.proseOpacity,
+  },
+  closingSection: {
+    marginTop: spacing.xl,
+    marginBottom: spacing.cinematic,
+  },
+  closingText: {
+    textAlign: 'center',
+    opacity: 0.72,
   },
   actionsSection: {
     alignItems: 'center',
+    marginTop: spacing.xl,
   },
-  revisitButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 24,
-    borderWidth: 1,
+  returnLink: {
+    paddingVertical: spacing.md,
   },
 });
 

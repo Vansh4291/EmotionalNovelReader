@@ -5,38 +5,69 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   Platform,
 } from 'react-native';
 import { NarrativeThemeEngine, NarrativeTheme } from '../theme/NarrativeThemeEngine';
-import { buildTypography, NarrativeTypography } from '../theme/NarrativeTypography';
-import { useNarration } from '../core/useNarration';
+import { buildTypography } from '../theme/NarrativeTypography';
 import { EmotionType } from '../core/types';
-import { NarrativeWeatherSystem, WeatherState } from '../core/narration/NarrativeWeatherSystem';
-import { NarrativeMemoryPersistence, NarrativeMemory } from '../core/narration/NarrativeMemoryPersistence';
+import {
+  NarrativeMemory,
+  NarrativeMemoryPersistence,
+} from '../core/narration/NarrativeMemoryPersistence';
 import { EventGovernor } from '../core/events/EventGovernor';
+import { spacing, atmosphereOpacity } from '../design';
 
 interface HomeScreenProps {
   navigation: any;
 }
 
-interface MemoryFragment {
-  bookId: string;
-  bookTitle: string;
-  text: string;
-  emotion: EmotionType;
-  timestamp: number;
-}
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 const GOVERNOR = new EventGovernor();
 
 const TIME_GREETINGS: Record<string, string> = {
-  morning: 'The morning light settles gently.',
-  afternoon: 'The afternoon stretches quietly.',
-  evening: 'Evening draws the curtains close.',
-  night: 'The night holds its breath.',
+  morning: 'Good morning.',
+  afternoon: 'Good afternoon.',
+  evening: 'Good evening.',
+  night: 'The night is quiet.',
+};
+
+const RETURN_INVITATIONS: Record<string, string[]> = {
+  morning: [
+    'The world stirs softly.',
+    'Light finds the unwritten pages.',
+    'Something waits to be remembered.',
+  ],
+  afternoon: [
+    'The world stretches, unhurried.',
+    'A still hour for the story.',
+    'Quiet holds the afternoon.',
+  ],
+  evening: [
+    'The forest still waits.',
+    'The city has dimmed its lamps.',
+    'The evening settles in.',
+  ],
+  night: [
+    'The story keeps its vigil.',
+    'The night remembers what the day forgot.',
+    'Some stories prefer darkness.',
+  ],
+};
+
+const EMOTIONAL_HUES: Record<EmotionType, string> = {
+  joy: 'a warmth lingers',
+  sadness: 'a quiet weight remains',
+  anger: 'the fire has not faded',
+  fear: 'shadows still touch the edges',
+  surprise: 'something shifted unexpectedly',
+  neutral: 'the world is patient',
+};
+
+const ARC_ATMOSPHERES: Record<string, string> = {
+  beginning: 'the world is opening',
+  rising: 'tension is gathering',
+  peak: 'the moment holds its breath',
+  falling: 'the air is settling',
+  resolution: 'something has come to rest',
 };
 
 function getTimeOfDay(): string {
@@ -47,19 +78,10 @@ function getTimeOfDay(): string {
   return 'night';
 }
 
-function getEmotionalGreeting(emotion: EmotionType, weather: WeatherState | null): string {
-  if (!weather) return '';
-
-  const timeOfDay = TIME_GREETINGS[getTimeOfDay()] || '';
-
-  if (weather.temperature < 0.3) {
-    return `${timeOfDay} The air feels still.`;
-  }
-  if (weather.temperature > 0.7) {
-    return `${timeOfDay} A quiet warmth lingers.`;
-  }
-
-  return timeOfDay;
+function pickInvitation(): string {
+  const time = getTimeOfDay();
+  const arr = RETURN_INVITATIONS[time] || RETURN_INVITATIONS.evening;
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function formatTimeSince(timestamp: number): string {
@@ -67,50 +89,57 @@ function formatTimeSince(timestamp: number): string {
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
+  if (minutes < 60) return 'recently';
+  if (hours < 24) return 'earlier today';
   if (days === 1) return 'yesterday';
-  return `${days}d ago`;
+  if (days < 7) return `${days} days ago`;
+  return 'a while ago';
 }
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({
-  navigation,
-}) => {
-  const [theme, setTheme] = useState<NarrativeTheme>(
+function buildWorldTitle(memory: NarrativeMemory): string {
+  const lastScene = memory.sceneSnapshots?.[memory.sceneSnapshots.length - 1];
+  if (lastScene) {
+    return `Chapter ${lastScene.sceneIndex + 1}`;
+  }
+  return 'The current chapter';
+}
+
+function buildWorldAtmosphere(memory: NarrativeMemory): string {
+  const emotionHue = EMOTIONAL_HUES[memory.emotion] || EMOTIONAL_HUES.neutral;
+  const arcPhrase = ARC_ATMOSPHERES[memory.arc.position] || ARC_ATMOSPHERES.beginning;
+  return `${arcPhrase.charAt(0).toUpperCase()}${arcPhrase.slice(1)}, and ${emotionHue}.`;
+}
+
+function buildLingeredAtmosphere(memory: NarrativeMemory): string {
+  const emotionHue = EMOTIONAL_HUES[memory.emotion] || EMOTIONAL_HUES.neutral;
+  return `You remember when ${emotionHue}.`;
+}
+
+export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+  const [theme] = useState<NarrativeTheme>(
     new NarrativeThemeEngine().getTheme('neutral')
   );
   const typography = useMemo(() => buildTypography(theme), [theme]);
 
-  const [recentBooks, setRecentBooks] = useState<NarrativeMemory[]>([]);
-  const [weather, setWeather] = useState<WeatherState | null>(null);
-
-  const themeEngine = useMemo(() => new NarrativeThemeEngine(), []);
+  const [currentWorld, setCurrentWorld] = useState<NarrativeMemory | null>(null);
+  const [lingeringMoment, setLingeredMoment] = useState<NarrativeMemory | null>(null);
 
   useEffect(() => {
-    loadRecentBooks();
+    loadFoyer();
   }, []);
 
-  const loadRecentBooks = async () => {
+  const loadFoyer = async () => {
     try {
       const persistence = new NarrativeMemoryPersistence(GOVERNOR);
-      const memories = await persistence.getRecentBooks(5);
-      setRecentBooks(memories);
+      const recent = await persistence.getRecentBooks(2);
+      setCurrentWorld(recent[0] || null);
+      setLingeredMoment(recent[1] || null);
     } catch (e) {
-      console.error('Failed to load recent books:', e);
+      console.error('[Foyer] load failed:', e);
     }
   };
 
-  const continueJourney = recentBooks[0];
-
-  const memoryFragments: MemoryFragment[] = recentBooks.slice(1, 4).map((book) => ({
-    bookId: book.bookId,
-    bookTitle: `Chapter ${book.sceneSnapshots[book.sceneSnapshots.length - 1]?.sceneIndex || 1}`,
-    text: buildMemoryText(book),
-    emotion: book.emotion,
-    timestamp: book.timestamp,
-  }));
+  const invitation = useMemo(() => pickInvitation(), []);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -120,153 +149,125 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.greetingSection}>
-          <Text style={[typography.ui.caption, { color: theme.colors.textMuted }]}>
-            {getEmotionalGreeting(recentBooks[0]?.emotion || 'neutral', weather)}
+          <Text
+            style={[
+              typography.ui.heading,
+              styles.greeting,
+              { color: theme.colors.text },
+            ]}
+          >
+            {TIME_GREETINGS[getTimeOfDay()]}
+          </Text>
+          <Text
+            style={[
+              typography.story,
+              styles.invitation,
+              { color: theme.colors.textSecondary },
+            ]}
+          >
+            {invitation}
           </Text>
         </View>
 
-        {continueJourney && (
+        {currentWorld && (
           <TouchableOpacity
-            style={[
-              styles.continueCard,
-              {
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
-              },
-            ]}
+            activeOpacity={0.6}
+            style={styles.currentWorldSection}
             onPress={() => navigation.navigate('Player', {
-              bookId: continueJourney.bookId,
-              chapterIndex: continueJourney.sceneSnapshots[continueJourney.sceneSnapshots.length - 1]?.sceneIndex,
+              bookId: currentWorld.bookId,
+              chapterIndex: currentWorld.sceneSnapshots?.[currentWorld.sceneSnapshots.length - 1]?.sceneIndex,
               sentenceIndex: 0,
             })}
-            activeOpacity={0.8}
           >
-            <View style={styles.continueCardContent}>
-              <Text style={[typography.ui.tiny, { color: theme.colors.textMuted, marginBottom: theme.spacing.xs }]}>
-                Continue Journey
-              </Text>
-              <Text style={[typography.ui.subheading, { color: theme.colors.text, marginBottom: theme.spacing.sm }]}>
-                {getAtmosphericDescription(continueJourney)}
-              </Text>
-              <View style={styles.continueMeta}>
-                <Text style={[typography.ui.tiny, { color: theme.colors.textMuted }]}>
-                  {formatTimeSince(continueJourney.timestamp)}
-                </Text>
-                <View style={[styles.emotionDot, { backgroundColor: theme.colors.accent }]} />
-              </View>
-            </View>
-            <View style={[styles.continueAtmosphere, { backgroundColor: theme.colors.emotionMuted }]} />
+            <Text
+              style={[
+                typography.ui.label,
+                styles.sectionLabel,
+                { color: theme.colors.textMuted },
+              ]}
+            >
+              Current World
+            </Text>
+            <Text
+              style={[
+                typography.ui.display,
+                styles.worldTitle,
+                { color: theme.colors.text },
+              ]}
+              numberOfLines={2}
+            >
+              {buildWorldTitle(currentWorld)}
+            </Text>
+            <Text
+              style={[
+                typography.story,
+                styles.worldAtmosphere,
+                { color: theme.colors.textSecondary, fontStyle: 'italic' },
+              ]}
+            >
+              {buildWorldAtmosphere(currentWorld)}
+            </Text>
+            <Text
+              style={[
+                typography.ui.micro,
+                styles.worldTimestamp,
+                { color: theme.colors.textMuted },
+              ]}
+            >
+              Last visited {formatTimeSince(currentWorld.timestamp)}
+            </Text>
           </TouchableOpacity>
         )}
 
-        {!continueJourney && (
-          <View style={styles.emptyState}>
-            <Text style={[typography.ui.body, { color: theme.colors.textSecondary, textAlign: 'center' }]}>
-              No stories yet.
+        {lingeringMoment && (
+          <View style={styles.momentSection}>
+            <Text
+              style={[
+                typography.ui.label,
+                styles.sectionLabel,
+                { color: theme.colors.textMuted },
+              ]}
+            >
+              A Moment That Stayed
             </Text>
-            <Text style={[typography.ui.caption, { color: theme.colors.textMuted, textAlign: 'center', marginTop: theme.spacing.sm }]}>
-              Import a book to begin your journey.
+            <Text
+              style={[
+                typography.story,
+                styles.momentAtmosphere,
+                { color: theme.colors.textSecondary, fontStyle: 'italic' },
+              ]}
+            >
+              {buildLingeredAtmosphere(lingeringMoment)}
+            </Text>
+            <Text
+              style={[
+                typography.ui.micro,
+                styles.momentMeta,
+                { color: theme.colors.textMuted },
+              ]}
+            >
+              {formatTimeSince(lingeringMoment.timestamp)}
             </Text>
           </View>
         )}
 
-        {memoryFragments.length > 0 && (
-          <View style={styles.section}>
-            <Text style={[typography.ui.label, { color: theme.colors.textMuted, marginBottom: theme.spacing.md }]}>
-              Moments That Lingered
+        {!currentWorld && !lingeringMoment && (
+          <View style={styles.emptyFoyer}>
+            <Text
+              style={[
+                typography.story,
+                styles.emptyText,
+                { color: theme.colors.textSecondary, fontStyle: 'italic' },
+              ]}
+            >
+              A story is waiting to be found.
             </Text>
-            {memoryFragments.map((fragment, index) => (
-              <TouchableOpacity
-                key={`${fragment.bookId}_${index}`}
-                style={[
-                  styles.fragmentCard,
-                  {
-                    backgroundColor: theme.colors.surface,
-                    borderLeftColor: theme.colors.accent,
-                  },
-                ]}
-                onPress={() => navigation.navigate('Player', { bookId: fragment.bookId })}
-              >
-                <Text style={[typography.story, { color: theme.colors.textSecondary, fontStyle: 'italic' }]}>
-                  "{fragment.text}"
-                </Text>
-                <Text style={[typography.ui.tiny, { color: theme.colors.textMuted, marginTop: theme.spacing.xs }]}>
-                  {formatTimeSince(fragment.timestamp)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {weather && (
-          <View style={styles.section}>
-            <Text style={[typography.ui.label, { color: theme.colors.textMuted, marginBottom: theme.spacing.md }]}>
-              Narrative Weather
-            </Text>
-            <View style={[styles.weatherCard, { backgroundColor: theme.colors.surface }]}>
-              <View style={styles.weatherRow}>
-                <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>
-                  Atmosphere
-                </Text>
-                <Text style={[typography.ui.caption, { color: theme.colors.accent }]}>
-                  {formatSeason(weather.season)}
-                </Text>
-              </View>
-              <View style={styles.weatherBar}>
-                <View style={[styles.weatherIndicator, {
-                  width: `${weather.temperature * 100}%`,
-                  backgroundColor: theme.colors.accent,
-                }]} />
-              </View>
-            </View>
           </View>
         )}
       </ScrollView>
     </View>
   );
 };
-
-function getAtmosphericDescription(memory: NarrativeMemory): string {
-  const greetings: Record<string, string> = {
-    joy: 'A warm feeling lingers here.',
-    sadness: 'The quiet weight remains.',
-    anger: 'The fire has not yet faded.',
-    fear: 'Shadows still touch the edges.',
-    surprise: 'Something shifted unexpectedly.',
-    neutral: 'The story continues quietly.',
-  };
-
-  return greetings[memory.emotion] || 'The story awaits.';
-}
-
-function buildMemoryText(memory: NarrativeMemory): string {
-  const lastScene = memory.sceneSnapshots[memory.sceneSnapshots.length - 1];
-  if (!lastScene) return 'A moment remembered.';
-
-  const texts: Record<string, string> = {
-    joy: 'A moment of light was felt here.',
-    sadness: 'The weight settled gently.',
-    anger: 'Tension gathered in this place.',
-    fear: 'Something stirred in the silence.',
-    surprise: 'The world turned unexpectedly.',
-    neutral: 'A quiet breath was taken.',
-  };
-
-  return texts[memory.emotion] || 'A moment was felt.';
-}
-
-function formatSeason(season: string): string {
-  const names: Record<string, string> = {
-    spring: 'Gentle warmth',
-    summer: 'Bright clarity',
-    autumn: 'Gathering weight',
-    winter: 'Quiet stillness',
-    thaw: 'Slow return',
-    storm: 'Rising tension',
-    stillness: 'Deep calm',
-  };
-  return names[season] || 'Quiet';
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -276,66 +277,52 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 48,
-    paddingBottom: 40,
-    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'ios' ? spacing.cinematic : spacing.xxl,
+    paddingBottom: spacing.cinematic,
+    paddingHorizontal: spacing.xl,
   },
   greetingSection: {
-    marginBottom: 32,
+    marginBottom: spacing.cinematic,
   },
-  continueCard: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 32,
-    borderWidth: 1,
+  greeting: {
+    marginBottom: spacing.sm,
   },
-  continueCardContent: {
-    padding: 24,
+  invitation: {
+    opacity: 0.78,
   },
-  continueMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  currentWorldSection: {
+    marginBottom: spacing.cinematic,
   },
-  emotionDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  worldTitle: {
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
   },
-  continueAtmosphere: {
-    height: 4,
+  worldAtmosphere: {
+    marginBottom: spacing.md,
+    opacity: 0.82,
   },
-  emptyState: {
-    paddingVertical: 60,
-    paddingHorizontal: 40,
+  worldTimestamp: {
+    marginTop: spacing.xs,
   },
-  section: {
-    marginBottom: 32,
+  momentSection: {
+    marginBottom: spacing.cinematic,
   },
-  fragmentCard: {
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 12,
-    borderLeftWidth: 2,
+  momentAtmosphere: {
+    marginTop: spacing.md,
+    opacity: 0.72,
   },
-  weatherCard: {
-    padding: 16,
-    borderRadius: 12,
+  momentMeta: {
+    marginTop: spacing.md,
   },
-  weatherRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+  sectionLabel: {
+    marginBottom: spacing.xs,
   },
-  weatherBar: {
-    height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 2,
-    overflow: 'hidden',
+  emptyFoyer: {
+    marginTop: spacing.xxl,
   },
-  weatherIndicator: {
-    height: '100%',
-    borderRadius: 2,
+  emptyText: {
+    textAlign: 'center',
+    opacity: atmosphereOpacity.proseContext,
   },
 });
 

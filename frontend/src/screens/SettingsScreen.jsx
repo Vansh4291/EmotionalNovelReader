@@ -181,7 +181,7 @@ const SettingsScreen = ({ navigation }) => {
             ]}
             onPress={() => setTheme('dark')}
           >
-            <Text style={[styles.themeOptionText, { color: theme.text }]}>🌙 Dark</Text>
+            <Text style={[styles.themeOptionText, { color: theme.text }]}>Dark</Text>
           </Pressable>
           
           <Pressable
@@ -193,7 +193,7 @@ const SettingsScreen = ({ navigation }) => {
             ]}
             onPress={() => setTheme('light')}
           >
-            <Text style={[styles.themeOptionText, { color: theme.text }]}>☀️ Light</Text>
+            <Text style={[styles.themeOptionText, { color: theme.text }]}>Light</Text>
           </Pressable>
           
           <Pressable
@@ -205,7 +205,7 @@ const SettingsScreen = ({ navigation }) => {
             ]}
             onPress={() => setTheme('sepia')}
           >
-            <Text style={[styles.themeOptionText, { color: theme.text }]}>📖 Sepia</Text>
+            <Text style={[styles.themeOptionText, { color: theme.text }]}>Sepia</Text>
           </Pressable>
         </View>
       </View>

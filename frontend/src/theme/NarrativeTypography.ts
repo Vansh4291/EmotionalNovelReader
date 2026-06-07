@@ -1,5 +1,15 @@
-import { TextStyle, Platform } from 'react-native';
+import { TextStyle } from 'react-native';
 import { NarrativeTheme } from './NarrativeThemeEngine';
+import {
+  fontFamily,
+  lineHeight,
+  letterSpacing,
+  fontWeight,
+  narrative as narrativeInk,
+  measure,
+  dialogue as dialogueTokens,
+  atmosphereOpacity,
+} from '../design';
 
 export interface StoryTextStyle extends TextStyle {
   fontFamily: string;
@@ -18,44 +28,28 @@ export interface NarrativeTypography {
   dialogue: StoryTextStyle;
   emphasis: StoryTextStyle;
   ui: {
+    display: TextStyle;
     heading: TextStyle;
     subheading: TextStyle;
     body: TextStyle;
+    secondary: TextStyle;
     caption: TextStyle;
+    micro: TextStyle;
     tiny: TextStyle;
     label: TextStyle;
   };
+  measure: {
+    proseColumnMaxWidth: number;
+    proseMinChars: number;
+    proseMaxChars: number;
+  };
 }
 
-const STORY_FONT_SERIF = Platform.select({
-  ios: 'CormorantGaramond-Regular',
-  android: 'CormorantGaramond-Regular',
-  default: 'serif',
-});
-
-const STORY_FONT_SERIF_MEDIUM = Platform.select({
-  ios: 'CormorantGaramond-Medium',
-  android: 'CormorantGaramond-Medium',
-  default: 'serif',
-});
-
-const UI_FONT = Platform.select({
-  ios: 'Inter-Regular',
-  android: 'Inter-Regular',
-  default: 'sans-serif',
-});
-
-const UI_FONT_MEDIUM = Platform.select({
-  ios: 'Inter-Medium',
-  android: 'Inter-Medium',
-  default: 'sans-serif-medium',
-});
-
-const UI_FONT_SEMIBOLD = Platform.select({
-  ios: 'Inter-SemiBold',
-  android: 'Inter-SemiBold',
-  default: 'sans-serif',
-});
+const STORY_FONT_SERIF = fontFamily.storyRegular;
+const STORY_FONT_SERIF_MEDIUM = fontFamily.storyMedium;
+const UI_FONT = fontFamily.uiRegular;
+const UI_FONT_MEDIUM = fontFamily.uiMedium;
+const UI_FONT_SEMIBOLD = fontFamily.uiSemibold;
 
 export function buildTypography(theme: NarrativeTheme): NarrativeTypography {
   const { colors, typography, spacing } = theme;
@@ -76,7 +70,7 @@ export function buildTypography(theme: NarrativeTheme): NarrativeTypography {
     storyDimmed: {
       ...baseStory,
       color: colors.textMuted,
-      opacity: 0.6,
+      opacity: atmosphereOpacity.proseDim,
     },
 
     storyFocused: {
@@ -87,9 +81,9 @@ export function buildTypography(theme: NarrativeTheme): NarrativeTypography {
 
     chapterTitle: {
       fontFamily: STORY_FONT_SERIF_MEDIUM,
-      fontSize: typography.h2,
-      lineHeight: typography.h2 * 1.4,
-      letterSpacing: 0.5,
+      fontSize: typography.h1,
+      lineHeight: typography.h1 * lineHeight.chapterTitle,
+      letterSpacing: letterSpacing.wider,
       color: colors.accent,
       marginBottom: spacing.lg,
       textAlign: 'center' as const,
@@ -99,7 +93,7 @@ export function buildTypography(theme: NarrativeTheme): NarrativeTypography {
       fontFamily: STORY_FONT_SERIF,
       fontSize: typography.body,
       lineHeight: typography.body * 1.8,
-      letterSpacing: 2,
+      letterSpacing: letterSpacing.widest,
       color: colors.textMuted,
       textAlign: 'center' as const,
       marginVertical: spacing.xl,
@@ -108,9 +102,10 @@ export function buildTypography(theme: NarrativeTheme): NarrativeTypography {
     dialogue: {
       ...baseStory,
       fontStyle: 'italic' as const,
-      paddingLeft: spacing.sm,
-      borderLeftWidth: 2,
-      borderLeftColor: colors.accentSubtle,
+      paddingLeft: dialogueTokens.indentPx,
+      marginTop: dialogueTokens.marginTopPx,
+      marginBottom: dialogueTokens.marginBottomPx,
+      borderLeftWidth: 0,
     },
 
     emphasis: {
@@ -120,49 +115,93 @@ export function buildTypography(theme: NarrativeTheme): NarrativeTypography {
     },
 
     ui: {
+      display: {
+        fontFamily: STORY_FONT_SERIF_MEDIUM,
+        fontSize: typography.display,
+        lineHeight: typography.display * lineHeight.display,
+        letterSpacing: letterSpacing.tight,
+        color: colors.text,
+        fontWeight: fontWeight.regular,
+      },
+
       heading: {
         fontFamily: UI_FONT_SEMIBOLD,
         fontSize: typography.h1,
-        lineHeight: typography.h1 * 1.3,
+        lineHeight: typography.h1 * lineHeight.chapterTitle,
+        letterSpacing: letterSpacing.wider,
         color: colors.text,
+        fontWeight: fontWeight.semibold,
       },
 
       subheading: {
         fontFamily: UI_FONT_MEDIUM,
         fontSize: typography.h2,
-        lineHeight: typography.h2 * 1.35,
+        lineHeight: typography.h2 * lineHeight.sectionTitle,
+        letterSpacing: letterSpacing.wide,
         color: colors.text,
+        fontWeight: fontWeight.medium,
       },
 
       body: {
         fontFamily: UI_FONT,
         fontSize: typography.body,
-        lineHeight: typography.body * 1.5,
+        lineHeight: typography.body * lineHeight.body,
+        letterSpacing: letterSpacing.normal,
         color: colors.text,
+        fontWeight: fontWeight.regular,
+      },
+
+      secondary: {
+        fontFamily: UI_FONT,
+        fontSize: typography.secondary,
+        lineHeight: typography.secondary * lineHeight.secondary,
+        letterSpacing: letterSpacing.normal,
+        color: colors.textSecondary,
+        fontWeight: fontWeight.regular,
       },
 
       caption: {
         fontFamily: UI_FONT,
         fontSize: typography.caption,
-        lineHeight: typography.caption * 1.4,
+        lineHeight: typography.caption * lineHeight.micro,
+        letterSpacing: letterSpacing.wide,
         color: colors.textSecondary,
+        fontWeight: fontWeight.regular,
+      },
+
+      micro: {
+        fontFamily: UI_FONT,
+        fontSize: typography.micro,
+        lineHeight: typography.micro * lineHeight.micro,
+        letterSpacing: letterSpacing.wider,
+        color: colors.textMuted,
+        fontWeight: fontWeight.regular,
       },
 
       tiny: {
         fontFamily: UI_FONT,
-        fontSize: typography.tiny,
-        lineHeight: typography.tiny * 1.4,
+        fontSize: typography.micro,
+        lineHeight: typography.micro * lineHeight.micro,
+        letterSpacing: letterSpacing.wider,
         color: colors.textMuted,
+        fontWeight: fontWeight.regular,
       },
 
       label: {
         fontFamily: UI_FONT_MEDIUM,
         fontSize: typography.caption,
         lineHeight: typography.caption * 1.3,
-        color: colors.textSecondary,
-        letterSpacing: 0.5,
+        letterSpacing: letterSpacing.widest,
+        color: colors.textMuted,
+        fontWeight: fontWeight.medium,
         textTransform: 'uppercase' as const,
       },
+    },
+
+    measure: {
+      proseColumnMaxWidth: measure.proseColumnPx,
+      proseMinChars: measure.proseMin,
+      proseMaxChars: measure.proseMax,
     },
   };
 }
@@ -171,7 +210,7 @@ export function getEmphasisStyle(
   theme: NarrativeTheme,
   type: 'thought' | 'memory' | 'narration' | 'whisper'
 ): StoryTextStyle {
-  const { colors, typography, spacing } = theme;
+  const { colors, typography } = theme;
 
   const base: StoryTextStyle = {
     fontFamily: STORY_FONT_SERIF,
@@ -193,7 +232,7 @@ export function getEmphasisStyle(
       return {
         ...base,
         color: colors.textMuted,
-        letterSpacing: typography.storyLetterSpacing + 0.3,
+        letterSpacing: typography.storyLetterSpacing + letterSpacing.wide,
       };
 
     case 'narration':
@@ -208,7 +247,7 @@ export function getEmphasisStyle(
         ...base,
         fontSize: typography.storySize - 1,
         color: colors.textMuted,
-        letterSpacing: typography.storyLetterSpacing + 0.5,
+        letterSpacing: typography.storyLetterSpacing + letterSpacing.wider,
       };
 
     default:
@@ -220,17 +259,19 @@ export function getDialogueStyle(
   theme: NarrativeTheme,
   intensity: number
 ): StoryTextStyle {
-  const { colors, typography, spacing } = theme;
+  const { colors, typography } = theme;
+  const isIntense = intensity > 0.7;
 
   return {
     fontFamily: STORY_FONT_SERIF,
     fontSize: typography.storySize,
     lineHeight: typography.storySize * typography.storyLineHeight,
     letterSpacing: typography.storyLetterSpacing,
-    color: colors.text,
-    fontStyle: intensity > 0.7 ? 'normal' : 'italic',
-    paddingLeft: intensity > 0.7 ? 0 : spacing.sm,
-    borderLeftWidth: intensity > 0.7 ? 0 : 2,
-    borderLeftColor: intensity > 0.7 ? 'transparent' : colors.accentSubtle,
+    color: isIntense ? colors.text : colors.textSecondary,
+    fontStyle: isIntense ? 'normal' : 'italic',
+    paddingLeft: isIntense ? 0 : dialogueTokens.indentPx,
+    borderLeftWidth: 0,
   };
 }
+
+export { narrativeInk };

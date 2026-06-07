@@ -7,6 +7,7 @@ export const useSettingsStore = create((set) => ({
   defaultVolume: 1.0,
   emotionEffectsEnabled: true,
   highlightSyncEnabled: true,
+  lastLineRitualEnabled: true,
   theme: 'dark',
 
   setDefaultVoiceEngine: (engine) => set({ defaultVoiceEngine: engine }),
@@ -15,5 +16,6 @@ export const useSettingsStore = create((set) => ({
   setDefaultVolume: (volume) => set({ defaultVolume: volume }),
   setEmotionEffectsEnabled: (enabled) => set({ emotionEffectsEnabled: enabled }),
   setHighlightSyncEnabled: (enabled) => set({ highlightSyncEnabled: enabled }),
+  setLastLineRitualEnabled: (enabled) => set({ lastLineRitualEnabled: enabled }),
   setTheme: (theme) => set({ theme }),
 }));

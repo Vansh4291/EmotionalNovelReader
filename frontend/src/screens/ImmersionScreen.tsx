@@ -11,6 +11,7 @@ import {
 import { NarrativeThemeEngine, NarrativeTheme } from '../theme/NarrativeThemeEngine';
 import { buildTypography, NarrativeTypography } from '../theme/NarrativeTypography';
 import { EmotionType } from '../core/types';
+import { useSettingsStore } from '../store/settingsStore';
 
 interface ImmersionScreenProps {
   navigation: any;
@@ -34,6 +35,9 @@ export const ImmersionScreen: React.FC<ImmersionScreenProps> = ({
     new NarrativeThemeEngine().getTheme('neutral')
   );
   const typography = useMemo(() => buildTypography(theme), [theme]);
+
+  const lastLineRitualEnabled = useSettingsStore((s) => s.lastLineRitualEnabled);
+  const setLastLineRitualEnabled = useSettingsStore((s) => s.setLastLineRitualEnabled);
 
   const [ambientEnabled, setAmbientEnabled] = useState(false);
   const [silenceSensitivity, setSilenceSensitivity] = useState(0.5);
@@ -62,7 +66,7 @@ export const ImmersionScreen: React.FC<ImmersionScreenProps> = ({
           </Text>
         </View>
 
-        <View style={[styles.settingSection, { backgroundColor: theme.colors.surface }]}>
+        <View style={styles.settingSection}>
           <Text style={[typography.ui.label, { color: theme.colors.textMuted, marginBottom: theme.spacing.lg }]}>
             Atmosphere
           </Text>
@@ -96,16 +100,16 @@ export const ImmersionScreen: React.FC<ImmersionScreenProps> = ({
             <View style={styles.levelControl}>
               <TouchableOpacity
                 onPress={() => setSilenceSensitivity(Math.max(0, silenceSensitivity - 0.1))}
-                style={[styles.levelButton, { borderColor: theme.colors.border }]}
+                style={styles.levelButton}
               >
-                <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>-</Text>
+                <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>−</Text>
               </TouchableOpacity>
               <Text style={[typography.ui.caption, { color: theme.colors.accent, minWidth: 40, textAlign: 'center' }]}>
                 {Math.round(silenceSensitivity * 100)}%
               </Text>
               <TouchableOpacity
                 onPress={() => setSilenceSensitivity(Math.min(1, silenceSensitivity + 0.1))}
-                style={[styles.levelButton, { borderColor: theme.colors.border }]}
+                style={styles.levelButton}
               >
                 <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>+</Text>
               </TouchableOpacity>
@@ -113,7 +117,7 @@ export const ImmersionScreen: React.FC<ImmersionScreenProps> = ({
           </View>
         </View>
 
-        <View style={[styles.settingSection, { backgroundColor: theme.colors.surface }]}>
+        <View style={styles.settingSection}>
           <Text style={[typography.ui.label, { color: theme.colors.textMuted, marginBottom: theme.spacing.lg }]}>
             Pacing
           </Text>
@@ -130,16 +134,16 @@ export const ImmersionScreen: React.FC<ImmersionScreenProps> = ({
             <View style={styles.levelControl}>
               <TouchableOpacity
                 onPress={() => setFocusDepth(Math.max(0, focusDepth - 0.1))}
-                style={[styles.levelButton, { borderColor: theme.colors.border }]}
+                style={styles.levelButton}
               >
-                <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>-</Text>
+                <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>−</Text>
               </TouchableOpacity>
               <Text style={[typography.ui.caption, { color: theme.colors.accent, minWidth: 40, textAlign: 'center' }]}>
                 {Math.round(focusDepth * 100)}%
               </Text>
               <TouchableOpacity
                 onPress={() => setFocusDepth(Math.min(1, focusDepth + 0.1))}
-                style={[styles.levelButton, { borderColor: theme.colors.border }]}
+                style={styles.levelButton}
               >
                 <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>+</Text>
               </TouchableOpacity>
@@ -158,16 +162,16 @@ export const ImmersionScreen: React.FC<ImmersionScreenProps> = ({
             <View style={styles.levelControl}>
               <TouchableOpacity
                 onPress={() => setPacingSoftness(Math.max(0, pacingSoftness - 0.1))}
-                style={[styles.levelButton, { borderColor: theme.colors.border }]}
+                style={styles.levelButton}
               >
-                <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>-</Text>
+                <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>−</Text>
               </TouchableOpacity>
               <Text style={[typography.ui.caption, { color: theme.colors.accent, minWidth: 40, textAlign: 'center' }]}>
                 {Math.round(pacingSoftness * 100)}%
               </Text>
               <TouchableOpacity
                 onPress={() => setPacingSoftness(Math.min(1, pacingSoftness + 0.1))}
-                style={[styles.levelButton, { borderColor: theme.colors.border }]}
+                style={styles.levelButton}
               >
                 <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>+</Text>
               </TouchableOpacity>
@@ -175,7 +179,7 @@ export const ImmersionScreen: React.FC<ImmersionScreenProps> = ({
           </View>
         </View>
 
-        <View style={[styles.settingSection, { backgroundColor: theme.colors.surface }]}>
+        <View style={styles.settingSection}>
           <Text style={[typography.ui.label, { color: theme.colors.textMuted, marginBottom: theme.spacing.lg }]}>
             Reading Space
           </Text>
@@ -192,20 +196,43 @@ export const ImmersionScreen: React.FC<ImmersionScreenProps> = ({
             <View style={styles.levelControl}>
               <TouchableOpacity
                 onPress={() => setTypographyWarmth(Math.max(0, typographyWarmth - 0.1))}
-                style={[styles.levelButton, { borderColor: theme.colors.border }]}
+                style={styles.levelButton}
               >
-                <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>-</Text>
+                <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>−</Text>
               </TouchableOpacity>
               <Text style={[typography.ui.caption, { color: theme.colors.accent, minWidth: 40, textAlign: 'center' }]}>
                 {Math.round(typographyWarmth * 100)}%
               </Text>
               <TouchableOpacity
                 onPress={() => setTypographyWarmth(Math.min(1, typographyWarmth + 0.1))}
-                style={[styles.levelButton, { borderColor: theme.colors.border }]}
+                style={styles.levelButton}
               >
                 <Text style={[typography.ui.caption, { color: theme.colors.textSecondary }]}>+</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+
+        <View style={styles.settingSection}>
+          <Text style={[typography.ui.label, { color: theme.colors.textMuted, marginBottom: theme.spacing.lg }]}>
+            Rituals
+          </Text>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={[typography.ui.body, { color: theme.colors.text }]}>
+                Last Line Reflection
+              </Text>
+              <Text style={[typography.ui.caption, { color: theme.colors.textMuted }]}>
+                Pause on the final line of each chapter before continuing
+              </Text>
+            </View>
+            <Switch
+              value={lastLineRitualEnabled}
+              onValueChange={setLastLineRitualEnabled}
+              trackColor={{ false: theme.colors.surface, true: theme.colors.accent }}
+              thumbColor={theme.colors.text}
+            />
           </View>
         </View>
 
@@ -239,17 +266,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   settingSection: {
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 32,
+    paddingTop: 8,
   },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.03)',
+    paddingVertical: 16,
   },
   settingInfo: {
     flex: 1,
@@ -264,7 +288,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },

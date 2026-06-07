@@ -8,85 +8,131 @@ import {
   Platform,
 } from 'react-native';
 import { NarrativeThemeEngine, NarrativeTheme } from '../theme/NarrativeThemeEngine';
-import { buildTypography, NarrativeTypography } from '../theme/NarrativeTypography';
-import { NarrativeMemoryPersistence, NarrativeMemory } from '../core/narration/NarrativeMemoryPersistence';
+import { buildTypography } from '../theme/NarrativeTypography';
+import {
+  NarrativeMemory,
+  NarrativeMemoryPersistence,
+} from '../core/narration/NarrativeMemoryPersistence';
 import { EmotionType } from '../core/types';
 import { EventGovernor } from '../core/events/EventGovernor';
+import { spacing, atmosphereOpacity } from '../design';
 
 interface MemoryVaultScreenProps {
   navigation: any;
   route?: any;
 }
 
-interface MemoryMoment {
+interface ArchiveMoment {
   bookId: string;
+  bookName: string;
   text: string;
   emotion: EmotionType;
+  weather: string;
+  moment: string;
   timestamp: number;
-  type: 'lingered' | 'paused' | 'returned' | 'first_heard';
+  intensity: number;
 }
 
 const GOVERNOR = new EventGovernor();
 
-const MOMENT_TEXTS: Record<EmotionType, {
-  lingered: string[];
-  paused: string[];
-  returned: string[];
-  first_heard: string[];
-}> = {
-  joy: {
-    lingered: ['A moment of warmth stayed.', 'The light lingered here.'],
-    paused: ['You rested in contentment.', 'A gentle pause was felt.'],
-    returned: ['You came back to this warmth.', 'The glow remained.'],
-    first_heard: ['First light was felt here.'],
-  },
-  sadness: {
-    lingered: ['The weight settled gently.', 'Sorrow found its rest.'],
-    paused: ['You paused in the quiet ache.', 'A breath was held here.'],
-    returned: ['You returned to the quiet.', 'The sorrow remembered you.'],
-    first_heard: ['The weight was first felt here.'],
-  },
-  anger: {
-    lingered: ['The fire left its mark.', 'Heat still lingers.'],
-    paused: ['The anger settled briefly.', 'A moment of stillness.'],
-    returned: ['The embers stirred again.', 'You returned to the fire.'],
-    first_heard: ['The flame first caught here.'],
-  },
-  fear: {
-    lingered: ['The shadows still breathe.', 'Dread left its echo.'],
-    paused: ['You paused in the dark.', 'A breath of fear was held.'],
-    returned: ['The darkness remembered.', 'You stepped back into shadow.'],
-    first_heard: ['The first shadow fell here.'],
-  },
-  surprise: {
-    lingered: ['Wonder still echoes.', 'The world shifted here.'],
-    paused: ['You lingered in surprise.', 'A moment of revelation.'],
-    returned: ['The echo of surprise remains.', 'You returned to the turning.'],
-    first_heard: ['The first surprise bloomed here.'],
-  },
-  neutral: {
-    lingered: ['A quiet moment was felt.', 'Stillness settled here.'],
-    paused: ['A gentle pause.', 'The breath between moments.'],
-    returned: ['You returned to the quiet.', 'The stillness remained.'],
-    first_heard: ['A quiet beginning.'],
-  },
+const MOMENT_VOICES: Record<EmotionType, string[]> = {
+  joy: [
+    'A moment of warmth stayed.',
+    'The light lingered here.',
+    'A small brightness returned to you.',
+    'Something was savored in passing.',
+  ],
+  sadness: [
+    'The weight settled gently.',
+    'A quiet ache was held here.',
+    'You paused in the soft dark.',
+    'The story grew heavier for a while.',
+  ],
+  anger: [
+    'The fire left its mark.',
+    'Heat still lingers in the page.',
+    'Tension was carried briefly.',
+    'The words burned low.',
+  ],
+  fear: [
+    'The shadows still breathe.',
+    'Dread left its echo here.',
+    'You stepped back from the edge.',
+    'A held breath returned.',
+  ],
+  surprise: [
+    'Wonder still echoes.',
+    'The world tilted, briefly.',
+    'Something unexpected was found.',
+    'A turning was noticed.',
+  ],
+  neutral: [
+    'A quiet moment was felt.',
+    'Stillness settled here.',
+    'The breath between moments.',
+    'A page was simply turned.',
+  ],
 };
 
-function getMomentText(emotion: EmotionType, type: MemoryMoment['type']): string {
-  const texts = MOMENT_TEXTS[emotion]?.[type] || MOMENT_TEXTS.neutral[type];
-  return texts[Math.floor(Date.now() / 100000) % texts.length];
+const EMOTION_WEATHER: Record<EmotionType, string> = {
+  joy: 'Warm',
+  sadness: 'Soft Rain',
+  anger: 'Heat',
+  fear: 'Shadow',
+  surprise: 'Light Break',
+  neutral: 'Stillness',
+};
+
+const ARC_SEASONS: Record<string, string> = {
+  beginning: 'Spring',
+  rising: 'Summer',
+  peak: 'Autumn',
+  falling: 'Winter',
+  resolution: 'Thaw',
+};
+
+function pickVoice(emotion: EmotionType, seed: number): string {
+  const arr = MOMENT_VOICES[emotion] || MOMENT_VOICES.neutral;
+  return arr[Math.abs(seed) % arr.length];
 }
 
-function formatTimeSince(timestamp: number): string {
-  const diff = Date.now() - timestamp;
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
+function deriveBookName(bookId: string): string {
+  const cleaned = bookId
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\.[^/.]+$/, '')
+    .trim();
+  if (!cleaned) return 'An untitled world';
+  return cleaned.replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
-  if (hours < 1) return 'moments ago';
-  if (hours < 24) return `${hours} hours ago`;
-  if (days === 1) return 'yesterday';
-  if (days < 7) return `${days} days ago`;
-  return `${Math.floor(days / 7)} weeks ago`;
+function formatDate(timestamp: number): string {
+  const d = new Date(timestamp);
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) {
+    const hours = d.getHours();
+    const minutes = d.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const h12 = hours % 12 || 12;
+    return `${h12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+  }
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday';
+  }
+  const days = Math.floor((now.getTime() - timestamp) / 86400000);
+  if (days < 7) {
+    return d.toLocaleDateString(undefined, { weekday: 'long' });
+  }
+  return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+}
+
+function buildWeatherLine(memory: NarrativeMemory): string {
+  const weather = EMOTION_WEATHER[memory.emotion] || EMOTION_WEATHER.neutral;
+  const season = ARC_SEASONS[memory.arc.position] || ARC_SEASONS.beginning;
+  return `${season} · ${weather}`;
 }
 
 export const MemoryVaultScreen: React.FC<MemoryVaultScreenProps> = ({
@@ -98,55 +144,41 @@ export const MemoryVaultScreen: React.FC<MemoryVaultScreenProps> = ({
   );
   const typography = useMemo(() => buildTypography(theme), [theme]);
 
-  const [moments, setMoments] = useState<MemoryMoment[]>([]);
+  const [moments, setMoments] = useState<ArchiveMoment[]>([]);
 
   useEffect(() => {
-    loadMemories();
+    loadArchive();
   }, []);
 
-  const loadMemories = async () => {
+  const loadArchive = async () => {
     try {
       const persistence = new NarrativeMemoryPersistence(GOVERNOR);
       const allMemories = await persistence.getAllMemories();
 
-      const extracted: MemoryMoment[] = [];
+      const extracted: ArchiveMoment[] = [];
 
       for (const memory of allMemories) {
-        if (memory.listening.sessionCount > 1) {
-          extracted.push({
-            bookId: memory.bookId,
-            text: getMomentText(memory.emotion, 'returned'),
-            emotion: memory.emotion,
-            timestamp: memory.timestamp,
-            type: 'returned',
-          });
-        }
+        const seed = memory.bookId.length + memory.timestamp;
+        const voiceType =
+          memory.listening.sessionCount > 1 ? 0 :
+          memory.listening.lastSessionDuration > 600 ? 1 : 2;
 
-        if (memory.listening.lastSessionDuration > 600) {
-          extracted.push({
-            bookId: memory.bookId,
-            text: getMomentText(memory.emotion, 'lingered'),
-            emotion: memory.emotion,
-            timestamp: memory.timestamp,
-            type: 'lingered',
-          });
-        }
-
-        if (memory.sceneSnapshots.length > 0) {
-          extracted.push({
-            bookId: memory.bookId,
-            text: getMomentText(memory.emotion, 'first_heard'),
-            emotion: memory.emotion,
-            timestamp: memory.timestamp,
-            type: 'first_heard',
-          });
-        }
+        extracted.push({
+          bookId: memory.bookId,
+          bookName: deriveBookName(memory.bookId),
+          text: pickVoice(memory.emotion, seed + voiceType),
+          emotion: memory.emotion,
+          weather: buildWeatherLine(memory),
+          moment: pickVoice(memory.emotion, seed),
+          timestamp: memory.timestamp,
+          intensity: memory.arc.tension,
+        });
       }
 
       extracted.sort((a, b) => b.timestamp - a.timestamp);
-      setMoments(extracted.slice(0, 20));
+      setMoments(extracted.slice(0, 30));
     } catch (e) {
-      console.error('Failed to load memories:', e);
+      console.error('Failed to load archive:', e);
     }
   };
 
@@ -163,20 +195,32 @@ export const MemoryVaultScreen: React.FC<MemoryVaultScreenProps> = ({
               Back
             </Text>
           </TouchableOpacity>
-          <Text style={[typography.ui.heading, { color: theme.colors.text }]}>
-            Memory Vault
+          <Text style={[typography.ui.heading, { color: theme.colors.text, marginTop: spacing.xs }]}>
+            Emotional Archive
           </Text>
-          <Text style={[typography.ui.caption, { color: theme.colors.textMuted, marginTop: theme.spacing.xs }]}>
+          <Text style={[typography.ui.caption, { color: theme.colors.textMuted, marginTop: spacing.xs }]}>
             Moments that stayed
           </Text>
         </View>
 
         {moments.length === 0 && (
           <View style={styles.emptyState}>
-            <Text style={[typography.story, { color: theme.colors.textSecondary, textAlign: 'center' }]}>
-              No memories yet.
+            <Text
+              style={[
+                typography.story,
+                styles.emptyText,
+                { color: theme.colors.textSecondary, fontStyle: 'italic' },
+              ]}
+            >
+              The archive is quiet.
             </Text>
-            <Text style={[typography.ui.caption, { color: theme.colors.textMuted, textAlign: 'center', marginTop: theme.spacing.sm }]}>
+            <Text
+              style={[
+                typography.ui.caption,
+                styles.emptySubtext,
+                { color: theme.colors.textMuted },
+              ]}
+            >
               Stories will leave their marks.
             </Text>
           </View>
@@ -185,21 +229,49 @@ export const MemoryVaultScreen: React.FC<MemoryVaultScreenProps> = ({
         {moments.map((moment, index) => (
           <TouchableOpacity
             key={`${moment.bookId}_${index}`}
-            style={[
-              styles.momentCard,
-              {
-                backgroundColor: theme.colors.surface,
-                borderLeftColor: theme.colors.accent,
-              },
-            ]}
+            activeOpacity={0.6}
+            style={styles.momentEntry}
             onPress={() => navigation.navigate('Player', { bookId: moment.bookId })}
           >
-            <Text style={[typography.story, { color: theme.colors.textSecondary, fontStyle: 'italic' }]}>
+            <Text
+              style={[
+                typography.story,
+                styles.momentQuote,
+                { color: theme.colors.text, fontStyle: 'italic' },
+              ]}
+            >
               "{moment.text}"
             </Text>
-            <Text style={[typography.ui.tiny, { color: theme.colors.textMuted, marginTop: theme.spacing.sm }]}>
-              {formatTimeSince(moment.timestamp)}
-            </Text>
+            <View style={styles.momentMetaRow}>
+              <Text
+                style={[
+                  typography.ui.micro,
+                  styles.momentBook,
+                  { color: theme.colors.textSecondary },
+                ]}
+                numberOfLines={1}
+              >
+                {moment.bookName}
+              </Text>
+              <Text
+                style={[
+                  typography.ui.micro,
+                  styles.momentWeather,
+                  { color: theme.colors.textMuted },
+                ]}
+              >
+                {moment.weather}
+              </Text>
+              <Text
+                style={[
+                  typography.ui.micro,
+                  styles.momentDate,
+                  { color: theme.colors.textMuted },
+                ]}
+              >
+                {formatDate(moment.timestamp)}
+              </Text>
+            </View>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -215,26 +287,49 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 48,
-    paddingBottom: 40,
-    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'ios' ? spacing.cinematic : spacing.xxl,
+    paddingBottom: spacing.cinematic,
+    paddingHorizontal: spacing.xl,
   },
   header: {
-    marginBottom: 32,
+    marginBottom: spacing.cinematic,
   },
   backButton: {
-    padding: 8,
-    marginBottom: 16,
+    padding: spacing.sm,
   },
   emptyState: {
-    paddingVertical: 60,
-    paddingHorizontal: 40,
+    paddingVertical: spacing.cinematic,
+    paddingHorizontal: spacing.xl,
   },
-  momentCard: {
-    padding: 20,
-    marginBottom: 16,
-    borderRadius: 12,
-    borderLeftWidth: 2,
+  emptyText: {
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    textAlign: 'center',
+    marginTop: spacing.md,
+  },
+  momentEntry: {
+    paddingVertical: spacing.xl,
+  },
+  momentQuote: {
+    marginBottom: spacing.md,
+    opacity: atmosphereOpacity.proseOpacity,
+  },
+  momentMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  momentBook: {
+    fontWeight: '500',
+  },
+  momentWeather: {
+    opacity: 0.72,
+  },
+  momentDate: {
+    opacity: 0.6,
+    marginLeft: 'auto',
   },
 });
 
