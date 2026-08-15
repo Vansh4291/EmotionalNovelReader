@@ -62,12 +62,22 @@ function runPythonAnalysis(sentences) {
       resolve(null);
     });
 
+    pyProcess.stdin.on('error', () => {
+      // Ignore EPIPE / write errors if process closed early
+    });
+
     const payload = JSON.stringify({ sentences: sentences.slice(0, MAX_SENTENCES) });
-    const canContinue = pyProcess.stdin.write(payload);
-    if (!canContinue) {
-      pyProcess.stdin.once('drain', () => pyProcess.stdin.end());
-    } else {
-      pyProcess.stdin.end();
+    try {
+      const canContinue = pyProcess.stdin.write(payload);
+      if (!canContinue) {
+        pyProcess.stdin.once('drain', () => {
+          try { pyProcess.stdin.end(); } catch (e) {}
+        });
+      } else {
+        pyProcess.stdin.end();
+      }
+    } catch (err) {
+      // Handle immediate write failure
     }
   });
 }
