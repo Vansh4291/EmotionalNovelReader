@@ -301,5 +301,53 @@
       "addedAt": "2026-08-15T09:41:36.670Z",
       "isEmotionAnalyzed": false
     }
+  ],
+  [
+    "book_1787407569586_21zhopo7o",
+    {
+      "_id": "book_1787407569586_21zhopo7o",
+      "title": "1787407569569-100585476-test-book",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is the first sentence.\nThis is the second sentence.",
+          "wordCount": 10
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The second chapter begins here.",
+          "wordCount": 5
+        }
+      ],
+      "addedAt": "2026-08-22T14:06:09.586Z",
+      "isEmotionAnalyzed": false
+    }
+  ],
+  [
+    "book_1787407570757_e1i66fxtz",
+    {
+      "_id": "book_1787407570757_e1i66fxtz",
+      "title": "1787407570712-299538989-rate-test-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Rate limit test.",
+          "wordCount": 3
+        }
+      ],
+      "addedAt": "2026-08-22T14:06:10.757Z",
+      "isEmotionAnalyzed": false
+    }
   ]
 ]

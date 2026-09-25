@@ -53,5 +53,16 @@
       "note": "test bookmark",
       "createdAt": "2026-08-15T09:41:35.199Z"
     }
+  ],
+  [
+    "bm_1787407569489_w5wsswq2o",
+    {
+      "_id": "bm_1787407569489_w5wsswq2o",
+      "bookId": "test-book",
+      "chapterIndex": 0,
+      "sentenceIndex": 0,
+      "note": "test bookmark",
+      "createdAt": "2026-08-22T14:06:09.489Z"
+    }
   ]
 ]
