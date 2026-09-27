@@ -2,35 +2,32 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
 
+// Real, data-backed screens only. The decorative "Worlds/Sanctuary/Journey/
+// Immersion" screens were removed — they read from a store nothing wrote and
+// navigated to dead ends (see PRODUCTION_READINESS_BASELINE.md §B6/B7).
 import HomeScreen from '../screens/HomeScreen.tsx';
 import LibraryScreen from '../screens/LibraryScreen.jsx';
-import JourneyScreen from '../screens/JourneyScreen.tsx';
-import SanctuaryScreen from '../screens/SanctuaryScreen.tsx';
-import ImmersionScreen from '../screens/ImmersionScreen.tsx';
 import BookDetailScreen from '../screens/BookDetailScreen.jsx';
 import PlayerScreen from '../screens/PlayerScreen.jsx';
 import SettingsScreen from '../screens/SettingsScreen.jsx';
-import StorySpaceScreen from '../screens/StorySpaceScreen.tsx';
-import MemoryVaultScreen from '../screens/MemoryVaultScreen.tsx';
-import DreamingModeScreen from '../screens/DreamingModeScreen.tsx';
-import EchoScreen from '../screens/EchoScreen.tsx';
 import { useTheme } from '../utils/themeContext.js';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function TabIcon({ name, focused }) {
+function TabIcon({ name, focused, color }) {
   const icons = {
     Home: '\u2302',
     Library: '\u2630',
-    Journey: '\u2192',
-    Sanctuary: '\u25CB',
-    Immersion: '\u2699',
+    Settings: '\u2699',
   };
   return (
-    <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>
+    <Text
+      accessibilityElementsHidden={false}
+      style={{ fontSize: 20, color, opacity: focused ? 1 : 0.55 }}
+    >
       {icons[name] || '\u25CB'}
     </Text>
   );
@@ -42,19 +39,21 @@ function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused }) => (
-          <TabIcon name={route.name} focused={focused} />
+        tabBarIcon: ({ focused, color }) => (
+          <TabIcon name={route.name} focused={focused} color={color} />
         ),
-        tabBarActiveTintColor: theme.accent || theme.primary,
-        tabBarInactiveTintColor: theme.textMuted || '#666',
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textMuted,
         tabBarStyle: {
-          backgroundColor: theme.surface || '#222',
-          borderTopColor: theme.border || '#333',
+          backgroundColor: theme.surface,
+          borderTopColor: theme.border,
         },
+        tabBarLabelStyle: styles.tabLabel,
         headerStyle: {
-          backgroundColor: theme.surface || '#222',
+          backgroundColor: theme.surface,
         },
-        headerTintColor: theme.text || '#fff',
+        headerTintColor: theme.text,
+        headerShadowVisible: false,
       })}
     >
       <Tab.Screen
@@ -68,19 +67,9 @@ function MainTabs() {
         options={{ title: 'Library' }}
       />
       <Tab.Screen
-        name="Journey"
-        component={JourneyScreen}
-        options={{ title: 'Journey' }}
-      />
-      <Tab.Screen
-        name="Sanctuary"
-        component={SanctuaryScreen}
-        options={{ title: 'Sanctuary' }}
-      />
-      <Tab.Screen
-        name="Immersion"
-        component={ImmersionScreen}
-        options={{ title: 'Immersion' }}
+        name="Settings"
+        component={SettingsScreen}
+        options={{ title: 'Settings' }}
       />
     </Tab.Navigator>
   );
@@ -91,17 +80,17 @@ function AppNavigator() {
 
   const screenOptions = {
     headerStyle: {
-      backgroundColor: theme.surface || '#222',
+      backgroundColor: theme.surface,
       shadowColor: 'transparent',
       elevation: 0,
     },
-    headerTintColor: theme.text || '#fff',
+    headerTintColor: theme.text,
     headerTitleStyle: {
       fontWeight: '600',
       fontSize: 18,
     },
     cardStyle: {
-      backgroundColor: theme.background || '#181818',
+      backgroundColor: theme.background,
     },
   };
 
@@ -132,38 +121,6 @@ function AppNavigator() {
           }}
         />
         <Stack.Screen
-          name="StorySpace"
-          component={StorySpaceScreen}
-          options={{
-            title: 'Story Space',
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="MemoryVault"
-          component={MemoryVaultScreen}
-          options={{
-            title: 'Memory Vault',
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="DreamingMode"
-          component={DreamingModeScreen}
-          options={{
-            title: 'Dreaming Mode',
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="Echo"
-          component={EchoScreen}
-          options={{
-            title: 'Echo',
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
           name="Settings"
           component={SettingsScreen}
           options={{
@@ -174,5 +131,11 @@ function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  tabLabel: {
+    fontSize: 11,
+  },
+});
 
 export default AppNavigator;

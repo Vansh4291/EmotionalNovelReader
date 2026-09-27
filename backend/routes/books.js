@@ -2,23 +2,27 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs').promises;
+const crypto = require('crypto');
 const { LRUCache } = require('lru-cache');
 
 const { parseEpub } = require('../parsers/epubParser');
-const { parsePdf } = require('../parsers/pdfParser');
+const { parsePdf, getPdfIntegrity } = require('../parsers/pdfParser');
 const { parseTxt } = require('../parsers/txtParser');
 const { processChapterText } = require('../services/chapterProcessor');
-const { uploadDir } = require('../middleware/upload');
-const { upload } = require('../middleware/upload');
+const { uploadDir, upload } = require('../middleware/upload');
 const { importLimiter } = require('../middleware/rateLimiter');
-const { enqueueAnalysis } = require('../utils/analysisQueue');
 const { loadMapFromJson, saveMapToJson } = require('../utils/db');
+const logger = require('../utils/logger');
 
 const booksDb = new Map();
 const chapterCache = new LRUCache({ max: 500, ttl: 1000 * 60 * 60 });
 
-const DB_PATH = path.join(__dirname, '..', 'books_db.json');
-const CACHE_PATH = path.join(__dirname, '..', 'chapter_cache.json');
+const DB_PATH = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'books_db.json')
+  : path.join(__dirname, '..', 'books_db.json');
+const CACHE_PATH = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'chapter_cache.json')
+  : path.join(__dirname, '..', 'chapter_cache.json');
 
 async function loadDb() {
   await loadMapFromJson(DB_PATH, booksDb);
@@ -26,26 +30,34 @@ async function loadDb() {
     const cacheData = await fs.readFile(CACHE_PATH, 'utf-8');
     const parsedCache = JSON.parse(cacheData);
     parsedCache.forEach(([k, v]) => chapterCache.set(k, v));
-  } catch (e) { }
+  } catch (e) { /* cache file may not exist yet */ }
 }
 
-loadDb();
 
 router.post('/import', importLimiter, upload.single('book'), async (req, res) => {
-  let filePath;
-  let fileType;
-  let fileName;
-
   if (!req.file) {
     return res.status(400).json({ error: 'Book file is required' });
   }
 
-  filePath = req.file.path;
-  fileName = req.file.originalname;
+  const filePath = req.file.path;
+  const fileName = req.file.originalname;
   const ext = path.extname(fileName).toLowerCase().replace('.', '');
-  fileType = ext === 'txt' ? 'txt' : ext;
+  const fileType = ext === 'txt' ? 'txt' : ext;
+
+  // Capture the original file bytes' digest + size BEFORE parsing so we can
+  // verify the source document stayed immutable throughout the import.
+  let originalHash = null;
+  let originalSize = null;
+  try {
+    const buf = await fs.readFile(filePath);
+    originalHash = crypto.createHash('sha256').update(buf).digest('hex');
+    originalSize = buf.length;
+  } catch (hashError) {
+    logger.error('Failed to hash uploaded file:', hashError.message);
+  }
 
   let bookData;
+  let integrity = null;
   try {
     switch (fileType) {
       case 'epub':
@@ -53,6 +65,7 @@ router.post('/import', importLimiter, upload.single('book'), async (req, res) =>
         break;
       case 'pdf':
         bookData = await parsePdf(filePath);
+        integrity = await getPdfIntegrity(filePath);
         break;
       case 'txt':
       case 'text':
@@ -64,14 +77,47 @@ router.post('/import', importLimiter, upload.single('book'), async (req, res) =>
     }
   } catch (parseError) {
     await fs.unlink(filePath).catch(() => {});
-    console.error('Parse error:', parseError);
+    logger.error('Parse error:', parseError.message);
     return res.status(422).json({ error: 'Failed to parse file. Ensure it is a valid ' + fileType.toUpperCase() + ' file.' });
   }
 
-  const bookId = `book_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  // PDF integrity verification: source must be unchanged, and the extraction
+  // must have produced at least one non-empty chapter when the source has text.
+  if (fileType === 'pdf' && integrity) {
+    let integrityOk = true;
+    let integrityDetail = null;
+
+    const verifyHash = await fs.readFile(filePath).then(
+      (buf) => crypto.createHash('sha256').update(buf).digest('hex'),
+      () => null
+    );
+    if (originalHash && verifyHash && verifyHash !== originalHash) {
+      integrityOk = false;
+      integrityDetail = 'source document changed during processing';
+    }
+    if (integrity.pageCount > 0 && (!bookData.chapters || bookData.chapters.length === 0)) {
+      integrityOk = false;
+      integrityDetail = 'extraction produced no chapters from a non-empty PDF';
+    }
+
+    if (!integrityOk) {
+      await fs.unlink(filePath).catch(() => {});
+      logger.error('PDF integrity check failed:', integrityDetail);
+      return res.status(422).json({ error: 'PDF integrity verification failed: ' + integrityDetail });
+    }
+  }
+
+  const bookId = `book_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+  // Prefer embedded metadata, then the filename (sans extension) — a bare
+  // "Unknown Title" makes the library unusable when PDFs lack metadata.
+  const fallbackTitle = path.basename(fileName, path.extname(fileName)).trim() || 'Unknown Title';
+  const metadataTitle = (bookData.title || '').trim();
+  const title = metadataTitle && !/^(unknown title|untitled)$/i.test(metadataTitle)
+    ? metadataTitle
+    : fallbackTitle;
   const book = {
     _id: bookId,
-    title: bookData.title || fileName || 'Unknown Title',
+    title,
     author: bookData.author || 'Unknown Author',
     coverImagePath: bookData.coverImagePath || null,
     fileType: fileType.toLowerCase(),
@@ -79,6 +125,18 @@ router.post('/import', importLimiter, upload.single('book'), async (req, res) =>
     chapters: bookData.chapters || [],
     addedAt: new Date().toISOString(),
     isEmotionAnalyzed: false,
+    // Integrity metadata (PDF only; null for other types)
+    integrity: fileType === 'pdf' && integrity
+      ? {
+          sourceSha256: originalHash,
+          sourceSizeBytes: originalSize,
+          pageCount: integrity.pageCount,
+          extraction: {
+            chapterCount: (bookData.chapters || []).length,
+            totalChars: (bookData.chapters || []).reduce((sum, c) => sum + (c.text || '').length, 0),
+          },
+        }
+      : null,
   };
 
   booksDb.set(bookId, book);
@@ -96,6 +154,7 @@ router.post('/import', importLimiter, upload.single('book'), async (req, res) =>
       fileType: book.fileType,
       totalChapters: book.totalChapters,
       addedAt: book.addedAt,
+      integrity: book.integrity,
     }
   });
 });
@@ -128,6 +187,7 @@ router.get('/:id', (req, res) => {
     fileType: book.fileType,
     totalChapters: book.totalChapters,
     addedAt: book.addedAt,
+    integrity: book.integrity || null,
     chapters: (book.chapters || []).map((c, i) => ({
       index: i,
       title: c.title || `Chapter ${i + 1}`,
@@ -166,7 +226,7 @@ router.get('/:id/chapters/:chapterIndex', async (req, res) => {
     return res.status(404).json({ error: 'Book not found' });
   }
   const chapterIndex = parseInt(req.params.chapterIndex, 10);
-  if (isNaN(chapterIndex) || chapterIndex < 0 || chapterIndex >= (book.chapters || []).length) {
+  if (Number.isNaN(chapterIndex) || chapterIndex < 0 || chapterIndex >= (book.chapters || []).length) {
     return res.status(404).json({ error: 'Chapter not found' });
   }
 
@@ -191,5 +251,12 @@ router.get('/:id/chapters/:chapterIndex', async (req, res) => {
     sentences
   });
 });
+
+// chapter cache for introspection/testing
+router.get('/meta/chapter-cache-size', (req, res) => {
+  res.json({ size: chapterCache.size });
+});
+
+loadDb();
 
 module.exports = router;

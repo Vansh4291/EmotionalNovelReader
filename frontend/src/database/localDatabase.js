@@ -8,7 +8,8 @@ import { UserSettings } from '../models/UserSettings';
 
 const realmConfig = {
   schema: [Book, Chapter, Sentence, UserProgress, Bookmark, UserSettings],
-  schemaVersion: 1,
+  // v2: added readerFontSize/readerLineHeight to UserSettings.
+  schemaVersion: 2,
 };
 
 let realmInstance = null;
@@ -281,6 +282,8 @@ export const loadSettingsFromRealm = async () => {
         highlightSyncEnabled: s.highlightSyncEnabled,
         sleepTimerMinutes: s.sleepTimerMinutes,
         theme: s.theme,
+        readerFontSize: s.readerFontSize,
+        readerLineHeight: s.readerLineHeight,
       };
     }
   } catch (e) {
@@ -294,28 +297,23 @@ export const saveSettingsToRealm = async (settings) => {
     const realm = await getRealm();
     realm.write(() => {
       const existing = realm.objects('UserSettings');
+      const withDefaults = {
+        defaultVoiceEngine: settings.defaultVoiceEngine || 'android',
+        defaultSpeed: settings.defaultSpeed ?? 1.0,
+        defaultPitch: settings.defaultPitch ?? 1.0,
+        defaultVolume: settings.defaultVolume ?? 1.0,
+        emotionEffectsEnabled: settings.emotionEffectsEnabled ?? true,
+        highlightSyncEnabled: settings.highlightSyncEnabled ?? true,
+        sleepTimerMinutes: settings.sleepTimerMinutes ?? 0,
+        theme: settings.theme || 'dark',
+        readerFontSize: settings.readerFontSize ?? 18,
+        readerLineHeight: settings.readerLineHeight ?? 1.6,
+      };
       if (existing.length > 0) {
         const s = existing[0];
-        s.defaultVoiceEngine = settings.defaultVoiceEngine || 'android';
-        s.defaultSpeed = settings.defaultSpeed ?? 1.0;
-        s.defaultPitch = settings.defaultPitch ?? 1.0;
-        s.defaultVolume = settings.defaultVolume ?? 1.0;
-        s.emotionEffectsEnabled = settings.emotionEffectsEnabled ?? true;
-        s.highlightSyncEnabled = settings.highlightSyncEnabled ?? true;
-        s.sleepTimerMinutes = settings.sleepTimerMinutes ?? 0;
-        s.theme = settings.theme || 'dark';
+        Object.assign(s, withDefaults);
       } else {
-        realm.create('UserSettings', {
-          _id: 'user_settings',
-          defaultVoiceEngine: settings.defaultVoiceEngine || 'android',
-          defaultSpeed: settings.defaultSpeed ?? 1.0,
-          defaultPitch: settings.defaultPitch ?? 1.0,
-          defaultVolume: settings.defaultVolume ?? 1.0,
-          emotionEffectsEnabled: settings.emotionEffectsEnabled ?? true,
-          highlightSyncEnabled: settings.highlightSyncEnabled ?? true,
-          sleepTimerMinutes: settings.sleepTimerMinutes ?? 0,
-          theme: settings.theme || 'dark',
-        });
+        realm.create('UserSettings', { _id: 'user_settings', ...withDefaults });
       }
     });
   } catch (e) {

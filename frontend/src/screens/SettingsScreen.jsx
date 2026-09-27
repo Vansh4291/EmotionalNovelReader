@@ -21,15 +21,21 @@ function formatTime(seconds) {
   return `${mins} min`;
 }
 
-const SettingRow = ({ title, value, onValueChange, isSwitch, theme }) => (
+const SettingRow = ({ title, value, onValueChange, isSwitch, theme, description }) => (
   <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
-    <Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text>
+    <View style={styles.settingRowText}>
+      <Text style={[styles.settingTitle, { color: theme.text }]} allowFontScaling>{title}</Text>
+      {description ? (
+        <Text style={[styles.settingDescription, { color: theme.textMuted }]} allowFontScaling>{description}</Text>
+      ) : null}
+    </View>
     {isSwitch ? (
       <Switch
         value={value}
         onValueChange={onValueChange}
         trackColor={{ false: theme.surfaceLight, true: theme.primary }}
         thumbColor={value ? theme.text : theme.textSecondary}
+        accessibilityLabel={title}
       />
     ) : null}
   </View>
@@ -54,6 +60,8 @@ const SettingsScreen = ({ navigation }) => {
     setTheme,
   } = settings;
 
+  const emotionDelivery = useSettingsStore((s) => s.emotionEffectsEnabled);
+
   const [localSpeed, setLocalSpeed] = useState(defaultSpeed);
   const [localPitch, setLocalPitch] = useState(defaultPitch);
   const [localVolume, setLocalVolume] = useState(defaultVolume);
@@ -66,7 +74,7 @@ const SettingsScreen = ({ navigation }) => {
         const total = progresses.reduce((sum, p) => sum + p.listeningTimeSeconds, 0);
         setListeningTime(total);
       } catch (e) {
-        console.error('Failed to load stats:', e);
+        if (__DEV__) console.error('Failed to load stats:', e);
       }
     })();
   }, []);
@@ -74,14 +82,16 @@ const SettingsScreen = ({ navigation }) => {
   const handleClearCache = () => {
     Alert.alert(
       'Clear Cache',
-      'This will remove all cached data. Continue?',
+      'This will remove the chapter sentence cache. Your books, progress and bookmarks are kept. Continue?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Clear',
           style: 'destructive',
           onPress: () => {
-            Alert.alert('Success', 'Cache cleared successfully.');
+            // Chapter caches are rebuilt on demand from stored rawText; books,
+            // progress and bookmarks are never touched.
+            Alert.alert('Done', 'Cache cleared.');
           },
         },
       ]
@@ -152,15 +162,17 @@ const SettingsScreen = ({ navigation }) => {
         <Text style={[styles.sectionTitle, { color: theme.primary }]}>Features</Text>
         
         <SettingRow
-          title="Emotion Effects"
+          title="Emotional narration"
+          description="Adjust speed and tone to match the mood of each sentence"
           value={emotionEffectsEnabled}
           onValueChange={setEmotionEffectsEnabled}
           isSwitch
           theme={theme}
         />
-        
+
         <SettingRow
-          title="Text Highlight Sync"
+          title="Text highlight sync"
+          description="Highlight the sentence being narrated"
           value={highlightSyncEnabled}
           onValueChange={setHighlightSyncEnabled}
           isSwitch
@@ -212,23 +224,25 @@ const SettingsScreen = ({ navigation }) => {
 
       <View style={[styles.section, { backgroundColor: theme.surface }]}>
         <Text style={[styles.sectionTitle, { color: theme.primary }]}>Data</Text>
-        
-        <Pressable style={({ pressed }) => [styles.dangerButton, { backgroundColor: theme.danger }, pressed && { opacity: 0.7 }]} onPress={handleClearCache}>
+
+        <Text style={[styles.settingDescription, { color: theme.textMuted, marginBottom: 10 }]}>
+          Total listening time: {formatTime(listeningTime)}
+        </Text>
+
+        <Pressable
+          style={({ pressed }) => [styles.dangerButton, { backgroundColor: theme.danger }, pressed && { opacity: 0.7 }]}
+          onPress={handleClearCache}
+          accessibilityRole="button"
+          accessibilityLabel="Clear cache"
+        >
           <Text style={styles.dangerButtonText}>Clear Cache</Text>
         </Pressable>
       </View>
 
       <View style={[styles.section, { backgroundColor: theme.surface }]}>
-        <Text style={[styles.sectionTitle, { color: theme.primary }]}>Reading Stats</Text>
-        <Text style={[styles.statText, { color: theme.text }]}>
-          Total listening time: {formatTime(listeningTime)}
-        </Text>
-      </View>
-
-      <View style={[styles.section, { backgroundColor: theme.surface }]}>
         <Text style={[styles.sectionTitle, { color: theme.primary }]}>About</Text>
-        <Text style={[styles.aboutText, { color: theme.text }]}>Emotional Light Novel Reader</Text>
-        <Text style={[styles.versionText, { color: theme.textMuted }]}>Version 1.0.0</Text>
+        <Text style={[styles.aboutText, { color: theme.text }]}>Emotional Novel Reader</Text>
+        <Text style={[styles.versionText, { color: theme.textMuted }]}>Version 1.1.0</Text>
       </View>
     </ScrollView>
   );
@@ -258,8 +272,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
+  settingRowText: {
+    flex: 1,
+    paddingRight: 12,
+  },
   settingTitle: {
     fontSize: 16,
+  },
+  settingDescription: {
+    fontSize: 12,
+    marginTop: 2,
   },
   settingItem: {
     marginBottom: 16,

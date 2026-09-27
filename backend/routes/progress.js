@@ -7,8 +7,12 @@ const { loadMapFromJson, saveMapToJson } = require('../utils/db');
 const progressDb = new Map();
 const bookmarksDb = new Map();
 
-const PROGRESS_PATH = path.join(__dirname, '..', 'progress_db.json');
-const BOOKMARKS_PATH = path.join(__dirname, '..', 'bookmarks_db.json');
+const PROGRESS_PATH = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'progress_db.json')
+  : path.join(__dirname, '..', 'progress_db.json');
+const BOOKMARKS_PATH = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'bookmarks_db.json')
+  : path.join(__dirname, '..', 'bookmarks_db.json');
 
 async function loadDbs() {
   await loadMapFromJson(PROGRESS_PATH, progressDb);

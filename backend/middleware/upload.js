@@ -1,7 +1,15 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+const env = require('../config/env');
 
-const uploadDir = path.join(__dirname, '..', 'uploads');
+const uploadDir = process.env.UPLOAD_DIR
+  ? path.resolve(process.env.UPLOAD_DIR)
+  : path.join(__dirname, '..', 'uploads');
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
@@ -12,13 +20,14 @@ const storage = multer.diskStorage({
   }
 });
 
+const ALLOWED_EXTENSIONS = new Set(['txt', 'epub', 'pdf', 'text']);
+
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: env.maxUploadBytes, files: 1 },
   fileFilter: (req, file, cb) => {
-    const allowed = ['txt', 'epub', 'pdf', 'text'];
-    const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
-    if (!allowed.includes(ext)) {
+    const ext = path.extname(file.originalname || '').toLowerCase().replace('.', '');
+    if (!ALLOWED_EXTENSIONS.has(ext)) {
       return cb(new Error('Unsupported file type: ' + ext), false);
     }
     cb(null, true);

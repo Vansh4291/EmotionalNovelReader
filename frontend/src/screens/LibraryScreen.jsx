@@ -22,6 +22,7 @@ const LibraryScreen = ({ navigation }) => {
   const { books, setBooks, addBook: addBookToStore, removeBook, isLoading, setLoading } = useLibraryStore();
   const [importing, setImporting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortMode, setSortMode] = useState('recent'); // 'recent' | 'title' | 'progress'
 
   const loadBooks = useCallback(async () => {
     try {
@@ -42,13 +43,24 @@ const LibraryScreen = ({ navigation }) => {
   );
 
   const filteredBooks = useMemo(() => {
-    if (!searchQuery.trim()) return books;
     const query = searchQuery.toLowerCase().trim();
-    return books.filter(b =>
-      (b.title && b.title.toLowerCase().includes(query)) ||
-      (b.author && b.author.toLowerCase().includes(query))
-    );
-  }, [books, searchQuery]);
+    let list = books;
+    if (query) {
+      list = books.filter(b =>
+        (b.title && b.title.toLowerCase().includes(query)) ||
+        (b.author && b.author.toLowerCase().includes(query))
+      );
+    }
+    const sorted = [...list];
+    if (sortMode === 'title') {
+      sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    } else if (sortMode === 'progress') {
+      sorted.sort((a, b) => (b.progress?.completionPercent || 0) - (a.progress?.completionPercent || 0));
+    } else {
+      sorted.sort((a, b) => (b.addedAt || '').localeCompare(a.addedAt || ''));
+    }
+    return sorted;
+  }, [books, searchQuery, sortMode]);
 
   const handleImportBook = async () => {
     try {
@@ -143,11 +155,11 @@ const LibraryScreen = ({ navigation }) => {
   const renderEmptyLibrary = () => (
     <View style={styles.emptyContainer}>
       <View style={[styles.emptyIconContainer, { backgroundColor: theme.surfaceLight }]}>
-        <Text style={[styles.emptyIcon, { color: theme.textMuted }]}>+</Text>
+        <Text style={[styles.emptyIcon, { color: theme.textMuted }]} accessible={false}>+</Text>
       </View>
-      <Text style={[styles.emptyTitle, { color: theme.text }]}>No books yet</Text>
-      <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-        Tap the + button to import your first book
+      <Text style={[styles.emptyTitle, { color: theme.text }]} allowFontScaling>No books yet</Text>
+      <Text style={[styles.emptySubtext, { color: theme.textSecondary }]} allowFontScaling>
+        Tap the + button to import a TXT, PDF or EPUB file
       </Text>
     </View>
   );
@@ -179,7 +191,7 @@ const LibraryScreen = ({ navigation }) => {
 
       <View style={[styles.searchContainer, { backgroundColor: theme.surface }]}>
         <View style={[styles.searchBar, { backgroundColor: theme.surfaceLight }]}>
-          <Text style={[styles.searchIcon, { color: theme.textMuted }]}>
+          <Text style={[styles.searchIcon, { color: theme.textMuted }]} accessible={false}>
             {'\u2315'}
           </Text>
           <TextInput
@@ -190,7 +202,40 @@ const LibraryScreen = ({ navigation }) => {
             onChangeText={setSearchQuery}
             returnKeyType="search"
             clearButtonMode="while-editing"
+            accessibilityLabel="Search library"
           />
+          {searchQuery.length > 0 && books.length > 0 && (
+            <Text style={[styles.resultCount, { color: theme.textMuted }]}>
+              {filteredBooks.length}
+            </Text>
+          )}
+        </View>
+        <View style={styles.sortRow}>
+          {[
+            { key: 'recent', label: 'Recent' },
+            { key: 'title', label: 'Title' },
+            { key: 'progress', label: 'Progress' },
+          ].map(({ key, label }) => (
+            <Pressable
+              key={key}
+              style={({ pressed }) => [
+                styles.sortChip,
+                { backgroundColor: sortMode === key ? theme.primary : theme.surfaceLight },
+                pressed && { opacity: 0.7 },
+              ]}
+              onPress={() => setSortMode(key)}
+              accessibilityRole="button"
+              accessibilityLabel={`Sort by ${label}`}
+              accessibilityState={{ selected: sortMode === key }}
+            >
+              <Text
+                style={[styles.sortChipText, { color: sortMode === key ? theme.surface : theme.textSecondary }]}
+                allowFontScaling
+              >
+                {label}
+              </Text>
+            </Pressable>
+          ))}
         </View>
       </View>
 
@@ -199,7 +244,7 @@ const LibraryScreen = ({ navigation }) => {
           <ActivityIndicator size="large" color={theme.primary} />
           {importing && (
             <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
-              Importing book\u2026
+              Importing book…
             </Text>
           )}
         </View>
@@ -224,8 +269,11 @@ const LibraryScreen = ({ navigation }) => {
         style={({ pressed }) => [styles.fab, { backgroundColor: theme.primary }, pressed && !importing && { opacity: 0.85 }]}
         onPress={handleImportBook}
         disabled={importing}
+        accessibilityRole="button"
+        accessibilityLabel="Import book"
+        accessibilityHint="Opens the document picker to import a TXT, PDF or EPUB file"
       >
-        <Text style={[styles.fabIcon, { color: theme.surface }]}>+</Text>
+        <Text style={[styles.fabIcon, { color: theme.surface }]} accessible={false}>+</Text>
       </Pressable>
     </View>
   );
@@ -277,6 +325,26 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     paddingVertical: 0,
+  },
+  resultCount: {
+    fontSize: 12,
+    marginLeft: 8,
+  },
+  sortRow: {
+    flexDirection: 'row',
+    marginTop: 10,
+    gap: 8,
+  },
+  sortChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    minHeight: 36,
+    justifyContent: 'center',
+  },
+  sortChipText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   listContent: {
     paddingTop: 4,

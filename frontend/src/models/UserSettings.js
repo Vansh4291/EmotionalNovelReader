@@ -14,6 +14,8 @@ export class UserSettings extends Realm.Object {
       highlightSyncEnabled: { type: 'bool', default: true },
       sleepTimerMinutes: { type: 'int', default: 0 },
       theme: { type: 'string', default: 'dark' },
+      readerFontSize: { type: 'int', default: 18 },
+      readerLineHeight: { type: 'float', default: 1.6 },
     },
   };
 }

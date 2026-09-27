@@ -2,6 +2,14 @@ import sys
 import json
 import logging
 
+# Force UTF-8 stdio so sentence text survives the pipe regardless of the
+# host's legacy code page (e.g. cp1252 on Windows), which would otherwise
+# mojibake non-ASCII characters such as typographic quotes.
+if hasattr(sys.stdin, "reconfigure"):
+    sys.stdin.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 # Note: For full ML capabilities, uncomment the transformers block and install torch/transformers.
 # pip install torch transformers
 # 
@@ -107,7 +115,7 @@ def main():
                 "confidence": res["confidence"]
             })
             
-        print(json.dumps(results))
+        print(json.dumps(results, ensure_ascii=True))
     except Exception as e:
         logging.error(f"Error processing: {e}")
         print(json.dumps([]))

@@ -40,11 +40,23 @@ export function processChapterText(text) {
     confidence: result.confidence,
     isDialogue: isDialogue(result.text),
     isQuestion: isQuestion(result.text),
+    isParagraphStart: index === 0 || isParagraphStart(result.text),
     emphasisWords: detectEmphasisWords(result.text),
     wordCount: result.text.split(/\s+/).length,
     startChar: 0,
     endChar: result.text.length,
   }));
+}
+
+/**
+ * Sentences beginning a fresh paragraph typically start with an indent
+ * marker or opening quote directly after a paragraph break in the source
+ * text. The splitter preserves double newlines as '\n' markers inside a
+ * sentence chunk — detect a leading quote or dialogue dash as a strong
+ * paragraph-start signal (conservative: preserves content either way).
+ */
+function isParagraphStart(text) {
+  return /^["'\u201C\u2018\u2014\u2013]/.test((text || '').trim());
 }
 
 export default { processChapterText };

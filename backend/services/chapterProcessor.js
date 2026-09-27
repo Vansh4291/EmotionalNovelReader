@@ -1,6 +1,11 @@
 const { splitBySentenceDelimiters } = require('../utils/sentenceSplitter');
 const { analyzeChapterAsync } = require('../emotion/emotionAnalyzer');
 
+/**
+ * Convert raw chapter text into narration-ready sentences with emotion
+ * metadata. Emotion data is metadata only — the sentence text is never
+ * rewritten or annotated inline.
+ */
 async function processChapterText(text) {
   if (!text || typeof text !== 'string') {
     return [];

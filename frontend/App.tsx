@@ -12,13 +12,13 @@ LogBox.ignoreLogs([
   '`new NativeEventEmitter()` was called with a non-null argument without the required `removeListeners` method.',
 ]);
 
-console.log('AppContent starting');
 function AppContent() {
   const theme = useTheme();
   const settings = useSettingsStore();
-  const savedRef = useRef<Record<string, unknown> | null>(null);
-  console.log('AppContent rendered, theme:', theme?.background);
+  const hydratedRef = useRef(false);
 
+  // Hydrate persisted settings into the store exactly once, before the
+  // save-effect below is allowed to write anything back.
   useEffect(() => {
     loadSettingsFromRealm().then((saved) => {
       if (saved) {
@@ -28,11 +28,17 @@ function AppContent() {
         if (saved.theme) settings.setTheme(saved.theme);
         if (saved.emotionEffectsEnabled !== undefined) settings.setEmotionEffectsEnabled(saved.emotionEffectsEnabled);
         if (saved.highlightSyncEnabled !== undefined) settings.setHighlightSyncEnabled(saved.highlightSyncEnabled);
+        if (saved.readerFontSize !== undefined) settings.setReaderFontSize(saved.readerFontSize);
+        if (saved.readerLineHeight !== undefined) settings.setReaderLineHeight(saved.readerLineHeight);
       }
+      hydratedRef.current = true;
     });
-  }, [settings.setDefaultSpeed, settings.setDefaultPitch, settings.setDefaultVolume, settings.setTheme, settings.setEmotionEffectsEnabled, settings.setHighlightSyncEnabled]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  // Persist settings whenever they change (after hydration).
   useEffect(() => {
+    if (!hydratedRef.current) return;
     const current = {
       defaultVoiceEngine: settings.defaultVoiceEngine,
       defaultSpeed: settings.defaultSpeed,
@@ -41,21 +47,16 @@ function AppContent() {
       emotionEffectsEnabled: settings.emotionEffectsEnabled,
       highlightSyncEnabled: settings.highlightSyncEnabled,
       theme: settings.theme,
+      readerFontSize: settings.readerFontSize,
+      readerLineHeight: settings.readerLineHeight,
     };
-    if (savedRef.current === null) {
-      savedRef.current = current;
-      saveSettingsToRealm(current);
-      return;
-    }
-    if (JSON.stringify(current) === JSON.stringify(savedRef.current)) return;
-    savedRef.current = current;
     saveSettingsToRealm(current);
   }, [
-    settings.defaultSpeed, settings.defaultPitch, settings.defaultVolume,
-    settings.emotionEffectsEnabled, settings.highlightSyncEnabled,
-    settings.theme, settings.defaultVoiceEngine, settings.sleepTimerMinutes,
+    settings.defaultVoiceEngine, settings.defaultSpeed, settings.defaultPitch,
+    settings.defaultVolume, settings.emotionEffectsEnabled, settings.highlightSyncEnabled,
+    settings.theme, settings.readerFontSize, settings.readerLineHeight,
   ]);
-  
+
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}>
       <StatusBar
@@ -68,9 +69,7 @@ function AppContent() {
   );
 }
 
-console.log('App module loaded');
 function App(): React.JSX.Element {
-  console.log('App render');
   return (
     <ThemeProvider>
       <AppContent />

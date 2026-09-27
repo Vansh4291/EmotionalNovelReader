@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { LRUCache } = require('lru-cache');
 const { analyzeChapter } = require('../emotion/emotionAnalyzer');
-const { enqueueAnalysis } = require('../utils/analysisQueue');
+const { enqueueAnalysis, queueStats } = require('../utils/analysisQueue');
 const { analysisLimiter } = require('../middleware/rateLimiter');
+const logger = require('../utils/logger');
 
 const analysisCache = new LRUCache({ max: 200, ttl: 1000 * 60 * 30 });
 
@@ -23,13 +24,24 @@ router.post('/analyze', analysisLimiter, async (req, res) => {
     return res.json({ success: true, results: analysisCache.get(cacheKey) });
   }
 
-  const results = await enqueueAnalysis(sentences);
+  let results;
+  try {
+    results = await enqueueAnalysis(sentences);
+  } catch (e) {
+    // Queue full — tell the client to retry rather than silently degrading.
+    logger.warn('Analysis queue full:', e.message);
+    return res.status(503).json({ error: 'Analysis queue full, retry later' });
+  }
+
+  if (!Array.isArray(results) || results.length !== sentences.length) {
+    results = analyzeChapter(sentences);
+  }
 
   if (chapterId) {
     analysisCache.set(chapterId, results);
   }
 
-  res.json({ success: true, results });
+  res.json({ success: true, results, queue: queueStats() });
 });
 
 router.get('/status/:chapterId', (req, res) => {

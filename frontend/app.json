@@ -1,4 +1,13 @@
 {
   "name": "ENR",
-  "displayName": "ENR"
+  "displayName": "ENR",
+  "expo": {
+    "name": "Emotional Novel Reader",
+    "slug": "emotional-novel-reader",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "android": {
+      "package": "com.emotionalnovelreader"
+    }
+  }
 }

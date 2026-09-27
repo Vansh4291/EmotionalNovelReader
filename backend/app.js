@@ -1,9 +1,13 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
+const helmet = require('helmet');
 const fs = require('fs');
 require('dotenv').config();
-require('express-async-errors');
+
+const env = require('./config/env');
+const logger = require('./utils/logger');
+
+logger.configure({ level: env.logLevel, isProd: env.isProduction });
 
 const { authMiddleware } = require('./middleware/auth');
 const { generalLimiter } = require('./middleware/rateLimiter');
@@ -20,19 +24,35 @@ if (!fs.existsSync(uploadDir)) {
 
 const app = express();
 
+app.set('trust proxy', env.trustProxy);
+app.disable('x-powered-by');
+
+// Request logging (method, path, status, duration). Never logs headers or
+// bodies, so the API key can never leak through this middleware.
 app.use((req, res, next) => {
-  console.log(`[REQ] ${req.method} ${req.url} from ${req.ip}`);
+  const start = Date.now();
+  res.on('finish', () => {
+    logger.debug(`[REQ] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${Date.now() - start}ms)`);
+  });
   next();
 });
 
-const corsOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
-  : true;
-
-app.use(cors({
-  origin: corsOrigins,
+const corsOptions = {
+  origin: env.corsOrigins === null ? true : env.corsOrigins,
   methods: ['GET', 'POST', 'DELETE'],
   allowedHeaders: ['Content-Type', 'x-api-key'],
+};
+
+app.use(cors(corsOptions));
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      'default-src': ["'self'"],
+      'script-src': ["'self'"],
+    },
+  },
+  crossOriginResourcePolicy: { policy: 'same-site' },
 }));
 
 app.use(express.json({ limit: '10mb' }));
@@ -47,21 +67,42 @@ app.get('/api/health', (req, res) => {
   const mem = process.memoryUsage();
   res.json({
     status: 'ok',
-    uptime: process.uptime(),
+    uptime: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
     memory: {
       rss: Math.round(mem.rss / 1024 / 1024) + 'MB',
       heapUsed: Math.round(mem.heapUsed / 1024 / 1024) + 'MB',
       heapTotal: Math.round(mem.heapTotal / 1024 / 1024) + 'MB',
     },
-    env: process.env.NODE_ENV || 'development',
+    env: env.nodeEnv,
   });
 });
 
+// API 404 handler: unknown /api routes get a clean JSON 404 instead of
+// falling through to the HTML-ish error middleware.
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// Error handler: production responses never include stack traces; logs keep
+// stacks only in non-production. Unexpected errors are logged with request
+// method/path only (no headers/bodies).
+// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err.message, err.stack);
+  logger.error(`Unhandled error on ${req.method} ${req.originalUrl}:`, err);
   if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(413).json({ error: 'File too large (max 50MB)' });
+    return res.status(413).json({ error: `File too large (max ${Math.round(env.maxUploadBytes / (1024 * 1024))}MB)` });
+  }
+  // body-parser emits PayloadTooLargeError (entity.too.large) for JSON/urlencoded
+  // bodies over the configured limit — a client fault, so map it to 413.
+  if (err.type === 'entity.too.large' || err.code === 'PAYLOAD_TOO_LARGE' || err instanceof RangeError) {
+    return res.status(413).json({ error: 'Payload too large' });
+  }
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Malformed JSON body' });
+  }
+  if (err.status === 429) {
+    return res.status(429).json({ error: 'Too many requests, try again later' });
   }
   if (err.message && err.message.startsWith('Unsupported file type')) {
     return res.status(400).json({ error: err.message });

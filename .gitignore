@@ -25,6 +25,20 @@ yarn-error.log*
 *.ipa
 build/
 
+# User-uploaded books and backend data (never commit user PDFs)
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/books_db.json
+backend/progress_db.json
+backend/bookmarks_db.json
+backend/chapter_cache.json
+
+# Frontend local env (developer machine values — never commit)
+frontend/src/config/Env.local.js
+
+# Validation harness build output
+frontend/validation/harness.js
+
 # Claude Code / Flow / Swarm
 .claude/
 .claude-flow/

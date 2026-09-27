@@ -349,5 +349,2467 @@
       "addedAt": "2026-08-22T13:02:28.911Z",
       "isEmotionAnalyzed": false
     }
+  ],
+  [
+    "book_1790494415681_8gh9kyhju",
+    {
+      "_id": "book_1790494415681_8gh9kyhju",
+      "title": "1790494415666-126426805-test-book",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is the first sentence.\nThis is the second sentence.",
+          "wordCount": 10
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The second chapter begins here.",
+          "wordCount": 5
+        }
+      ],
+      "addedAt": "2026-09-27T07:33:35.681Z",
+      "isEmotionAnalyzed": false
+    }
+  ],
+  [
+    "book_1790494416621_7zwt8bdp7",
+    {
+      "_id": "book_1790494416621_7zwt8bdp7",
+      "title": "1790494416581-132411838-rate-test-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Rate limit test.",
+          "wordCount": 3
+        }
+      ],
+      "addedAt": "2026-09-27T07:33:36.621Z",
+      "isEmotionAnalyzed": false
+    }
+  ],
+  [
+    "book_1790495369164_dnuen02fd",
+    {
+      "_id": "book_1790495369164_dnuen02fd",
+      "title": "1790495369109-291597990-test-book",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is the first sentence.\nThis is the second sentence.",
+          "wordCount": 10
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The second chapter begins here.",
+          "wordCount": 5
+        }
+      ],
+      "addedAt": "2026-09-27T07:49:29.165Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790495370804_l2c3tea89",
+    {
+      "_id": "book_1790495370804_l2c3tea89",
+      "title": "1790495370742-733800864-rate-test-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Rate limit test.",
+          "wordCount": 3
+        }
+      ],
+      "addedAt": "2026-09-27T07:49:30.804Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790498239400_lsi7kbes6",
+    {
+      "_id": "book_1790498239400_lsi7kbes6",
+      "title": "Unknown Title",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "pdf",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Chapter 1\nThe morning light crept through the shutters.\nShe smiled and laughed at the sight of the blooming garden.\nWhat a wonderful day to be alive, she thought.\nEverything felt bright and hopeful and full of joy.\n\nChapter 2\nThe letter arrived at dusk, later than anyone expected.\nHe read it twice, and his hands began to tremble with dread.\nTears filled her eyes as the grief washed over her entirely.\nThe house felt empty and cold without him, impossibly silent now.\nShe wandered the empty halls remembering better days long past.\nNothing could have prepared her for a loss quite like this one.",
+          "wordCount": 105
+        }
+      ],
+      "addedAt": "2026-09-27T08:37:19.400Z",
+      "isEmotionAnalyzed": false,
+      "integrity": {
+        "sourceSha256": "06f3c0bf985e2ee1c69ac1d7e0b3e8025305d71d094c311bce721a7b366955aa",
+        "sourceSizeBytes": 1524,
+        "pageCount": 2,
+        "extraction": {
+          "chapterCount": 1,
+          "totalChars": 597
+        }
+      }
+    }
+  ],
+  [
+    "book_1790498239745_209iat090",
+    {
+      "_id": "book_1790498239745_209iat090",
+      "title": "Unknown Title",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "pdf",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Chapter 1\nThe morning light crept through the shutters.\nShe smiled and laughed at the sight of the blooming garden.\nWhat a wonderful day to be alive, she thought.\nEverything felt bright and hopeful and full of joy.",
+          "wordCount": 38
+        }
+      ],
+      "addedAt": "2026-09-27T08:37:19.745Z",
+      "isEmotionAnalyzed": false,
+      "integrity": {
+        "sourceSha256": "b68ac216ab534d9713aef9ce299cb3f0d54d6235202517e3d7c34efd013e7032",
+        "sourceSizeBytes": 831,
+        "pageCount": 1,
+        "extraction": {
+          "chapterCount": 1,
+          "totalChars": 214
+        }
+      }
+    }
+  ],
+  [
+    "book_1790498284530_0dpeduwrq",
+    {
+      "_id": "book_1790498284530_0dpeduwrq",
+      "title": "Unknown Title",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "pdf",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Chapter 1\nThe morning light crept through the shutters.\nShe smiled and laughed at the sight of the blooming garden.\nWhat a wonderful day to be alive, she thought.\nEverything felt bright and hopeful and full of joy.\n\nChapter 2\nThe letter arrived at dusk, later than anyone expected.\nHe read it twice, and his hands began to tremble with dread.\nTears filled her eyes as the grief washed over her entirely.\nThe house felt empty and cold without him, impossibly silent now.\nShe wandered the empty halls remembering better days long past.\nNothing could have prepared her for a loss quite like this one.",
+          "wordCount": 105
+        }
+      ],
+      "addedAt": "2026-09-27T08:38:04.530Z",
+      "isEmotionAnalyzed": false,
+      "integrity": {
+        "sourceSha256": "06f3c0bf985e2ee1c69ac1d7e0b3e8025305d71d094c311bce721a7b366955aa",
+        "sourceSizeBytes": 1524,
+        "pageCount": 2,
+        "extraction": {
+          "chapterCount": 1,
+          "totalChars": 597
+        }
+      }
+    }
+  ],
+  [
+    "book_1790498284847_2i7b6g2jh",
+    {
+      "_id": "book_1790498284847_2i7b6g2jh",
+      "title": "Unknown Title",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "pdf",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Chapter 1\nThe morning light crept through the shutters.\nShe smiled and laughed at the sight of the blooming garden.\nWhat a wonderful day to be alive, she thought.\nEverything felt bright and hopeful and full of joy.",
+          "wordCount": 38
+        }
+      ],
+      "addedAt": "2026-09-27T08:38:04.847Z",
+      "isEmotionAnalyzed": false,
+      "integrity": {
+        "sourceSha256": "b68ac216ab534d9713aef9ce299cb3f0d54d6235202517e3d7c34efd013e7032",
+        "sourceSizeBytes": 831,
+        "pageCount": 1,
+        "extraction": {
+          "chapterCount": 1,
+          "totalChars": 214
+        }
+      }
+    }
+  ],
+  [
+    "book_1790498771698_b47fd7gu4",
+    {
+      "_id": "book_1790498771698_b47fd7gu4",
+      "title": "Unknown Title",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "pdf",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "The morning light crept through the shutters.\nShe smiled and laughed at the sight of the blooming garden.\nWhat a wonderful day to be alive, she thought.\nEverything felt bright and hopeful and full of joy.",
+          "wordCount": 36
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The letter arrived at dusk, later than anyone expected.\nHe read it twice, and his hands began to tremble with dread.\nTears filled her eyes as the grief washed over her entirely.\nThe house felt empty and cold without him, impossibly silent now.\nShe wandered the empty halls remembering better days long past.\nNothing could have prepared her for a loss quite like this one.",
+          "wordCount": 65
+        }
+      ],
+      "addedAt": "2026-09-27T08:46:11.698Z",
+      "isEmotionAnalyzed": false,
+      "integrity": {
+        "sourceSha256": "06f3c0bf985e2ee1c69ac1d7e0b3e8025305d71d094c311bce721a7b366955aa",
+        "sourceSizeBytes": 1524,
+        "pageCount": 2,
+        "extraction": {
+          "chapterCount": 2,
+          "totalChars": 575
+        }
+      }
+    }
+  ],
+  [
+    "book_1790498772232_phmab9cg8",
+    {
+      "_id": "book_1790498772232_phmab9cg8",
+      "title": "Unknown Title",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "pdf",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "The morning light crept through the shutters.\nShe smiled and laughed at the sight of the blooming garden.\nWhat a wonderful day to be alive, she thought.\nEverything felt bright and hopeful and full of joy.",
+          "wordCount": 36
+        }
+      ],
+      "addedAt": "2026-09-27T08:46:12.232Z",
+      "isEmotionAnalyzed": false,
+      "integrity": {
+        "sourceSha256": "b68ac216ab534d9713aef9ce299cb3f0d54d6235202517e3d7c34efd013e7032",
+        "sourceSizeBytes": 831,
+        "pageCount": 1,
+        "extraction": {
+          "chapterCount": 1,
+          "totalChars": 204
+        }
+      }
+    }
+  ],
+  [
+    "book_1790498954149_0qzbacs14",
+    {
+      "_id": "book_1790498954149_0qzbacs14",
+      "title": "Unknown Title",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "pdf",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "The morning light crept through the shutters.\nShe smiled and laughed at the sight of the blooming garden.\nWhat a wonderful day to be alive, she thought.\nEverything felt bright and hopeful and full of joy.",
+          "wordCount": 36
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The letter arrived at dusk, later than anyone expected.\nHe read it twice, and his hands began to tremble with dread.\nTears filled her eyes as the grief washed over her entirely.\nThe house felt empty and cold without him, impossibly silent now.\nShe wandered the empty halls remembering better days long past.\nNothing could have prepared her for a loss quite like this one.",
+          "wordCount": 65
+        }
+      ],
+      "addedAt": "2026-09-27T08:49:14.149Z",
+      "isEmotionAnalyzed": false,
+      "integrity": {
+        "sourceSha256": "06f3c0bf985e2ee1c69ac1d7e0b3e8025305d71d094c311bce721a7b366955aa",
+        "sourceSizeBytes": 1524,
+        "pageCount": 2,
+        "extraction": {
+          "chapterCount": 2,
+          "totalChars": 575
+        }
+      }
+    }
+  ],
+  [
+    "book_1790498954543_pvlfjg7zc",
+    {
+      "_id": "book_1790498954543_pvlfjg7zc",
+      "title": "Unknown Title",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "pdf",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "The morning light crept through the shutters.\nShe smiled and laughed at the sight of the blooming garden.\nWhat a wonderful day to be alive, she thought.\nEverything felt bright and hopeful and full of joy.",
+          "wordCount": 36
+        }
+      ],
+      "addedAt": "2026-09-27T08:49:14.543Z",
+      "isEmotionAnalyzed": false,
+      "integrity": {
+        "sourceSha256": "b68ac216ab534d9713aef9ce299cb3f0d54d6235202517e3d7c34efd013e7032",
+        "sourceSizeBytes": 831,
+        "pageCount": 1,
+        "extraction": {
+          "chapterCount": 1,
+          "totalChars": 204
+        }
+      }
+    }
+  ],
+  [
+    "book_1790498987128_mi7bkic7q",
+    {
+      "_id": "book_1790498987128_mi7bkic7q",
+      "title": "1790498987099-183141329-test-book",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is the first sentence.\nThis is the second sentence.",
+          "wordCount": 10
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The second chapter begins here.",
+          "wordCount": 5
+        }
+      ],
+      "addedAt": "2026-09-27T08:49:47.128Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790498987783_1au6gs8xz",
+    {
+      "_id": "book_1790498987783_1au6gs8xz",
+      "title": "1790498987748-758178704-rate-test-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Rate limit test.",
+          "wordCount": 3
+        }
+      ],
+      "addedAt": "2026-09-27T08:49:47.783Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790498989107_v6r86s0mb",
+    {
+      "_id": "book_1790498989107_v6r86s0mb",
+      "title": "Unknown Title",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "pdf",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "The morning light crept through the shutters.\nShe smiled and laughed at the sight of the blooming garden.\nWhat a wonderful day to be alive, she thought.\nEverything felt bright and hopeful and full of joy.",
+          "wordCount": 36
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The letter arrived at dusk, later than anyone expected.\nHe read it twice, and his hands began to tremble with dread.\nTears filled her eyes as the grief washed over her entirely.\nThe house felt empty and cold without him, impossibly silent now.\nShe wandered the empty halls remembering better days long past.\nNothing could have prepared her for a loss quite like this one.",
+          "wordCount": 65
+        }
+      ],
+      "addedAt": "2026-09-27T08:49:49.107Z",
+      "isEmotionAnalyzed": false,
+      "integrity": {
+        "sourceSha256": "06f3c0bf985e2ee1c69ac1d7e0b3e8025305d71d094c311bce721a7b366955aa",
+        "sourceSizeBytes": 1524,
+        "pageCount": 2,
+        "extraction": {
+          "chapterCount": 2,
+          "totalChars": 575
+        }
+      }
+    }
+  ],
+  [
+    "book_1790498989287_xh8q523qi",
+    {
+      "_id": "book_1790498989287_xh8q523qi",
+      "title": "Unknown Title",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "pdf",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "The morning light crept through the shutters.\nShe smiled and laughed at the sight of the blooming garden.\nWhat a wonderful day to be alive, she thought.\nEverything felt bright and hopeful and full of joy.",
+          "wordCount": 36
+        }
+      ],
+      "addedAt": "2026-09-27T08:49:49.287Z",
+      "isEmotionAnalyzed": false,
+      "integrity": {
+        "sourceSha256": "b68ac216ab534d9713aef9ce299cb3f0d54d6235202517e3d7c34efd013e7032",
+        "sourceSizeBytes": 831,
+        "pageCount": 1,
+        "extraction": {
+          "chapterCount": 1,
+          "totalChars": 204
+        }
+      }
+    }
+  ],
+  [
+    "book_1790499022594_xloxk999t",
+    {
+      "_id": "book_1790499022594_xloxk999t",
+      "title": "1790499022583-718811933-test-book",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is the first sentence.\nThis is the second sentence.",
+          "wordCount": 10
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The second chapter begins here.",
+          "wordCount": 5
+        }
+      ],
+      "addedAt": "2026-09-27T08:50:22.594Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499023199_9mec9gblk",
+    {
+      "_id": "book_1790499023199_9mec9gblk",
+      "title": "1790499023182-11106646-rate-test-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Rate limit test.",
+          "wordCount": 3
+        }
+      ],
+      "addedAt": "2026-09-27T08:50:23.199Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499145958_1yo1tnvun",
+    {
+      "_id": "book_1790499145958_1yo1tnvun",
+      "title": "1790499145952-169715409-test-book",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is the first sentence.\nThis is the second sentence.",
+          "wordCount": 10
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The second chapter begins here.",
+          "wordCount": 5
+        }
+      ],
+      "addedAt": "2026-09-27T08:52:25.958Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499146567_j5buv9x0r",
+    {
+      "_id": "book_1790499146567_j5buv9x0r",
+      "title": "1790499146553-844711364-rate-test-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Rate limit test.",
+          "wordCount": 3
+        }
+      ],
+      "addedAt": "2026-09-27T08:52:26.567Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499180338_lt3od3xrr",
+    {
+      "_id": "book_1790499180338_lt3od3xrr",
+      "title": "1790499180330-79410174-test-book",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is the first sentence.\nThis is the second sentence.",
+          "wordCount": 10
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The second chapter begins here.",
+          "wordCount": 5
+        }
+      ],
+      "addedAt": "2026-09-27T08:53:00.338Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499180864_pkhv6cv2l",
+    {
+      "_id": "book_1790499180864_pkhv6cv2l",
+      "title": "1790499180852-455144946-rate-test-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Rate limit test.",
+          "wordCount": 3
+        }
+      ],
+      "addedAt": "2026-09-27T08:53:00.864Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499214334_mpcb6c0ct",
+    {
+      "_id": "book_1790499214334_mpcb6c0ct",
+      "title": "1790499214326-336680507-test-book",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is the first sentence.\nThis is the second sentence.",
+          "wordCount": 10
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The second chapter begins here.",
+          "wordCount": 5
+        }
+      ],
+      "addedAt": "2026-09-27T08:53:34.334Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499214834_yt75xo5py",
+    {
+      "_id": "book_1790499214834_yt75xo5py",
+      "title": "1790499214818-600962219-rate-test-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Rate limit test.",
+          "wordCount": 3
+        }
+      ],
+      "addedAt": "2026-09-27T08:53:34.834Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499250224_mfs4466p2",
+    {
+      "_id": "book_1790499250224_mfs4466p2",
+      "title": "1790499250218-606878362-test-book",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is the first sentence.\nThis is the second sentence.",
+          "wordCount": 10
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The second chapter begins here.",
+          "wordCount": 5
+        }
+      ],
+      "addedAt": "2026-09-27T08:54:10.224Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499250768_ishyqctcm",
+    {
+      "_id": "book_1790499250768_ishyqctcm",
+      "title": "1790499250758-316399008-rate-test-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Rate limit test.",
+          "wordCount": 3
+        }
+      ],
+      "addedAt": "2026-09-27T08:54:10.768Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499300026_lp0cql7km",
+    {
+      "_id": "book_1790499300026_lp0cql7km",
+      "title": "1790499300017-928808860-test-book",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is the first sentence.\nThis is the second sentence.",
+          "wordCount": 10
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The second chapter begins here.",
+          "wordCount": 5
+        }
+      ],
+      "addedAt": "2026-09-27T08:55:00.026Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499300582_ftlw6rw0e",
+    {
+      "_id": "book_1790499300582_ftlw6rw0e",
+      "title": "1790499300568-428749953-rate-test-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Rate limit test.",
+          "wordCount": 3
+        }
+      ],
+      "addedAt": "2026-09-27T08:55:00.582Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499338360_mtivc808b",
+    {
+      "_id": "book_1790499338360_mtivc808b",
+      "title": "1790499338353-902575721-test-book",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 2,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is the first sentence.\nThis is the second sentence.",
+          "wordCount": 10
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "The second chapter begins here.",
+          "wordCount": 5
+        }
+      ],
+      "addedAt": "2026-09-27T08:55:38.360Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499338946_141kdtw7b",
+    {
+      "_id": "book_1790499338946_141kdtw7b",
+      "title": "1790499338931-895941293-rate-test-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Rate limit test.",
+          "wordCount": 3
+        }
+      ],
+      "addedAt": "2026-09-27T08:55:38.946Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499753948_ve3pw2qcd",
+    {
+      "_id": "book_1790499753948_ve3pw2qcd",
+      "title": "1790499753928-746961376-burst-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 0 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:02:33.948Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499754023_15iup5byn",
+    {
+      "_id": "book_1790499754023_15iup5byn",
+      "title": "1790499754019-835384454-burst-1",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 1 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:02:34.023Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499754078_ctj9yhiyb",
+    {
+      "_id": "book_1790499754078_ctj9yhiyb",
+      "title": "1790499754074-768529427-burst-2",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 2 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:02:34.078Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499754129_yc3nupghh",
+    {
+      "_id": "book_1790499754129_yc3nupghh",
+      "title": "1790499754126-645323900-burst-3",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 3 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:02:34.129Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499754179_hg7t2psa5",
+    {
+      "_id": "book_1790499754179_hg7t2psa5",
+      "title": "1790499754176-496923707-burst-4",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 4 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:02:34.179Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499762942_z5xfj54q2",
+    {
+      "_id": "book_1790499762942_z5xfj54q2",
+      "title": "1790499762924-422771725-burst-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 0 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:02:42.942Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499763005_ocn5xrlrz",
+    {
+      "_id": "book_1790499763005_ocn5xrlrz",
+      "title": "1790499763002-792756362-burst-1",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 1 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:02:43.005Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499763053_2ihykf0bg",
+    {
+      "_id": "book_1790499763053_2ihykf0bg",
+      "title": "1790499763050-834604346-burst-2",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 2 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:02:43.053Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499763102_dmrc06e4e",
+    {
+      "_id": "book_1790499763102_dmrc06e4e",
+      "title": "1790499763100-299754564-burst-3",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 3 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:02:43.102Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790499763148_td1xh5qe5",
+    {
+      "_id": "book_1790499763148_td1xh5qe5",
+      "title": "1790499763146-445267483-burst-4",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 4 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:02:43.148Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500006145_6ux2prgpy",
+    {
+      "_id": "book_1790500006145_6ux2prgpy",
+      "title": "1790500006124-598683078-burst-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 0 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:06:46.145Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500006214_rb9mb01cx",
+    {
+      "_id": "book_1790500006214_rb9mb01cx",
+      "title": "1790500006211-863055284-burst-1",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 1 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:06:46.214Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500006263_aak8972v7",
+    {
+      "_id": "book_1790500006263_aak8972v7",
+      "title": "1790500006259-445390156-burst-2",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 2 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:06:46.263Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500006309_k7o24c0zf",
+    {
+      "_id": "book_1790500006309_k7o24c0zf",
+      "title": "1790500006306-575063068-burst-3",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 3 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:06:46.309Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500006356_uvj245rju",
+    {
+      "_id": "book_1790500006356_uvj245rju",
+      "title": "1790500006353-603909436-burst-4",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 4 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:06:46.356Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500015453_ga3343s4p",
+    {
+      "_id": "book_1790500015453_ga3343s4p",
+      "title": "1790500015436-698085607-burst-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 0 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:06:55.453Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500015533_7vwd4z33b",
+    {
+      "_id": "book_1790500015533_7vwd4z33b",
+      "title": "1790500015531-553159630-burst-1",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 1 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:06:55.533Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500015580_h4w6a4lrn",
+    {
+      "_id": "book_1790500015580_h4w6a4lrn",
+      "title": "1790500015578-505883480-burst-2",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 2 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:06:55.580Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500015627_cr3vzshig",
+    {
+      "_id": "book_1790500015627_cr3vzshig",
+      "title": "1790500015625-627523821-burst-3",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 3 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:06:55.627Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500015677_j5j4nqlal",
+    {
+      "_id": "book_1790500015677_j5j4nqlal",
+      "title": "1790500015673-65680613-burst-4",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 4 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:06:55.677Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500024676_rpnb9bi54",
+    {
+      "_id": "book_1790500024676_rpnb9bi54",
+      "title": "1790500024657-561192321-burst-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 0 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:07:04.676Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500024745_rp91itaya",
+    {
+      "_id": "book_1790500024745_rp91itaya",
+      "title": "1790500024741-55706891-burst-1",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 1 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:07:04.745Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500024799_l27zqeiz2",
+    {
+      "_id": "book_1790500024799_l27zqeiz2",
+      "title": "1790500024795-285900416-burst-2",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 2 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:07:04.799Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500024852_noc22s5h4",
+    {
+      "_id": "book_1790500024852_noc22s5h4",
+      "title": "1790500024849-766165387-burst-3",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 3 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:07:04.852Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500024897_2gcitz0ed",
+    {
+      "_id": "book_1790500024897_2gcitz0ed",
+      "title": "1790500024895-799102024-burst-4",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 4 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:07:04.897Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500079648_bjker6p3k",
+    {
+      "_id": "book_1790500079648_bjker6p3k",
+      "title": "1790500079621-821635522-burst-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 0 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:07:59.648Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500079735_iiq3ylhfs",
+    {
+      "_id": "book_1790500079735_iiq3ylhfs",
+      "title": "1790500079732-137785987-burst-1",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 1 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:07:59.735Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500079787_zma0rig66",
+    {
+      "_id": "book_1790500079787_zma0rig66",
+      "title": "1790500079784-396119091-burst-2",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 2 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:07:59.787Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500079845_501c5e8c7",
+    {
+      "_id": "book_1790500079845_501c5e8c7",
+      "title": "1790500079842-198294719-burst-3",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 3 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:07:59.845Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500079898_74v6tmtyq",
+    {
+      "_id": "book_1790500079898_74v6tmtyq",
+      "title": "1790500079895-830766055-burst-4",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 4 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:07:59.898Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500093640_c794gmro2",
+    {
+      "_id": "book_1790500093640_c794gmro2",
+      "title": "1790500093619-257922085-burst-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 0 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:08:13.640Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500093714_d4bxjeihh",
+    {
+      "_id": "book_1790500093714_d4bxjeihh",
+      "title": "1790500093710-611226503-burst-1",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 1 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:08:13.714Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500093760_jgch0uunr",
+    {
+      "_id": "book_1790500093760_jgch0uunr",
+      "title": "1790500093757-369369700-burst-2",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 2 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:08:13.760Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500093808_60dozdy08",
+    {
+      "_id": "book_1790500093808_60dozdy08",
+      "title": "1790500093805-840761544-burst-3",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 3 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:08:13.808Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500093859_9dbmazrkv",
+    {
+      "_id": "book_1790500093859_9dbmazrkv",
+      "title": "1790500093856-311732018-burst-4",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 4 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:08:13.859Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500103177_e4axdvmwg",
+    {
+      "_id": "book_1790500103177_e4axdvmwg",
+      "title": "1790500103158-807142350-burst-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 0 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:08:23.177Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500103246_w4fjq2u5w",
+    {
+      "_id": "book_1790500103246_w4fjq2u5w",
+      "title": "1790500103243-175307575-burst-1",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 1 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:08:23.246Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500103308_eh65bcz6v",
+    {
+      "_id": "book_1790500103308_eh65bcz6v",
+      "title": "1790500103304-17089939-burst-2",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 2 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:08:23.308Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500103370_633l4tkbh",
+    {
+      "_id": "book_1790500103370_633l4tkbh",
+      "title": "1790500103366-82030351-burst-3",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 3 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:08:23.370Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500103420_lvsct939l",
+    {
+      "_id": "book_1790500103420_lvsct939l",
+      "title": "1790500103417-841784109-burst-4",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 4 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:08:23.420Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500250839_r3gryzsbb",
+    {
+      "_id": "book_1790500250839_r3gryzsbb",
+      "title": "1790500250816-963404299-burst-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 0 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:10:50.839Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500250907_skt9eakqd",
+    {
+      "_id": "book_1790500250907_skt9eakqd",
+      "title": "1790500250904-786460399-burst-1",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 1 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:10:50.907Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500250958_3wr2awdw9",
+    {
+      "_id": "book_1790500250958_3wr2awdw9",
+      "title": "1790500250955-124263777-burst-2",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 2 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:10:50.958Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500251010_s2z3o64f7",
+    {
+      "_id": "book_1790500251010_s2z3o64f7",
+      "title": "1790500251007-362991732-burst-3",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 3 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:10:51.010Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500251063_trdvicjd9",
+    {
+      "_id": "book_1790500251063_trdvicjd9",
+      "title": "1790500251060-222965078-burst-4",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 4 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:10:51.063Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500252060_esh6fk06g",
+    {
+      "_id": "book_1790500252060_esh6fk06g",
+      "title": "Unknown Title",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "pdf",
+      "totalChapters": 30,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is page 1 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "This is page 2 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 2,
+          "title": "Chapter 3",
+          "text": "This is page 3 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 3,
+          "title": "Chapter 4",
+          "text": "This is page 4 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 4,
+          "title": "Chapter 5",
+          "text": "This is page 5 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 5,
+          "title": "Chapter 6",
+          "text": "This is page 6 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 6,
+          "title": "Chapter 7",
+          "text": "This is page 7 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 7,
+          "title": "Chapter 8",
+          "text": "This is page 8 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 8,
+          "title": "Chapter 9",
+          "text": "This is page 9 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 9,
+          "title": "Chapter 10",
+          "text": "This is page 10 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 10,
+          "title": "Chapter 11",
+          "text": "This is page 11 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 11,
+          "title": "Chapter 12",
+          "text": "This is page 12 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 12,
+          "title": "Chapter 13",
+          "text": "This is page 13 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 13,
+          "title": "Chapter 14",
+          "text": "This is page 14 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 14,
+          "title": "Chapter 15",
+          "text": "This is page 15 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 15,
+          "title": "Chapter 16",
+          "text": "This is page 16 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 16,
+          "title": "Chapter 17",
+          "text": "This is page 17 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 17,
+          "title": "Chapter 18",
+          "text": "This is page 18 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 18,
+          "title": "Chapter 19",
+          "text": "This is page 19 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 19,
+          "title": "Chapter 20",
+          "text": "This is page 20 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 20,
+          "title": "Chapter 21",
+          "text": "This is page 21 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 21,
+          "title": "Chapter 22",
+          "text": "This is page 22 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 22,
+          "title": "Chapter 23",
+          "text": "This is page 23 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 23,
+          "title": "Chapter 24",
+          "text": "This is page 24 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 24,
+          "title": "Chapter 25",
+          "text": "This is page 25 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 25,
+          "title": "Chapter 26",
+          "text": "This is page 26 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 26,
+          "title": "Chapter 27",
+          "text": "This is page 27 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 27,
+          "title": "Chapter 28",
+          "text": "This is page 28 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 28,
+          "title": "Chapter 29",
+          "text": "This is page 29 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 29,
+          "title": "Chapter 30",
+          "text": "This is page 30 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        }
+      ],
+      "addedAt": "2026-09-27T09:10:52.060Z",
+      "isEmotionAnalyzed": false,
+      "integrity": {
+        "sourceSha256": "849a13d1058d5886a9a6f668d06b237079a54b276f777bb93ba93d9f00632a04",
+        "sourceSizeBytes": 15566,
+        "pageCount": 30,
+        "extraction": {
+          "chapterCount": 30,
+          "totalChars": 6171
+        }
+      }
+    }
+  ],
+  [
+    "book_1790500272858_n66ub79kj",
+    {
+      "_id": "book_1790500272858_n66ub79kj",
+      "title": "1790500272826-586954384-burst-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 0 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:11:12.858Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500303875_tj8pmkfr1",
+    {
+      "_id": "book_1790500303875_tj8pmkfr1",
+      "title": "Unknown Title",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "pdf",
+      "totalChapters": 30,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is page 1 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "This is page 2 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 2,
+          "title": "Chapter 3",
+          "text": "This is page 3 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 3,
+          "title": "Chapter 4",
+          "text": "This is page 4 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 4,
+          "title": "Chapter 5",
+          "text": "This is page 5 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 5,
+          "title": "Chapter 6",
+          "text": "This is page 6 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 6,
+          "title": "Chapter 7",
+          "text": "This is page 7 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 7,
+          "title": "Chapter 8",
+          "text": "This is page 8 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 8,
+          "title": "Chapter 9",
+          "text": "This is page 9 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 9,
+          "title": "Chapter 10",
+          "text": "This is page 10 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 10,
+          "title": "Chapter 11",
+          "text": "This is page 11 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 11,
+          "title": "Chapter 12",
+          "text": "This is page 12 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 12,
+          "title": "Chapter 13",
+          "text": "This is page 13 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 13,
+          "title": "Chapter 14",
+          "text": "This is page 14 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 14,
+          "title": "Chapter 15",
+          "text": "This is page 15 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 15,
+          "title": "Chapter 16",
+          "text": "This is page 16 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 16,
+          "title": "Chapter 17",
+          "text": "This is page 17 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 17,
+          "title": "Chapter 18",
+          "text": "This is page 18 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 18,
+          "title": "Chapter 19",
+          "text": "This is page 19 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 19,
+          "title": "Chapter 20",
+          "text": "This is page 20 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 20,
+          "title": "Chapter 21",
+          "text": "This is page 21 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 21,
+          "title": "Chapter 22",
+          "text": "This is page 22 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 22,
+          "title": "Chapter 23",
+          "text": "This is page 23 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 23,
+          "title": "Chapter 24",
+          "text": "This is page 24 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 24,
+          "title": "Chapter 25",
+          "text": "This is page 25 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 25,
+          "title": "Chapter 26",
+          "text": "This is page 26 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 26,
+          "title": "Chapter 27",
+          "text": "This is page 27 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 27,
+          "title": "Chapter 28",
+          "text": "This is page 28 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 28,
+          "title": "Chapter 29",
+          "text": "This is page 29 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 29,
+          "title": "Chapter 30",
+          "text": "This is page 30 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        }
+      ],
+      "addedAt": "2026-09-27T09:11:43.875Z",
+      "isEmotionAnalyzed": false,
+      "integrity": {
+        "sourceSha256": "849a13d1058d5886a9a6f668d06b237079a54b276f777bb93ba93d9f00632a04",
+        "sourceSizeBytes": 15566,
+        "pageCount": 30,
+        "extraction": {
+          "chapterCount": 30,
+          "totalChars": 6171
+        }
+      }
+    }
+  ],
+  [
+    "book_1790500312713_qvtf4kd5z",
+    {
+      "_id": "book_1790500312713_qvtf4kd5z",
+      "title": "1790500312688-501185409-burst-0",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "txt",
+      "totalChapters": 1,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "Burst import test 0 with some content.",
+          "wordCount": 7
+        }
+      ],
+      "addedAt": "2026-09-27T09:11:52.713Z",
+      "isEmotionAnalyzed": false,
+      "integrity": null
+    }
+  ],
+  [
+    "book_1790500343733_evp465ri3",
+    {
+      "_id": "book_1790500343733_evp465ri3",
+      "title": "Unknown Title",
+      "author": "Unknown Author",
+      "coverImagePath": null,
+      "fileType": "pdf",
+      "totalChapters": 30,
+      "chapters": [
+        {
+          "index": 0,
+          "title": "Chapter 1",
+          "text": "This is page 1 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 1,
+          "title": "Chapter 2",
+          "text": "This is page 2 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 2,
+          "title": "Chapter 3",
+          "text": "This is page 3 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 3,
+          "title": "Chapter 4",
+          "text": "This is page 4 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 4,
+          "title": "Chapter 5",
+          "text": "This is page 5 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 5,
+          "title": "Chapter 6",
+          "text": "This is page 6 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 6,
+          "title": "Chapter 7",
+          "text": "This is page 7 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 7,
+          "title": "Chapter 8",
+          "text": "This is page 8 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 8,
+          "title": "Chapter 9",
+          "text": "This is page 9 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 9,
+          "title": "Chapter 10",
+          "text": "This is page 10 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 10,
+          "title": "Chapter 11",
+          "text": "This is page 11 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 11,
+          "title": "Chapter 12",
+          "text": "This is page 12 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 12,
+          "title": "Chapter 13",
+          "text": "This is page 13 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 13,
+          "title": "Chapter 14",
+          "text": "This is page 14 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 14,
+          "title": "Chapter 15",
+          "text": "This is page 15 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 15,
+          "title": "Chapter 16",
+          "text": "This is page 16 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 16,
+          "title": "Chapter 17",
+          "text": "This is page 17 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 17,
+          "title": "Chapter 18",
+          "text": "This is page 18 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 18,
+          "title": "Chapter 19",
+          "text": "This is page 19 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 19,
+          "title": "Chapter 20",
+          "text": "This is page 20 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 20,
+          "title": "Chapter 21",
+          "text": "This is page 21 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 21,
+          "title": "Chapter 22",
+          "text": "This is page 22 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 22,
+          "title": "Chapter 23",
+          "text": "This is page 23 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 23,
+          "title": "Chapter 24",
+          "text": "This is page 24 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 24,
+          "title": "Chapter 25",
+          "text": "This is page 25 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 25,
+          "title": "Chapter 26",
+          "text": "This is page 26 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 26,
+          "title": "Chapter 27",
+          "text": "This is page 27 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 27,
+          "title": "Chapter 28",
+          "text": "This is page 28 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 28,
+          "title": "Chapter 29",
+          "text": "This is page 29 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        },
+        {
+          "index": 29,
+          "title": "Chapter 30",
+          "text": "This is page 30 of a large synthetic document used for load testing.\nContent lines follow to give the parser realistic work to perform here.\nAnother line of narrative text to exercise extraction thoroughly.",
+          "wordCount": 34
+        }
+      ],
+      "addedAt": "2026-09-27T09:12:23.733Z",
+      "isEmotionAnalyzed": false,
+      "integrity": {
+        "sourceSha256": "849a13d1058d5886a9a6f668d06b237079a54b276f777bb93ba93d9f00632a04",
+        "sourceSizeBytes": 15566,
+        "pageCount": 30,
+        "extraction": {
+          "chapterCount": 30,
+          "totalChars": 6171
+        }
+      }
+    }
   ]
 ]

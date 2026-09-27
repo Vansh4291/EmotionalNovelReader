@@ -13,28 +13,23 @@ import { getBookById, getOrCreateProgress } from '../database/localDatabase';
 import { usePlayerStore } from '../store/playerStore';
 import { useTheme } from '../utils/themeContext';
 
+// Deterministic cover palette keyed by title hash (stable per book).
 const COVER_COLORS = [
-  ['#FF6B6B', '#EE5A24'],
-  ['#A29BFE', '#6C5CE7'],
-  ['#55EFC4', '#00B894'],
-  ['#FDCB6E', '#E17055'],
-  ['#74B9FF', '#0984E3'],
-  ['#FD79A8', '#E84393'],
-  ['#00CEC9', '#55EFC4'],
-  ['#E17055', '#D63031'],
-  ['#6C5CE7', '#4834D4'],
-  ['#00B894', '#00A381'],
-  ['#81ECEC', '#00CEC9'],
-  ['#FAB1A0', '#E17055'],
-  ['#DFE6E9', '#636E72'],
-  ['#DDA0DD', '#6C5CE7'],
-  ['#FFEAA7', '#FDCB6E'],
-  ['#B8E994', '#00B894'],
+  ['#8B6F47', '#5C4A30'],
+  ['#5B7B9A', '#3D5468'],
+  ['#8B3A3A', '#5E2626'],
+  ['#6B4F7A', '#493653'],
+  ['#5B8A5B', '#3D5C3D'],
+  ['#A3874A', '#6D5A31'],
 ];
 
-const getCoverColors = (letter) => {
-  const code = (letter || 'A').charCodeAt(0);
-  return COVER_COLORS[code % COVER_COLORS.length];
+const getCoverColors = (title) => {
+  let hash = 0;
+  const t = title || '';
+  for (let i = 0; i < t.length; i++) {
+    hash = (hash * 31 + t.charCodeAt(i)) >>> 0;
+  }
+  return COVER_COLORS[hash % COVER_COLORS.length];
 };
 
 const BookDetailScreen = ({ route, navigation }) => {
@@ -59,7 +54,7 @@ const BookDetailScreen = ({ route, navigation }) => {
       setChapters(bookData?.chapters || []);
       setProgress(progressData);
     } catch (error) {
-      console.error('Failed to load book:', error);
+      if (__DEV__) console.error('Failed to load book:', error);
       Alert.alert('Error', 'Failed to load book details.');
     } finally {
       setLoading(false);
@@ -116,26 +111,29 @@ const BookDetailScreen = ({ route, navigation }) => {
       <Pressable
         style={({ pressed }) => [styles.chapterItem, { backgroundColor: theme.surface }, pressed && { opacity: 0.7 }]}
         onPress={() => handleChapterPress(item, index)}
+        accessibilityRole="button"
+        accessibilityLabel={`Chapter ${index + 1}: ${item.title || ''}. ${formatWordCount(item.wordCount || 0)}`}
+        accessibilityHint={isCurrent ? 'Continue reading this chapter' : 'Open this chapter'}
       >
         <View style={[styles.chapterBadge, { backgroundColor: isCompleted ? theme.primary : theme.surfaceLight }]}>
-          <Text style={[styles.chapterBadgeText, { color: isCompleted ? theme.surface : theme.textSecondary }]}>
+          <Text style={[styles.chapterBadgeText, { color: isCompleted ? theme.surface : theme.textSecondary }]} accessible={false}>
             {index + 1}
           </Text>
         </View>
         <View style={styles.chapterInfo}>
-          <Text style={[styles.chapterTitle, { color: theme.text }]} numberOfLines={1}>
+          <Text style={[styles.chapterTitle, { color: theme.text }]} numberOfLines={1} allowFontScaling maxFontSizeMultiplier={1.4}>
             {item.title || `Chapter ${index + 1}`}
           </Text>
-          <Text style={[styles.chapterWordCount, { color: theme.textMuted }]}>
+          <Text style={[styles.chapterWordCount, { color: theme.textMuted }]} allowFontScaling>
             {formatWordCount(item.wordCount || 0)}
           </Text>
         </View>
         {isCompleted ? (
-          <View style={[styles.statusIcon, { backgroundColor: theme.primary }]}>
+          <View style={[styles.statusIcon, { backgroundColor: theme.primary }]} accessible={false}>
             <Text style={[styles.statusIconText, { color: theme.surface }]}>{'\u2713'}</Text>
           </View>
         ) : (
-          <Text style={[styles.playIcon, { color: isCurrent ? theme.primary : theme.textMuted }]}>
+          <Text style={[styles.playIcon, { color: isCurrent ? theme.primary : theme.textMuted }]} accessible={false}>
             {'\u25B6'}
           </Text>
         )}
@@ -160,9 +158,9 @@ const BookDetailScreen = ({ route, navigation }) => {
   }
 
   const initial = book.title ? book.title.charAt(0).toUpperCase() : '?';
-  const [topColor, bottomColor] = getCoverColors(initial);
-  const completionPercent = progress?.completionPercent || 0;
+  const completionPercent = Math.min(100, Math.max(0, progress?.completionPercent || 0));
   const totalWords = chapters.reduce((sum, ch) => sum + (ch.wordCount || 0), 0);
+  const [topColor, bottomColor] = getCoverColors(book.title || '');
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -175,23 +173,23 @@ const BookDetailScreen = ({ route, navigation }) => {
         ListHeaderComponent={
           <View style={[styles.heroSection, { backgroundColor: theme.surface }]}>
             <View style={styles.heroTop}>
-              <View style={[styles.heroCover, { backgroundColor: topColor }]}>
+              <View style={[styles.heroCover, { backgroundColor: topColor }]} accessible={false}>
                 <View style={[styles.heroCoverGradient, { backgroundColor: bottomColor }]} />
-                <Text style={styles.heroCoverLetter}>{initial}</Text>
+                <Text style={styles.heroCoverLetter} accessible={false}>{initial}</Text>
               </View>
               <View style={styles.heroInfo}>
-                <Text style={[styles.heroTitle, { color: theme.text }]} numberOfLines={3}>
+                <Text style={[styles.heroTitle, { color: theme.text }]} numberOfLines={3} allowFontScaling maxFontSizeMultiplier={1.3}>
                   {book.title}
                 </Text>
-                <Text style={[styles.heroAuthor, { color: theme.textSecondary }]} numberOfLines={1}>
+                <Text style={[styles.heroAuthor, { color: theme.textSecondary }]} numberOfLines={1} allowFontScaling>
                   {book.author || 'Unknown Author'}
                 </Text>
                 <View style={styles.heroStats}>
-                  <Text style={[styles.heroStat, { color: theme.textMuted }]}>
-                    {chapters.length} chapter{chapters.length !== 1 ? 's' : ''}
+                  <Text style={[styles.heroStat, { color: theme.textMuted }]} allowFontScaling>
+                    {book.fileType ? book.fileType.toUpperCase() : 'TXT'} · {chapters.length} chapter{chapters.length !== 1 ? 's' : ''}
                   </Text>
-                  <Text style={[styles.heroStatDot, { color: theme.textMuted }]}>{'\u00B7'}</Text>
-                  <Text style={[styles.heroStat, { color: theme.textMuted }]}>
+                  <Text style={[styles.heroStatDot, { color: theme.textMuted }]} accessible={false}>{'\u00B7'}</Text>
+                  <Text style={[styles.heroStat, { color: theme.textMuted }]} allowFontScaling>
                     {formatWordCount(totalWords)}
                   </Text>
                 </View>
@@ -212,11 +210,14 @@ const BookDetailScreen = ({ route, navigation }) => {
             <Pressable
               style={({ pressed }) => [styles.listenButton, pressed && { opacity: 0.85 }]}
               onPress={handleStartListening}
+              accessibilityRole="button"
+              accessibilityLabel={completionPercent > 0 ? 'Continue listening' : 'Start listening'}
+              accessibilityHint="Opens the narration player"
             >
               <View style={[styles.listenButtonInner, { backgroundColor: theme.primary }]}>
-                <Text style={styles.listenButtonIcon}>{'\u25B6'}</Text>
-                <Text style={[styles.listenButtonText, { color: theme.surface }]}>
-                  {completionPercent > 0 ? 'Continue Listening' : 'Start Listening'}
+                <Text style={styles.listenButtonIcon} accessible={false}>{'\u25B6'}</Text>
+                <Text style={[styles.listenButtonText, { color: theme.surface }]} allowFontScaling>
+                  {completionPercent > 0 ? 'Continue' : 'Start reading'}
                 </Text>
               </View>
             </Pressable>

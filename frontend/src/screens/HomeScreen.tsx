@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,266 +6,129 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
-import { NarrativeThemeEngine, NarrativeTheme } from '../theme/NarrativeThemeEngine';
-import { buildTypography } from '../theme/NarrativeTypography';
-import { EmotionType } from '../core/types';
-import {
-  NarrativeMemory,
-  NarrativeMemoryPersistence,
-} from '../core/narration/NarrativeMemoryPersistence';
-import { EventGovernor } from '../core/events/EventGovernor';
-import { spacing, atmosphereOpacity } from '../design';
+import { useFocusEffect } from '@react-navigation/native';
+import { getAllBooks } from '../database/localDatabase.js';
+import { useTheme } from '../utils/themeContext.js';
+import BookCard from '../components/BookCard.jsx';
 
 interface HomeScreenProps {
   navigation: any;
 }
 
-const GOVERNOR = new EventGovernor();
+interface BookEntry {
+  _id: string;
+  title: string;
+  author: string;
+  coverImagePath: string | null;
+  fileType: string;
+  totalChapters: number;
+  addedAt: string;
+  progress: { currentChapterIndex: number; completionPercent: number } | null;
+}
 
-const TIME_GREETINGS: Record<string, string> = {
-  morning: 'Good morning.',
-  afternoon: 'Good afternoon.',
-  evening: 'Good evening.',
-  night: 'The night is quiet.',
-};
-
-const RETURN_INVITATIONS: Record<string, string[]> = {
-  morning: [
-    'The world stirs softly.',
-    'Light finds the unwritten pages.',
-    'Something waits to be remembered.',
-  ],
-  afternoon: [
-    'The world stretches, unhurried.',
-    'A still hour for the story.',
-    'Quiet holds the afternoon.',
-  ],
-  evening: [
-    'The forest still waits.',
-    'The city has dimmed its lamps.',
-    'The evening settles in.',
-  ],
-  night: [
-    'The story keeps its vigil.',
-    'The night remembers what the day forgot.',
-    'Some stories prefer darkness.',
-  ],
-};
-
-const EMOTIONAL_HUES: Record<EmotionType, string> = {
-  joy: 'a warmth lingers',
-  sadness: 'a quiet weight remains',
-  anger: 'the fire has not faded',
-  fear: 'shadows still touch the edges',
-  surprise: 'something shifted unexpectedly',
-  neutral: 'the world is patient',
-};
-
-const ARC_ATMOSPHERES: Record<string, string> = {
-  beginning: 'the world is opening',
-  rising: 'tension is gathering',
-  peak: 'the moment holds its breath',
-  falling: 'the air is settling',
-  resolution: 'something has come to rest',
-};
-
-function getTimeOfDay(): string {
+function getTimeGreeting(): string {
   const hour = new Date().getHours();
-  if (hour >= 6 && hour < 12) return 'morning';
-  if (hour >= 12 && hour < 17) return 'afternoon';
-  if (hour >= 17 && hour < 21) return 'evening';
-  return 'night';
-}
-
-function pickInvitation(): string {
-  const time = getTimeOfDay();
-  const arr = RETURN_INVITATIONS[time] || RETURN_INVITATIONS.evening;
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function formatTimeSince(timestamp: number): string {
-  const diff = Date.now() - timestamp;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  if (minutes < 60) return 'recently';
-  if (hours < 24) return 'earlier today';
-  if (days === 1) return 'yesterday';
-  if (days < 7) return `${days} days ago`;
-  return 'a while ago';
-}
-
-function buildWorldTitle(memory: NarrativeMemory): string {
-  const lastScene = memory.sceneSnapshots?.[memory.sceneSnapshots.length - 1];
-  if (lastScene) {
-    return `Chapter ${lastScene.sceneIndex + 1}`;
-  }
-  return 'The current chapter';
-}
-
-function buildWorldAtmosphere(memory: NarrativeMemory): string {
-  const emotionHue = EMOTIONAL_HUES[memory.emotion] || EMOTIONAL_HUES.neutral;
-  const arcPhrase = ARC_ATMOSPHERES[memory.arc.position] || ARC_ATMOSPHERES.beginning;
-  return `${arcPhrase.charAt(0).toUpperCase()}${arcPhrase.slice(1)}, and ${emotionHue}.`;
-}
-
-function buildLingeredAtmosphere(memory: NarrativeMemory): string {
-  const emotionHue = EMOTIONAL_HUES[memory.emotion] || EMOTIONAL_HUES.neutral;
-  return `You remember when ${emotionHue}.`;
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  if (hour >= 17 && hour < 22) return 'Good evening';
+  return 'Late night reading';
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const [theme] = useState<NarrativeTheme>(
-    new NarrativeThemeEngine().getTheme('neutral')
-  );
-  const typography = useMemo(() => buildTypography(theme), [theme]);
+  const theme = useTheme();
+  const [books, setBooks] = useState<BookEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [currentWorld, setCurrentWorld] = useState<NarrativeMemory | null>(null);
-  const [lingeringMoment, setLingeredMoment] = useState<NarrativeMemory | null>(null);
-
-  useEffect(() => {
-    loadFoyer();
+  const loadBooks = useCallback(async () => {
+    try {
+      const all = await getAllBooks();
+      setBooks((all || []) as BookEntry[]);
+    } catch (e) {
+      if (__DEV__) console.error('[Home] load failed:', e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
-  const loadFoyer = async () => {
-    try {
-      const persistence = new NarrativeMemoryPersistence(GOVERNOR);
-      const recent = await persistence.getRecentBooks(2);
-      setCurrentWorld(recent[0] || null);
-      setLingeredMoment(recent[1] || null);
-    } catch (e) {
-      console.error('[Foyer] load failed:', e);
-    }
-  };
+  useFocusEffect(
+    useCallback(() => {
+      loadBooks();
+    }, [loadBooks])
+  );
 
-  const invitation = useMemo(() => pickInvitation(), []);
+  const continueReading = books.filter((b) => b.progress && b.progress.completionPercent > 0 && b.progress.completionPercent < 100);
+  const recent = books.slice(0, 6);
+  const greeting = getTimeGreeting();
+
+  const renderBook = (book: BookEntry) => (
+    <BookCard
+      key={book._id}
+      book={book}
+      onPress={() => navigation.navigate('BookDetail', { bookId: book._id, bookTitle: book.title })}
+    />
+  );
+
+  if (loading) {
+    return (
+      <View style={[styles.centered, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </View>
+    );
+  }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.greetingSection}>
-          <Text
-            style={[
-              typography.ui.heading,
-              styles.greeting,
-              { color: theme.colors.text },
-            ]}
-          >
-            {TIME_GREETINGS[getTimeOfDay()]}
-          </Text>
-          <Text
-            style={[
-              typography.story,
-              styles.invitation,
-              { color: theme.colors.textSecondary },
-            ]}
-          >
-            {invitation}
-          </Text>
-        </View>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadBooks(); }} tintColor={theme.primary} />
+      }
+    >
+      <Text style={[styles.greeting, { color: theme.text }]} accessibilityRole="header">
+        {greeting}
+      </Text>
 
-        {currentWorld && (
+      {books.length === 0 && (
+        <View style={[styles.emptyCard, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>Your shelf is empty</Text>
+          <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+            Import a book from the Library tab to begin.
+          </Text>
           <TouchableOpacity
-            activeOpacity={0.6}
-            style={styles.currentWorldSection}
-            onPress={() => navigation.navigate('Player', {
-              bookId: currentWorld.bookId,
-              chapterIndex: currentWorld.sceneSnapshots?.[currentWorld.sceneSnapshots.length - 1]?.sceneIndex,
-              sentenceIndex: 0,
-            })}
+            style={[styles.emptyButton, { backgroundColor: theme.primary }]}
+            onPress={() => navigation.navigate('Library')}
+            accessibilityRole="button"
+            accessibilityLabel="Go to Library"
           >
-            <Text
-              style={[
-                typography.ui.label,
-                styles.sectionLabel,
-                { color: theme.colors.textMuted },
-              ]}
-            >
-              Current World
-            </Text>
-            <Text
-              style={[
-                typography.ui.display,
-                styles.worldTitle,
-                { color: theme.colors.text },
-              ]}
-              numberOfLines={2}
-            >
-              {buildWorldTitle(currentWorld)}
-            </Text>
-            <Text
-              style={[
-                typography.story,
-                styles.worldAtmosphere,
-                { color: theme.colors.textSecondary, fontStyle: 'italic' },
-              ]}
-            >
-              {buildWorldAtmosphere(currentWorld)}
-            </Text>
-            <Text
-              style={[
-                typography.ui.micro,
-                styles.worldTimestamp,
-                { color: theme.colors.textMuted },
-              ]}
-            >
-              Last visited {formatTimeSince(currentWorld.timestamp)}
-            </Text>
+            <Text style={[styles.emptyButtonText, { color: theme.surface }]}>Go to Library</Text>
           </TouchableOpacity>
-        )}
+        </View>
+      )}
 
-        {lingeringMoment && (
-          <View style={styles.momentSection}>
-            <Text
-              style={[
-                typography.ui.label,
-                styles.sectionLabel,
-                { color: theme.colors.textMuted },
-              ]}
-            >
-              A Moment That Stayed
-            </Text>
-            <Text
-              style={[
-                typography.story,
-                styles.momentAtmosphere,
-                { color: theme.colors.textSecondary, fontStyle: 'italic' },
-              ]}
-            >
-              {buildLingeredAtmosphere(lingeringMoment)}
-            </Text>
-            <Text
-              style={[
-                typography.ui.micro,
-                styles.momentMeta,
-                { color: theme.colors.textMuted },
-              ]}
-            >
-              {formatTimeSince(lingeringMoment.timestamp)}
-            </Text>
-          </View>
-        )}
+      {continueReading.length > 0 && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]} accessibilityRole="header">
+            CONTINUE READING
+          </Text>
+          {continueReading.map(renderBook)}
+        </View>
+      )}
 
-        {!currentWorld && !lingeringMoment && (
-          <View style={styles.emptyFoyer}>
-            <Text
-              style={[
-                typography.story,
-                styles.emptyText,
-                { color: theme.colors.textSecondary, fontStyle: 'italic' },
-              ]}
-            >
-              A story is waiting to be found.
-            </Text>
-          </View>
-        )}
-      </ScrollView>
-    </View>
+      {recent.length > 0 && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]} accessibilityRole="header">
+            RECENTLY ADDED
+          </Text>
+          {recent.map(renderBook)}
+        </View>
+      )}
+    </ScrollView>
   );
 };
 
@@ -273,56 +136,57 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
+  content: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 48,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+  },
+  centered: {
     flex: 1,
-  },
-  scrollContent: {
-    paddingTop: Platform.OS === 'ios' ? spacing.cinematic : spacing.xxl,
-    paddingBottom: spacing.cinematic,
-    paddingHorizontal: spacing.xl,
-  },
-  greetingSection: {
-    marginBottom: spacing.cinematic,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   greeting: {
-    marginBottom: spacing.sm,
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+    marginBottom: 24,
   },
-  invitation: {
-    opacity: 0.78,
+  section: {
+    marginBottom: 28,
   },
-  currentWorldSection: {
-    marginBottom: spacing.cinematic,
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1.2,
+    marginBottom: 12,
   },
-  worldTitle: {
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
+  emptyCard: {
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
   },
-  worldAtmosphere: {
-    marginBottom: spacing.md,
-    opacity: 0.82,
-  },
-  worldTimestamp: {
-    marginTop: spacing.xs,
-  },
-  momentSection: {
-    marginBottom: spacing.cinematic,
-  },
-  momentAtmosphere: {
-    marginTop: spacing.md,
-    opacity: 0.72,
-  },
-  momentMeta: {
-    marginTop: spacing.md,
-  },
-  sectionLabel: {
-    marginBottom: spacing.xs,
-  },
-  emptyFoyer: {
-    marginTop: spacing.xxl,
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
   },
   emptyText: {
+    fontSize: 14,
     textAlign: 'center',
-    opacity: atmosphereOpacity.proseContext,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  emptyButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  emptyButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 

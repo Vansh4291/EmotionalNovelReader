@@ -2,74 +2,76 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../utils/themeContext';
 
+// Deterministic cover palette — book covers are letter avatars with a stable
+// color derived from the title so the same book always looks the same.
 const COVER_COLORS = [
-  ['#FF6B6B', '#EE5A24'],
-  ['#A29BFE', '#6C5CE7'],
-  ['#55EFC4', '#00B894'],
-  ['#FDCB6E', '#E17055'],
-  ['#74B9FF', '#0984E3'],
-  ['#FD79A8', '#E84393'],
-  ['#00CEC9', '#55EFC4'],
-  ['#E17055', '#D63031'],
-  ['#6C5CE7', '#4834D4'],
-  ['#00B894', '#00A381'],
-  ['#81ECEC', '#00CEC9'],
-  ['#FAB1A0', '#E17055'],
-  ['#DFE6E9', '#636E72'],
-  ['#DDA0DD', '#6C5CE7'],
-  ['#FFEAA7', '#FDCB6E'],
-  ['#B8E994', '#00B894'],
+  ['#8B6F47', '#5C4A30'],
+  ['#5B7B9A', '#3D5468'],
+  ['#8B3A3A', '#5E2626'],
+  ['#6B4F7A', '#493653'],
+  ['#5B8A5B', '#3D5C3D'],
+  ['#A3874A', '#6D5A31'],
 ];
 
-const getCoverColors = (letter) => {
-  const code = (letter || 'A').charCodeAt(0);
-  return COVER_COLORS[code % COVER_COLORS.length];
+const getCoverColors = (title) => {
+  let hash = 0;
+  const t = title || '';
+  for (let i = 0; i < t.length; i++) {
+    hash = (hash * 31 + t.charCodeAt(i)) >>> 0;
+  }
+  return COVER_COLORS[hash % COVER_COLORS.length];
 };
 
-const BookCard = ({ book, onPress, onLongPress }) => {
+const BookCard = ({ book, onPress, onLongPress = null }) => {
   const theme = useTheme();
-  const initial = book?.title?.charAt(0)?.toUpperCase() || '?';
-  const [topColor, bottomColor] = getCoverColors(initial);
-  const progress = book?.progress?.completionPercent || 0;
+  const title = book?.title || 'Untitled';
+  const initial = title.charAt(0).toUpperCase() || '?';
+  const [topColor, bottomColor] = getCoverColors(title);
+  const progress = Math.min(100, Math.max(0, book?.progress?.completionPercent || 0));
   const hasProgress = progress > 0;
-  const clampedProgress = Math.min(100, Math.max(0, progress));
+  const chapter = book?.progress?.currentChapterIndex;
 
   return (
     <Pressable
       style={({ pressed }) => [styles.card, { backgroundColor: theme.surface }, pressed && styles.pressed]}
       onPress={onPress}
       onLongPress={onLongPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${title} by ${book?.author || 'Unknown Author'}${hasProgress ? `, ${Math.round(progress)} percent read` : ''}`}
+      accessibilityHint="Opens book details"
     >
       <View style={[styles.cover, { backgroundColor: topColor }]}>
         <View style={[styles.coverGradient, { backgroundColor: bottomColor }]} />
-        <Text style={styles.coverLetter}>{initial}</Text>
+        <Text style={styles.coverLetter} accessibilityElementsHidden>
+          {initial}
+        </Text>
       </View>
       <View style={styles.info}>
-        <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
-          {book.title || 'Untitled'}
+        <Text style={[styles.title, { color: theme.text }]} numberOfLines={2} allowFontScaling maxFontSizeMultiplier={1.4}>
+          {title}
         </Text>
-        <Text style={[styles.author, { color: theme.textSecondary }]} numberOfLines={1}>
-          {book.author || 'Unknown Author'}
+        <Text style={[styles.author, { color: theme.textSecondary }]} numberOfLines={1} allowFontScaling maxFontSizeMultiplier={1.4}>
+          {book?.author || 'Unknown Author'}
         </Text>
         <View style={styles.spacer} />
+        <Text style={[styles.meta, { color: theme.textMuted }]}>
+          {book?.totalChapters || 0} chapter{(book?.totalChapters || 0) !== 1 ? 's' : ''}
+        </Text>
         {hasProgress ? (
-          <>
-            <View style={styles.progressSection}>
-              <View style={[styles.progressBar, { backgroundColor: theme.surfaceLight }]}>
-                <View style={[styles.progressFill, { backgroundColor: theme.primary, width: `${clampedProgress}%` }]} />
-              </View>
-              <Text style={[styles.progressPercent, { color: theme.textMuted }]}>
-                {Math.round(clampedProgress)}%
-              </Text>
+          <View style={styles.progressSection}>
+            <View style={[styles.progressBar, { backgroundColor: theme.surfaceLight }]}>
+              <View style={[styles.progressFill, { backgroundColor: theme.primary, width: `${progress}%` }]} />
             </View>
-            <View style={styles.continueRow}>
-              <View style={[styles.continueDot, { backgroundColor: theme.primary }]} />
-              <Text style={[styles.continueText, { color: theme.primary }]}>Continue</Text>
-            </View>
-          </>
+            <Text style={[styles.progressPercent, { color: theme.textMuted }]}>
+              {Math.round(progress)}%
+            </Text>
+          </View>
         ) : (
-          <Text style={[styles.startText, { color: theme.textMuted }]} numberOfLines={1}>
-            Tap to explore
+          <Text style={[styles.startText, { color: theme.textMuted }]}>Not started</Text>
+        )}
+        {hasProgress && chapter != null && (
+          <Text style={[styles.continueText, { color: theme.primary }]}>
+            Chapter {chapter + 1}
           </Text>
         )}
       </View>
@@ -84,14 +86,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
     padding: 12,
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
   },
   pressed: {
     opacity: 0.85,
   },
   cover: {
-    width: 80,
-    height: 120,
+    width: 78,
+    height: 116,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
     opacity: 0.35,
   },
   coverLetter: {
-    fontSize: 40,
+    fontSize: 38,
     fontWeight: '700',
     color: '#FFFFFF',
     textShadowColor: 'rgba(0,0,0,0.15)',
@@ -120,7 +121,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   title: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
     lineHeight: 22,
   },
@@ -130,11 +131,15 @@ const styles = StyleSheet.create({
   },
   spacer: {
     flex: 1,
+    minHeight: 8,
+  },
+  meta: {
+    fontSize: 12,
+    marginBottom: 6,
   },
   progressSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
   },
   progressBar: {
     flex: 1,
@@ -149,29 +154,18 @@ const styles = StyleSheet.create({
   progressPercent: {
     fontSize: 11,
     marginLeft: 6,
-    minWidth: 30,
+    minWidth: 32,
     textAlign: 'right',
-  },
-  continueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  continueDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 5,
-  },
-  continueText: {
-    fontSize: 12,
-    fontWeight: '600',
   },
   startText: {
     fontSize: 12,
     fontStyle: 'italic',
+  },
+  continueText: {
+    fontSize: 12,
+    fontWeight: '600',
     marginTop: 4,
   },
 });
 
-export default BookCard;
+export default React.memo(BookCard);

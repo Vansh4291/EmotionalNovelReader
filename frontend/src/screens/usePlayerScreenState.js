@@ -2,65 +2,12 @@ import { useReducer, useRef, useCallback, useEffect } from 'react';
 import Tts from 'react-native-tts';
 import { getChapterWithSentences, updateProgress, getBookById, getBookmarks, addBookmark, deleteBookmark } from '../database/localDatabase.js';
 import { processChapterText } from '../utils/chapterProcessor.js';
+import { computeDelivery } from '../services/narration/emotionDelivery.js';
+import { PAUSE } from '../services/narration/emotionDelivery.js';
 import { usePlayerStore } from '../store/playerStore.js';
 import { useSettingsStore } from '../store/settingsStore.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-const EMOTION_PROFILES = {
-  joy: { speed: 1.15, pitch: 1.10 },
-  sadness: { speed: 0.78, pitch: 0.88 },
-  anger: { speed: 1.10, pitch: 1.05 },
-  fear: { speed: 0.90, pitch: 1.08 },
-  surprise: { speed: 1.05, pitch: 1.15 },
-  neutral: { speed: 1.0, pitch: 1.0 },
-};
-
-const EMOTION_PAUSE_MS = {
-  sadness: 1000, fear: 800, joy: 350, anger: 200,
-  surprise: 450, awe: 1400, neutral: 250,
-};
-
-const EMPHASIS_PAUSE_MS = 600;
-
-function perceptualSpeed(uiSpeed) {
-  if (uiSpeed <= 0.5) return 0.22;
-  if (uiSpeed <= 0.75) return 0.32;
-  if (uiSpeed <= 1.0) return 0.40;
-  if (uiSpeed <= 1.25) return 0.50;
-  if (uiSpeed <= 1.5) return 0.60;
-  return 0.78;
-}
-
-function getDeliveryParams(sentence, emotion, baseSpeed, basePitch) {
-  const profile = EMOTION_PROFILES[emotion] || EMOTION_PROFILES.neutral;
-  let speed = baseSpeed * profile.speed;
-  let pitch = basePitch * profile.pitch;
-  let pauseBefore = 0;
-  let pauseAfter = EMOTION_PAUSE_MS[emotion] || 250;
-
-  if (sentence.isDialogue) {
-    speed *= 0.88;
-    pitch *= 1.06;
-  }
-
-  if (sentence.isQuestion) {
-    pitch *= 1.08;
-  }
-
-  if (sentence.emphasisWords && sentence.emphasisWords.length > 0) {
-    speed *= 0.82;
-    pauseBefore = 300;
-    pauseAfter += EMPHASIS_PAUSE_MS;
-  }
-
-  return {
-    speed: perceptualSpeed(Math.max(0.5, Math.min(2.0, speed))),
-    pitch: Math.max(0.5, Math.min(2.0, pitch)),
-    pauseBefore,
-    pauseAfter,
-  };
-}
 
 function playerReducer(state, action) {
   switch (action.type) {
@@ -116,29 +63,30 @@ export function usePlayerScreenState(bookId, initialChapterIndex, initialSentenc
 
   const saveProgress = useCallback(async (ci, si) => {
     try { await updateProgress(bookId, ci, si); }
-    catch (e) { console.error('Save progress error:', e); }
+    catch (e) { if (__DEV__) console.error('Save progress error:', e); }
   }, [bookId]);
 
   const stopSpeaking = useCallback(async () => {
     try { isSpeakingRef.current = false; await Tts.stop(); setIsPlaying(false); }
-    catch (e) { console.error('Stop error:', e); }
+    catch (e) { if (__DEV__) console.error('Stop error:', e); }
   }, [setIsPlaying]);
 
   const speakSentence = useCallback(async (text, emotion, sentenceData) => {
     try {
-      const params = getDeliveryParams(
-        sentenceData || {},
-        emotion || 'neutral',
-        speedRef.current,
-        pitchRef.current,
-      );
+      const params = computeDelivery({
+        sentence: sentenceData || {},
+        emotion: emotion || 'neutral',
+        baseSpeed: speedRef.current,
+        basePitch: pitchRef.current,
+        emotionEffectsEnabled: useSettingsStore.getState().emotionEffectsEnabled,
+      });
       if (params.pauseBefore > 0) await sleep(params.pauseBefore);
       await Promise.all([
         Tts.setDefaultRate(params.speed),
         Tts.setDefaultPitch(params.pitch),
       ]);
       await Tts.speak(text);
-    } catch (e) { console.error('Speak error:', e); }
+    } catch (e) { if (__DEV__) console.error('Speak error:', e); }
   }, []);
 
   const loadChapter = useCallback(async (ci) => {
@@ -186,8 +134,14 @@ export function usePlayerScreenState(bookId, initialChapterIndex, initialSentenc
       saveProgress(cidx, ni);
       const next = ss[ni];
       if (next) {
-        const pauseMs = ss[ci].emphasisWords && ss[ci].emphasisWords.length > 0 ? 800
-          : EMOTION_PAUSE_MS[ss[ci].emotion] || 250;
+        const prev = ss[ci] || {};
+        const pauseMs = computeDelivery({
+          sentence: prev,
+          emotion: prev.emotion || 'neutral',
+          baseSpeed: speedRef.current,
+          basePitch: pitchRef.current,
+          emotionEffectsEnabled: useSettingsStore.getState().emotionEffectsEnabled,
+        }).pauseAfter;
         await sleep(pauseMs);
         await speakSentence(next.text, next.emotion, next);
       }
@@ -201,10 +155,11 @@ export function usePlayerScreenState(bookId, initialChapterIndex, initialSentenc
     try {
       await Promise.all([
         Tts.setDefaultLanguage('en-US'),
-        Tts.setDefaultRate(perceptualSpeed(defaultSpeed || 1.0)),
+        Tts.setDefaultRate(defaultSpeed || 1.0),
         Tts.setDefaultPitch(defaultPitch || 1.0),
       ]);
-    } catch (e) { console.error('TTS init error:', e); }
+      await Tts.getInitStatus();
+    } catch (e) { if (__DEV__) console.error('TTS init error:', e); }
   }, [defaultSpeed, defaultPitch]);
 
   const handleTTSFinishRef = useRef(null);
@@ -212,11 +167,27 @@ export function usePlayerScreenState(bookId, initialChapterIndex, initialSentenc
   useEffect(() => { handleTTSFinishRef.current = handleSentenceComplete; }, [handleSentenceComplete]);
   useEffect(() => { handleTTSCancelRef.current = () => { isSpeakingRef.current = false; setIsPlaying(false); }; }, [setIsPlaying]);
   useEffect(() => {
+    let finishSub = null;
+    let cancelSub = null;
+    let errorSub = null;
     initTTS();
-    Tts.addEventListener('tts-finish', () => handleTTSFinishRef.current?.());
-    Tts.addEventListener('tts-cancel', () => handleTTSCancelRef.current?.());
+    // Keep subscription handles and remove them on unmount — previously these
+    // listeners leaked on every PlayerScreen mount, causing double narration.
+    try {
+      finishSub = Tts.addEventListener('tts-finish', () => handleTTSFinishRef.current?.());
+      cancelSub = Tts.addEventListener('tts-cancel', () => handleTTSCancelRef.current?.());
+      errorSub = Tts.addEventListener('tts-error', () => {
+        // Treat a TTS error as a cancel so playback state stays consistent.
+        handleTTSCancelRef.current?.();
+      });
+    } catch (e) { if (__DEV__) console.error('TTS listener error:', e); }
     loadBookAndChapter();
-    return () => { stopSpeaking(); };
+    return () => {
+      try { finishSub?.remove(); } catch (e) { /* noop */ }
+      try { cancelSub?.remove(); } catch (e) { /* noop */ }
+      try { errorSub?.remove(); } catch (e) { /* noop */ }
+      stopSpeaking();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initTTS, stopSpeaking]);
 
