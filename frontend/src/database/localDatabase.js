@@ -79,10 +79,17 @@ export const addBook = async (bookData) => {
 
 export const getAllBooks = async () => {
   const realm = await getRealm();
-  const books = realm.objects('Book').sorted('addedAt', true);
-  return books.map(book => {
-    const progress = realm.objects('UserProgress').filtered('bookId == $0', book._id)[0];
-    return {
+  const books = realm.objects("Book").sorted("addedAt", true);
+  // Normalize the collection to a plain array: the Realm SDK exposes a live
+  // Results (iterable; older versions lack Array.prototype.map), and the
+  // validation harness mirrors the same surface. Converting to an array keeps
+  // Array methods (map/filter/sort) available regardless of Realm version.
+  const items = Array.isArray(books) ? books : Array.from(books);
+  const out = [];
+  for (const book of items) {
+    const progressList = realm.objects('UserProgress').filtered('bookId == $0', book._id);
+    const progress = progressList.length > 0 ? progressList[0] : null;
+    out.push({
       _id: book._id,
       title: book.title,
       author: book.author,
@@ -96,8 +103,9 @@ export const getAllBooks = async () => {
         currentChapterIndex: progress.currentChapterIndex,
         completionPercent: progress.completionPercent,
       } : null,
-    };
-  });
+    });
+  }
+  return out;
 };
 
 export const getBookById = async (bookId) => {

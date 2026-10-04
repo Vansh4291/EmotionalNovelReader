@@ -76,8 +76,13 @@ const LibraryScreen = ({ navigation }) => {
 
       const filePath = file.uri;
       const fileName = file.name || 'Unknown';
-      const ext = fileName.split('.').pop().toLowerCase();
-      const fileType = ext === 'txt' ? 'txt' : ext;
+      // Prefer the selected-file MIME type (the shim sets this) over the
+      // extension, which can be empty for simple picker results.
+      const mime = file.type || '';
+      const ext = (file.name || '').split('.').pop().toLowerCase();
+      const fileType = mime
+        ? (mime.startsWith('text/') ? 'txt' : mime.includes('/pdf') ? 'pdf' : mime.includes('epub') ? 'epub' : ext)
+        : (ext === 'txt' ? 'txt' : ext);
 
       const bookData = await parseLocalBook(filePath, fileType);
 

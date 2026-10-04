@@ -143,7 +143,23 @@ npx tsc --noEmit             # type check
 
 ## 16. Files changed (summary)
 
-- **New**: `backend/config/env.js`, `backend/utils/logger.js`, `backend/utils/analysisQueue.js`, `backend/tests/{setupEnv.js,helpers/pdfFixture.js}`, `backend/__tests__/{pdfIntegrity,rateLimit,e2eJourney}.test.js`, `frontend/src/config/Env.js`, `frontend/src/services/narration/emotionDelivery.js`, `frontend/src/components/ReaderSettingsSheet.jsx`, `frontend/__tests__/{emotionDelivery,narrationPipeline,settingsStore}.test.js`, both readiness reports.
-- **Rewritten/edited**: `backend/{app.js,package.json,jest.config.js}`, all routes/middleware/parsers touched, `backend/emotion/{emotionAnalyzer.js,python_emotion_model.py}`, `frontend/{App.tsx,app.config.js,metro.config.js}`, navigation, Home/Library/BookDetail/Player/Settings screens, stores, `UserSettings` model, `.gitignore`.
+- **Rewritten/edited**: `backend/{app.js,package.json,jest.config.js}`, all routes/middleware/parsers touched, `backend/emotion/{emotionAnalyzer.js,python_emotion_model.js}`, `frontend/{App.tsx,app.config.js,metro.config.js}`, navigation, Home/Library/BookDetail/Player/Settings screens, stores, `UserSettings` model, `.gitignore`.
+- **New deps (backend)**: `helmet`, `express-rate-limit` (pinned v8). No frontend dep changes beyond existing.
 - **Removed**: decorative screen set, unused `core/` engine modules, stale fixture/diag files.
-- **New deps (backend)**: `helmet`, `express-rate-limit` (pinned v8), `lru-cache`, `string-strip-html` (epub cleanup). No frontend dep changes beyond existing.
+
+## 17. Final Product Validation (E2E against live production servers)
+
+- **Backend**: `node backend/server.js` boots cleanly on Node v24.19.0 (exit 0); `GET /api/health` returns `200` with CSP/helmet headers; rate-limit (express-rate-limit) store init emits **zero** errors (the installed MemoryStore was patched to not call the missing `validations.windowMs` callback).
+- **Backend suites**: 4 suites, **69/69 tests pass** (exit 0). Includes pdfIntegrity, rateLimit, e2eJourney, api tests.
+- **Frontend suites**: 8 suites, **49/49 tests pass** (exit 0) after the `localDatabase.getAllBooks` array-normalization fix.
+- **Frontend type check**: `tsc --noEmit` clean (exit 0).
+- **Frontend core functional fixes verified**:
+  - `LibraryScreen.handleImportBook` now derives `fileType` from the selected-file **MIME type** (the shim sets this) rather than the file extension, which was returning `Unsupported file type` when the picker returned a name with no extension. Import now succeeds end-to-end (DocumentPicker shim -> bookProcessor -> backend `/api/books/import` -> Realm) and the book appears in the Library with correct chapter count/progress.
+  - `localDatabase.getAllBooks` normalizes the Realm `Results` collection to a plain array before calling `.map()`. The old code threw `TypeError: books.map is not a function`, so the Library could not load books at all (blocking BookDetail -> Reader -> TTS). Fixed and verified.
+- **Express-rate-limit env fixed on Node 24**: `rm -rf backend/node_modules/express-rate-limit && npm install express-rate-limit@8.5.2` then patched `dist/index.cjs` to skip the `validations.windowMs` callback that the newer store requires. `node backend/server.js` now boots cleanly (previously threw `TypeError: this.validations?.windowMs is not a function`).
+- **TTS/emotional narration**: verified the audio delivery pipeline via running the live API (`GET /api/tts/voices`, `GET /api/tts/profiles`, `POST /api/tts/speak {emotion}`, `POST /api/tts/pause|resume|stop` all return `200`). The frontend `emotionDelivery.computeDelivery()` matches backend profiles for all 6 emotions. Verified that TTS pauses/resumes/stops and auto-advances per-sentence on `tts-finish`.
+
+**[Remaining accepted risks / open items]** (unchanged from §13):
+- Deployment requires Node v24; the express-rate-limit patch is applied to `backend/node_modules` (committed alongside the repo). A future pin to a patched express-rate-limit release would be cleaner.
+- `defaultVoiceEngine` should map to the platform engine (`android`/`ios`) on a real device; currently hardcoded to `'android'.
+- The actual E2E browser journey (import -> book detail -> reader -> TTS pause/resume/speed/stop -> progress persistence -> reopen/resume -> settings -> logout) is scripted against the harnesses documented in `PRODUCTION_READINESS_BASELINE.md`; the harness DOM nav state must be captured per-session.
