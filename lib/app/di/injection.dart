@@ -3,6 +3,9 @@ import '../../core/database/app_database.dart';
 import '../../core/logging/app_logger.dart';
 import '../../core/security/secure_storage_service.dart';
 import '../../core/storage/storage_service.dart';
+import '../../features/annotations/data/repositories/annotation_repository_impl.dart';
+import '../../features/annotations/domain/repositories/annotation_repository.dart';
+import '../../features/annotations/presentation/cubit/annotation_cubit.dart';
 import '../../features/import/domain/extractors/extractor_factory.dart';
 import '../../features/import/domain/services/format_detector.dart';
 import '../../features/import/domain/services/import_service.dart';
@@ -25,6 +28,7 @@ Future<void> configureDependencies({
   AppLogger? loggerOverride,
   FilePickerFn? filePickerOverride,
   SearchRepository? searchRepositoryOverride,
+  AnnotationRepository? annotationRepositoryOverride,
 }) async {
   // Clear any existing registrations (useful during tests)
   if (getIt.isRegistered<AppLogger>()) {
@@ -82,11 +86,25 @@ Future<void> configureDependencies({
     ),
   );
 
+  // Feature: Annotations dependencies
+  final annotationRepo = annotationRepositoryOverride ??
+      AnnotationRepositoryImpl(
+        database: getIt<AppDatabase>(),
+      );
+  getIt.registerLazySingleton<AnnotationRepository>(() => annotationRepo);
+
+  getIt.registerFactory<AnnotationCubit>(
+    () => AnnotationCubit(
+      repository: getIt<AnnotationRepository>(),
+    ),
+  );
+
   // Feature: Reader dependencies
   getIt.registerFactory<ReaderCubit>(
     () => ReaderCubit(
       bookRepository: getIt<BookRepository>(),
       logger: getIt<AppLogger>(),
+      annotationRepository: getIt<AnnotationRepository>(),
     ),
   );
 
@@ -106,4 +124,3 @@ Future<void> configureDependencies({
 
   logger.info('Dependency injection composition root initialized successfully.');
 }
-

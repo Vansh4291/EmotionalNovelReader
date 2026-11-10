@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/presentation/widgets/error_view.dart';
 import '../../../../core/presentation/widgets/loading_view.dart';
+import '../../../annotations/domain/entities/highlight_entity.dart';
+import '../../../annotations/presentation/widgets/annotations_sheet.dart';
+import '../../../annotations/presentation/widgets/note_editor_dialog.dart';
 import '../../domain/entities/reader_preferences.dart';
 import '../cubit/reader_cubit.dart';
 import '../cubit/reader_state.dart';
@@ -19,11 +22,88 @@ class ReaderScreen extends StatefulWidget {
   final String bookId;
   final int? initialChapterIndex;
 
+  static List<InlineSpan> buildHighlightedSpans({
+    required String content,
+    required List<HighlightEntity> highlights,
+    required TextStyle baseStyle,
+  }) {
+    if (highlights.isEmpty) {
+      return [TextSpan(text: content, style: baseStyle)];
+    }
+
+    final validHighlights = highlights
+        .where((h) =>
+            h.startOffset >= 0 &&
+            h.endOffset <= content.length &&
+            h.startOffset < h.endOffset)
+        .toList()
+      ..sort((a, b) {
+        final cmp = a.startOffset.compareTo(b.startOffset);
+        if (cmp != 0) return cmp;
+        return a.endOffset.compareTo(b.endOffset);
+      });
+
+    if (validHighlights.isEmpty) {
+      return [TextSpan(text: content, style: baseStyle)];
+    }
+
+    final List<InlineSpan> spans = [];
+    int cursor = 0;
+
+    for (final h in validHighlights) {
+      if (h.endOffset <= cursor) {
+        continue;
+      }
+
+      if (h.startOffset > cursor) {
+        spans.add(
+          TextSpan(
+            text: content.substring(cursor, h.startOffset),
+            style: baseStyle,
+          ),
+        );
+        cursor = h.startOffset;
+      }
+
+      final effectiveStart = cursor;
+      final effectiveEnd = h.endOffset.clamp(0, content.length);
+
+      if (effectiveEnd > effectiveStart) {
+        final highlightedText = content.substring(effectiveStart, effectiveEnd);
+        spans.add(
+          TextSpan(
+            text: highlightedText,
+            style: baseStyle.copyWith(
+              backgroundColor: Color(h.colorValue).withValues(alpha: 0.45),
+              decoration: h.hasNote ? TextDecoration.underline : null,
+              decorationStyle: h.hasNote ? TextDecorationStyle.dotted : null,
+              decorationColor: h.hasNote ? Colors.black87 : null,
+              decorationThickness: h.hasNote ? 2.0 : null,
+            ),
+          ),
+        );
+        cursor = effectiveEnd;
+      }
+    }
+
+    if (cursor < content.length) {
+      spans.add(
+        TextSpan(
+          text: content.substring(cursor),
+          style: baseStyle,
+        ),
+      );
+    }
+
+    return spans;
+  }
+
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
 }
 
-class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver {
+class _ReaderScreenState extends State<ReaderScreen>
+    with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   bool _initialScrollRestored = false;
 
@@ -48,7 +128,8 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       context.read<ReaderCubit>().flushProgress();
     }
   }
@@ -57,7 +138,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     // Only record user scroll movements after initial position has been restored
     if (!_initialScrollRestored) return;
     if (_scrollController.hasClients) {
-      context.read<ReaderCubit>().updateScrollPosition(_scrollController.offset);
+      context
+          .read<ReaderCubit>()
+          .updateScrollPosition(_scrollController.offset);
     }
   }
 
@@ -84,14 +167,85 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   ) {
     final theme = Theme.of(context);
     return switch (mode) {
-      ReaderThemeMode.light => (const Color(0xFFFAF9F6), const Color(0xFF1E1E1E)),
-      ReaderThemeMode.dark => (const Color(0xFF121212), const Color(0xFFE0E0E0)),
-      ReaderThemeMode.sepia => (const Color(0xFFFBF0D9), const Color(0xFF5F4B32)),
+      ReaderThemeMode.light => (
+          const Color(0xFFFAF9F6),
+          const Color(0xFF1E1E1E),
+        ),
+      ReaderThemeMode.dark => (
+          const Color(0xFF121212),
+          const Color(0xFFE0E0E0),
+        ),
+      ReaderThemeMode.sepia => (
+          const Color(0xFFFBF0D9),
+          const Color(0xFF5F4B32),
+        ),
       ReaderThemeMode.system => (
           theme.colorScheme.surface,
           theme.colorScheme.onSurface,
         ),
     };
+  }
+
+  Widget _buildContextMenu(
+    BuildContext context,
+    EditableTextState editableTextState,
+    ReaderLoaded state,
+  ) {
+    final textEditingValue = editableTextState.textEditingValue;
+    final selection = textEditingValue.selection;
+    final defaultItems = editableTextState.contextMenuButtonItems;
+
+    if (!selection.isValid || selection.isCollapsed) {
+      return AdaptiveTextSelectionToolbar.buttonItems(
+        anchors: editableTextState.contextMenuAnchors,
+        buttonItems: defaultItems,
+      );
+    }
+
+    final selectedText = textEditingValue.text.substring(
+      selection.start,
+      selection.end,
+    );
+
+    final customItems = <ContextMenuButtonItem>[
+      ContextMenuButtonItem(
+        label: 'Highlight',
+        onPressed: () async {
+          editableTextState.hideToolbar();
+          await context.read<ReaderCubit>().addHighlight(
+                startOffset: selection.start,
+                endOffset: selection.end,
+                selectedText: selectedText,
+              );
+        },
+      ),
+      ContextMenuButtonItem(
+        label: 'Add Note',
+        onPressed: () async {
+          editableTextState.hideToolbar();
+          final result = await NoteEditorDialog.show(
+            context: context,
+            selectedText: selectedText,
+            title: 'Add Note',
+          );
+          if (result != null && context.mounted) {
+            await context.read<ReaderCubit>().addHighlight(
+                  startOffset: selection.start,
+                  endOffset: selection.end,
+                  selectedText: selectedText,
+                  note: result.note,
+                  colorValue: result.colorValue,
+                );
+          }
+        },
+      ),
+      ...defaultItems,
+    ];
+
+    return AdaptiveTextSelectionToolbar.buttonItems(
+      anchors: editableTextState.contextMenuAnchors,
+      buttonItems: customItems,
+    );
   }
 
   @override
@@ -111,7 +265,8 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
               appBar: AppBar(title: const Text('Reader')),
               body: ErrorView(
                 message: message,
-                onRetry: () => context.read<ReaderCubit>().loadBook(widget.bookId),
+                onRetry: () =>
+                    context.read<ReaderCubit>().loadBook(widget.bookId),
               ),
             ),
           ReaderLoaded() => _buildReaderScaffold(context, state),
@@ -121,7 +276,8 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   }
 
   Widget _buildReaderScaffold(BuildContext context, ReaderLoaded state) {
-    final (bgColor, textColor) = _resolveThemeColors(context, state.preferences.themeMode);
+    final (bgColor, textColor) =
+        _resolveThemeColors(context, state.preferences.themeMode);
     final isDark = Theme.of(context).brightness == Brightness.dark ||
         state.preferences.themeMode == ReaderThemeMode.dark;
 
@@ -160,6 +316,42 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
               ),
               actions: [
                 IconButton(
+                  icon: Icon(
+                    state.isCurrentChapterBookmarked
+                        ? Icons.bookmark
+                        : Icons.bookmark_border_rounded,
+                    color: state.isCurrentChapterBookmarked
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                  tooltip: state.isCurrentChapterBookmarked
+                      ? 'Remove Bookmark'
+                      : 'Bookmark Chapter',
+                  onPressed: () {
+                    context.read<ReaderCubit>().toggleBookmark();
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.collections_bookmark_rounded),
+                  tooltip: 'Bookmarks & Highlights',
+                  onPressed: () async {
+                    await AnnotationsSheet.show(
+                      context: context,
+                      bookId: state.book.id,
+                      onNavigate: (chapterIndex, location) {
+                        _scrollController.jumpTo(0.0);
+                        context.read<ReaderCubit>().goToChapter(
+                              chapterIndex,
+                              targetLocation: location,
+                            );
+                      },
+                    );
+                    if (context.mounted) {
+                      await context.read<ReaderCubit>().reloadAnnotations();
+                    }
+                  },
+                ),
+                IconButton(
                   icon: const Icon(Icons.search_rounded),
                   tooltip: 'Search in Book',
                   onPressed: () {
@@ -184,9 +376,8 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
               ],
             )
           : null,
-      bottomNavigationBar: state.isControlsVisible
-          ? _buildBottomBar(context, state)
-          : null,
+      bottomNavigationBar:
+          state.isControlsVisible ? _buildBottomBar(context, state) : null,
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: () => context.read<ReaderCubit>().toggleControls(),
@@ -213,15 +404,27 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                 const Divider(),
                 const SizedBox(height: 20),
 
-                // Chapter Content
-                SelectableText(
-                  state.currentChapter.content,
-                  style: TextStyle(
-                    fontSize: state.preferences.fontSize,
-                    height: state.preferences.lineHeight,
-                    color: textColor,
-                    letterSpacing: 0.2,
+                // Chapter Content with Persistent Highlights & Context Menu
+                SelectableText.rich(
+                  TextSpan(
+                    children: ReaderScreen.buildHighlightedSpans(
+                      content: state.currentChapter.content,
+                      highlights: state.highlights,
+                      baseStyle: TextStyle(
+                        fontSize: state.preferences.fontSize,
+                        height: state.preferences.lineHeight,
+                        color: textColor,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
                   ),
+                  contextMenuBuilder: (context, editableTextState) {
+                    return _buildContextMenu(
+                      context,
+                      editableTextState,
+                      state,
+                    );
+                  },
                 ),
                 const SizedBox(height: 60),
 
@@ -315,4 +518,3 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     );
   }
 }
-

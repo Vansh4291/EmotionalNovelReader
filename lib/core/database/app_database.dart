@@ -158,12 +158,35 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
+  Future<List<Bookmark>> getBookmarksForBook(String bookId) {
+    return (select(bookmarks)
+          ..where((b) => b.bookId.equals(bookId))
+          ..orderBy([(b) => OrderingTerm.desc(b.createdAt)]))
+        .get();
+  }
+
+  Future<Bookmark?> getBookmarkById(String bookmarkId) {
+    return (select(bookmarks)..where((b) => b.id.equals(bookmarkId))).getSingleOrNull();
+  }
+
+  Future<Bookmark?> getBookmarkForChapter(String bookId, String chapterId) {
+    return (select(bookmarks)
+          ..where((b) => b.bookId.equals(bookId) & b.chapterId.equals(chapterId)))
+        .getSingleOrNull();
+  }
+
   Future<int> insertBookmark(BookmarksCompanion bookmark) {
     return into(bookmarks).insert(bookmark);
   }
 
   Future<int> deleteBookmark(String bookmarkId) {
     return (delete(bookmarks)..where((b) => b.id.equals(bookmarkId))).go();
+  }
+
+  Future<int> deleteBookmarkForChapter(String bookId, String chapterId) {
+    return (delete(bookmarks)
+          ..where((b) => b.bookId.equals(bookId) & b.chapterId.equals(chapterId)))
+        .go();
   }
 
   Stream<List<Highlight>> watchHighlightsForBook(String bookId) {
@@ -173,8 +196,47 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
+  Future<List<Highlight>> getHighlightsForBook(String bookId) {
+    return (select(highlights)
+          ..where((h) => h.bookId.equals(bookId))
+          ..orderBy([(h) => OrderingTerm.desc(h.createdAt)]))
+        .get();
+  }
+
+  Future<List<Highlight>> getHighlightsForChapter(String bookId, String chapterId) {
+    return (select(highlights)
+          ..where((h) => h.bookId.equals(bookId) & h.chapterId.equals(chapterId))
+          ..orderBy([(h) => OrderingTerm.asc(h.startLocation)]))
+        .get();
+  }
+
+  Stream<List<Highlight>> watchHighlightsForChapter(String bookId, String chapterId) {
+    return (select(highlights)
+          ..where((h) => h.bookId.equals(bookId) & h.chapterId.equals(chapterId))
+          ..orderBy([(h) => OrderingTerm.asc(h.startLocation)]))
+        .watch();
+  }
+
+  Future<Highlight?> getHighlightById(String highlightId) {
+    return (select(highlights)..where((h) => h.id.equals(highlightId))).getSingleOrNull();
+  }
+
   Future<int> insertHighlight(HighlightsCompanion highlight) {
     return into(highlights).insert(highlight);
+  }
+
+  Future<bool> updateHighlight(HighlightsCompanion highlight) {
+    return update(highlights).replace(highlight);
+  }
+
+  Future<int> updateHighlightNote(String highlightId, String? note) {
+    return (update(highlights)..where((h) => h.id.equals(highlightId)))
+        .write(HighlightsCompanion(note: Value(note)));
+  }
+
+  Future<int> updateHighlightColor(String highlightId, int colorValue) {
+    return (update(highlights)..where((h) => h.id.equals(highlightId)))
+        .write(HighlightsCompanion(colorValue: Value(colorValue)));
   }
 
   Future<int> deleteHighlight(String highlightId) {

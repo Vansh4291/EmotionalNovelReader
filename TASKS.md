@@ -1159,26 +1159,33 @@ These tasks are investigations first. A task may produce a prototype, comparison
 | Phase / Epic | P05 / E05 |
 | Module | ANNOTATIONS |
 | Priority / MoSCoW | P1 / Must Have |
-| Status | Planned |
+| Status | Completed |
 | Owner | AI Agent |
-| Size / Effort | L / TBD |
+| Size / Effort | L / Complete |
 | Depends on | ENR-0032, ENR-0042, ENR-0043 |
 | Blocks | ENR-0060 |
 | Related to | ENR-0050 |
 
 **Subtasks**
-- [ ] ENR-0051-S01 Define annotation and anchor data models.
-- [ ] ENR-0051-S02 Implement bookmarks.
-- [ ] ENR-0051-S03 Implement highlights.
-- [ ] ENR-0051-S04 Implement notes and annotations.
-- [ ] ENR-0051-S05 Implement annotation listing and navigation.
-- [ ] ENR-0051-S06 Handle source changes and invalid anchors.
-- [ ] ENR-0051-S07 Add persistence, migration, and regression tests.
+- [x] ENR-0051-S01 Define annotation and anchor data models (`BookmarkEntity`, `HighlightEntity` with UTF-16 code-unit offsets, Material 3 color palette, and reconciliation support).
+- [x] ENR-0051-S02 Implement bookmarks (CRUD, chapter toggle, duplicate prevention, and reactive watchers).
+- [x] ENR-0051-S03 Implement highlights (text selection integration via `SelectableText.rich`, context menu, custom color selection, and overlapping span handling).
+- [x] ENR-0051-S04 Implement notes and annotations (`NoteEditorDialog`, note attachment, editing, and deletion).
+- [x] ENR-0051-S05 Implement annotation listing and navigation (`AnnotationsSheet` modal bottom sheet with filter chips for All/Bookmarks/Highlights/Notes, search filtering, and chapter navigation).
+- [x] ENR-0051-S06 Handle source changes and invalid anchors (`isValidIn`, `reconcileIn`, and safe boundary clamping).
+- [x] ENR-0051-S07 Add persistence, migration, and regression tests (repository tests, cubit tests, Unicode multi-script tests, reader integration tests, and end-to-end lifecycle tests).
 
 **Acceptance criteria**
 - Annotations persist locally.
 - Users can navigate from saved annotations to supported source positions.
 - Invalid or unavailable anchors are handled safely.
+
+**Implementation Summary**
+- **Data Models:** Created `BookmarkEntity` and `HighlightEntity` with UTF-16 code-unit offsets (`startOffset`, `endOffset`), exact text excerpt (`selectedText`), optional note, Material 3 pastel highlight palette (Yellow `0xFFFFF59D`, Green `0xFFA5D6A7`, Blue `0xFF90CAF9`, Pink `0xFFF48FB1`, Orange `0xFFFFCC80`), `isValidIn(content)`, and `reconcileIn(content)`.
+- **Database & Repositories:** Leveraged existing Drift `Bookmarks` and `Highlights` tables with cascading foreign keys (`ON DELETE CASCADE`). Implemented `AnnotationRepository` and `AnnotationRepositoryImpl` with duplicate bookmark prevention, reactive streams (`watchBookmarksForBook`, `watchHighlightsForChapter`), and full CRUD.
+- **Presentation & UI:** Implemented `AnnotationCubit` and `AnnotationState` with search filtering and category filtering (`AnnotationFilter.all`, `bookmarks`, `highlights`, `notes`). Created `HighlightColorPicker`, `NoteEditorDialog`, and `AnnotationsSheet`.
+- **Reader Integration:** Integrated native text selection context menu with "Highlight" and "Add Note" actions on `SelectableText.rich`, AppBar bookmark toggle, and persistent highlight rendering via `ReaderScreen.buildHighlightedSpans`.
+- **Verification:** 131 automated tests passing across 21 test files (`flutter test`), 0 analyzer issues (`flutter analyze`), and successful debug APK build (`flutter build apk --debug`).
 
 ### ENR-0052 - Implement reading statistics and basic goals
 
