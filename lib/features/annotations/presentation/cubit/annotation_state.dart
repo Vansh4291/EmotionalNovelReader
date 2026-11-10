@@ -1,4 +1,5 @@
 import '../../domain/entities/bookmark_entity.dart';
+import '../../domain/entities/chapter_note_entity.dart';
 import '../../domain/entities/highlight_entity.dart';
 
 enum AnnotationFilter {
@@ -25,6 +26,7 @@ class AnnotationLoaded extends AnnotationState {
     required this.bookId,
     required this.allBookmarks,
     required this.allHighlights,
+    this.allChapterNotes = const [],
     this.filter = AnnotationFilter.all,
     this.searchQuery = '',
   });
@@ -32,6 +34,7 @@ class AnnotationLoaded extends AnnotationState {
   final String bookId;
   final List<BookmarkEntity> allBookmarks;
   final List<HighlightEntity> allHighlights;
+  final List<ChapterNoteEntity> allChapterNotes;
   final AnnotationFilter filter;
   final String searchQuery;
 
@@ -70,12 +73,31 @@ class AnnotationLoaded extends AnnotationState {
     }).toList();
   }
 
-  bool get isEmpty => displayedBookmarks.isEmpty && displayedHighlights.isEmpty;
+  List<ChapterNoteEntity> get displayedChapterNotes {
+    if (filter == AnnotationFilter.bookmarks || filter == AnnotationFilter.highlights) {
+      return [];
+    }
+    if (searchQuery.trim().isEmpty) {
+      return allChapterNotes;
+    }
+    final q = searchQuery.trim().toLowerCase();
+    return allChapterNotes.where((cn) {
+      final content = cn.content.toLowerCase();
+      final chTitle = cn.chapterTitle?.toLowerCase() ?? '';
+      return content.contains(q) || chTitle.contains(q);
+    }).toList();
+  }
+
+  bool get isEmpty =>
+      displayedBookmarks.isEmpty &&
+      displayedHighlights.isEmpty &&
+      displayedChapterNotes.isEmpty;
 
   AnnotationLoaded copyWith({
     String? bookId,
     List<BookmarkEntity>? allBookmarks,
     List<HighlightEntity>? allHighlights,
+    List<ChapterNoteEntity>? allChapterNotes,
     AnnotationFilter? filter,
     String? searchQuery,
   }) {
@@ -83,6 +105,7 @@ class AnnotationLoaded extends AnnotationState {
       bookId: bookId ?? this.bookId,
       allBookmarks: allBookmarks ?? this.allBookmarks,
       allHighlights: allHighlights ?? this.allHighlights,
+      allChapterNotes: allChapterNotes ?? this.allChapterNotes,
       filter: filter ?? this.filter,
       searchQuery: searchQuery ?? this.searchQuery,
     );

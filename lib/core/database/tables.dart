@@ -85,3 +85,19 @@ class ReadingProgressTable extends Table {
   Set<Column> get primaryKey => {bookId};
 }
 
+/// Standalone chapter-level notes table.
+class ChapterNotes extends Table {
+  TextColumn get id => text()();
+  TextColumn get bookId =>
+      text().customConstraint('NOT NULL REFERENCES books(id) ON DELETE CASCADE')();
+  TextColumn get chapterId =>
+      text().customConstraint('NOT NULL REFERENCES chapters(id) ON DELETE CASCADE')();
+  TextColumn get content => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+

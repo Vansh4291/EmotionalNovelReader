@@ -100,7 +100,7 @@ void main() {
       appDb = AppDatabase(NativeDatabase(dbFile));
 
       // Trigger database open and migration
-      expect(appDb!.schemaVersion, 3);
+      expect(appDb!.schemaVersion, 4);
 
       // 3. Verify existing data preserved intact
       final migratedBook = await appDb!.getBookById('book-v1');

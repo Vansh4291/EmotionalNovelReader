@@ -579,20 +579,36 @@ Example structure:
 ## [Unreleased]
 
 ### Added
-- **Phase 5: ENR-0051 Bookmarks, Highlights, Notes, and Annotations**:
-  - Implemented annotation and anchor domain models (`BookmarkEntity`, `HighlightEntity`) using UTF-16 code-unit offsets (`startOffset`, `endOffset`), exact text excerpt capture (`selectedText`), optional note text, and Material 3 pastel highlight palette (Soft Yellow `0xFFFFF59D`, Soft Green `0xFFA5D6A7`, Soft Blue `0xFF90CAF9`, Soft Pink `0xFFF48FB1`, Soft Orange `0xFFFFCC80`).
-  - Added anchor validity checks (`isValidIn`) and anchor reconciliation logic (`reconcileIn`) to recover highlight anchors after source text shifts or chapter updates.
-  - Implemented `AnnotationRepository` contract and `AnnotationRepositoryImpl` using existing Drift SQLite `Bookmarks` and `Highlights` tables with cascading foreign keys (`ON DELETE CASCADE`), duplicate bookmark prevention per chapter, and reactive stream watchers (`watchBookmarksForBook`, `watchHighlightsForChapter`).
-  - Implemented `AnnotationCubit` and `AnnotationState` providing category filtering (`AnnotationFilter.all`, `bookmarks`, `highlights`, `notes`), case-insensitive search across chapter titles, labels, highlights, and notes, and reactive CRUD state updates.
-  - Implemented reader UI integration in `ReaderScreen`:
-    - Converted content display to `SelectableText.rich` using `ReaderScreen.buildHighlightedSpans` with support for overlapping and adjacent highlights and distinct note styling (dotted underlines).
-    - Integrated native selection context menu (`contextMenuBuilder`) with "Highlight" and "Add Note" actions.
-    - Added AppBar bookmark toggle button reflecting active bookmark status and "Bookmarks & Highlights" sheet trigger.
-    - Implemented `NoteEditorDialog` with selected text preview quote card, `HighlightColorPicker`, and multi-line note editing.
-    - Implemented `AnnotationsSheet` modal bottom sheet with search filtering, category filter chips, swipe/icon deletion, and direct chapter navigation callbacks (`onNavigate(chapterIndex, location)`).
-  - Updated `ReaderCubit` and `ReaderState` with `List<BookmarkEntity> bookmarks`, `List<HighlightEntity> highlights`, `isCurrentChapterBookmarked` getter, deep list equality (`listEquals`), and chapter navigation with target location support (`goToChapter(index, targetLocation)`).
-  - Configured DI registration in `injection.dart` for `AnnotationRepository`, `AnnotationCubit`, and wired `AnnotationRepository` into `ReaderCubit`.
-  - Expanded automated test suite from 97 to 131 passing tests across 21 test files (`flutter test`), including repository tests, cubit state tests, Unicode multi-script offset tests (English, Hindi, Gujarati, Japanese, Chinese, Emoji/surrogate pairs), reader cubit annotation integration tests, and end-to-end lifecycle and widget tests.
+- **Phase 5: ENR-0051 Bookmarks, Highlights, Notes, and Annotations (Implementation & Remediation)**:
+  - **Location-Level Bookmarks (Workstream A)**:
+    - Supported multiple distinct bookmarks per chapter using character-offset anchors (`char:<offset>`), allowing users to mark specific locations within lengthy chapters.
+    - Added location-level duplicate prevention: saving a bookmark at an identical character offset is rejected without creating redundant database entries.
+    - Enabled independent bookmark deletion by ID and location (`deleteBookmarkAtLocation`), ensuring deleting one bookmark does not disturb other bookmarks in the same chapter.
+  - **Decoupled Intra-Session Reader Navigation (Workstream B, MED-01)**:
+    - Introduced `ReaderNavigationRequest` in `ReaderLoaded` state, separating initial reading progress restoration (`_initialScrollRestored`) from explicit user navigation to bookmarks, highlights, search results, or table-of-contents items.
+    - Ensured navigation within the same chapter or across chapters accurately moves the viewport without getting suppressed by progress restoration.
+  - **Rendered Position Layout Calculation (Workstream C, MED-02)**:
+    - Implemented `ReaderScrollMapper` using Flutter's `TextPainter`, `TextPainter.layout`, and `getOffsetForCaret` to translate character offsets into actual rendered pixel offsets based on reader width, typography, font size, line height, and dynamic header/padding dimensions.
+    - Avoided naive 1:1 character-to-pixel assumptions, eliminating undershooting and overshooting during navigation.
+    - Added reverse mapping (`calculateCharOffset`) using `getPositionForOffset` to accurately derive visible character position during scrolling.
+  - **Proximity-Aware Highlight Anchor Reconciliation (Workstream D, MED-03)**:
+    - Upgraded `HighlightEntity.reconcileIn` with `AnchorStatus` (`exact`, `reconciled`, `ambiguous`, `unresolved`).
+    - Handled duplicate occurrences of highlighted text by selecting the occurrence closest to the saved offset rather than naive index 0.
+    - Handled equidistant ambiguous occurrences safely by maintaining `AnchorStatus.ambiguous` without modifying original offsets.
+    - Preserved unresolved highlights without data loss when excerpt text is missing, displaying status badges in `AnnotationsSheet`.
+    - Integrated automatic highlight anchor reconciliation into `ReaderCubit.loadBook` and `goToChapter`.
+  - **Standalone Chapter Notes (Workstream E, LOW-02)**:
+    - Created `ChapterNoteEntity` and Drift SQLite `ChapterNotes` table (`chapter_notes`) with cascading foreign keys (`book_id`, `chapter_id`).
+    - Added full CRUD operations for standalone chapter-level notes across database, repository, cubit, and UI layers.
+    - Integrated chapter notes into `AnnotationsSheet` with category filtering (`AnnotationFilter.notes`) and unified text search alongside passage notes.
+    - Added AppBar action in `ReaderScreen` to add chapter-level notes at any time.
+  - **Drift SQLite Schema v4 Migration (Workstreams F & G)**:
+    - Incremented schema version to 4 with automated non-destructive migration creating the `chapter_notes` table and preserving all existing library, reading progress, and annotation data.
+    - Verified schema v1 -> v2, v2 -> v3, and v3 -> v4 migrations in automated database tests.
+  - **Expanded Automated Test Suite & Verification**:
+    - Expanded test suite to 145 automated tests across 22 test files (`flutter test`) passing with 100% success rate.
+    - Verified static analysis with 0 issues found (`flutter analyze`).
+    - Verified Android debug APK assembly (`flutter build apk --debug`) with successful build artifact generated.
 - **Phase 5: ENR-0050 Book-Content and Library Search**:
   - Implemented full-text search (FTS5) using Drift SQLite schema v3 migration with virtual table `chapter_fts` configured with `tokenize="trigram"`.
   - Added relational substring search fallback (`LIKE ?`) with bounded snippet extraction to ensure 100% search recall for queries under 3 characters (e.g. single/double CJK ideograms).

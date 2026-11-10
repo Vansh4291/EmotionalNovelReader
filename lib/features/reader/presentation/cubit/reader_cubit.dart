@@ -75,7 +75,9 @@ class ReaderCubit extends Cubit<ReaderState> {
         chapterId: chapters[targetChapterIndex].id,
       );
       if (hRes.isSuccess) {
-        highlights = hRes.dataOrNull ?? const [];
+        final raw = hRes.dataOrNull ?? const [];
+        final chapterContent = chapters[targetChapterIndex].content;
+        highlights = raw.map((h) => h.reconcileIn(chapterContent)).toList();
       }
     }
 
@@ -130,12 +132,20 @@ class ReaderCubit extends Cubit<ReaderState> {
 
     final updatedProgress = ReadingProgressEntity(
       bookId: s.book.id,
-      currentLocation: targetLocation ?? '0',
+      currentLocation: targetLocation ?? 'char:0',
       currentChapterId: targetChapter.id,
       progressPercentage: progressPercentage,
       totalSecondsRead: s.progress?.totalSecondsRead ?? 0,
       updatedAt: DateTime.now().toUtc(),
     );
+
+    final navReq = targetLocation != null
+        ? ReaderNavigationRequest(
+            requestId: DateTime.now().microsecondsSinceEpoch.toString(),
+            chapterIndex: index,
+            targetLocation: targetLocation,
+          )
+        : null;
 
     List<HighlightEntity> highlights = const [];
     if (annotationRepository != null) {
@@ -144,7 +154,9 @@ class ReaderCubit extends Cubit<ReaderState> {
         chapterId: targetChapter.id,
       );
       if (hRes.isSuccess) {
-        highlights = hRes.dataOrNull ?? const [];
+        final raw = hRes.dataOrNull ?? const [];
+        highlights =
+            raw.map((h) => h.reconcileIn(targetChapter.content)).toList();
       }
     }
 
@@ -153,22 +165,34 @@ class ReaderCubit extends Cubit<ReaderState> {
         currentChapterIndex: index,
         progress: updatedProgress,
         highlights: highlights,
+        navigationRequest: navReq,
+        clearNavigationRequest: navReq == null,
       ),
     );
 
     await bookRepository.saveReadingProgress(updatedProgress);
   }
 
-  void updateScrollPosition(double scrollOffset) {
+  void clearNavigationRequest() {
+    final s = state;
+    if (s is ReaderLoaded && s.navigationRequest != null) {
+      emit(s.copyWith(clearNavigationRequest: true));
+    }
+  }
+
+  void updateScrollPosition(double scrollOffset, {int? visibleCharOffset}) {
     final s = state;
     if (s is! ReaderLoaded) return;
 
     final currentChapter = s.currentChapter;
     final progressPercentage = (s.currentChapterIndex + 1) / s.chapters.length;
+    final loc = visibleCharOffset != null
+        ? 'char:$visibleCharOffset'
+        : scrollOffset.toStringAsFixed(1);
 
     _pendingProgress = ReadingProgressEntity(
       bookId: s.book.id,
-      currentLocation: scrollOffset.toStringAsFixed(1),
+      currentLocation: loc,
       currentChapterId: currentChapter.id,
       progressPercentage: progressPercentage,
       totalSecondsRead: s.progress?.totalSecondsRead ?? 0,
@@ -194,18 +218,30 @@ class ReaderCubit extends Cubit<ReaderState> {
     if (s is! ReaderLoaded || annotationRepository == null) return;
 
     final currentChapter = s.currentChapter;
-    final isBookmarked = s.isCurrentChapterBookmarked;
+    final targetLoc = location ?? s.progress?.currentLocation ?? 'char:0';
 
-    if (isBookmarked) {
-      final res = await annotationRepository!.deleteBookmarkForChapter(
-        bookId: s.book.id,
-        chapterId: currentChapter.id,
-      );
+    BookmarkEntity? existing;
+    if (location != null) {
+      existing = s.getBookmarkAtLocation(location);
+    } else {
+      existing = s.getBookmarkAtLocation(targetLoc);
+      if (existing == null && s.isCurrentChapterBookmarked) {
+        final chapterBookmarks = s.bookmarks
+            .where((b) =>
+                b.chapterId == currentChapter.id ||
+                b.chapterIndex == s.currentChapterIndex)
+            .toList();
+        if (chapterBookmarks.length == 1) {
+          existing = chapterBookmarks.first;
+        }
+      }
+    }
+
+    if (existing != null) {
+      final res = await annotationRepository!.deleteBookmark(existing.id);
       if (res.isSuccess) {
         final updated = s.bookmarks
-            .where((b) =>
-                b.chapterId != currentChapter.id &&
-                b.chapterIndex != s.currentChapterIndex)
+            .where((b) => b.id != existing!.id)
             .toList(growable: false);
         emit(s.copyWith(bookmarks: updated));
       }
@@ -215,7 +251,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         chapterId: currentChapter.id,
         chapterIndex: s.currentChapterIndex,
         chapterTitle: currentChapter.title,
-        location: location ?? s.progress?.currentLocation ?? '0',
+        location: targetLoc,
         label: label,
       );
       if (res.isSuccess) {
@@ -317,9 +353,13 @@ class ReaderCubit extends Cubit<ReaderState> {
       bookId: s.book.id,
       chapterId: s.currentChapter.id,
     );
+    final rawHighlights = hRes.dataOrNull ?? s.highlights;
+    final reconciled = rawHighlights
+        .map((h) => h.reconcileIn(s.currentChapter.content))
+        .toList();
     emit(s.copyWith(
       bookmarks: bRes.dataOrNull ?? s.bookmarks,
-      highlights: hRes.dataOrNull ?? s.highlights,
+      highlights: reconciled,
     ));
   }
 

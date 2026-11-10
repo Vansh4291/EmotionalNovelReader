@@ -86,28 +86,46 @@ void main() {
       expect(list.first.id, bookmark.id);
     });
 
-    test('addBookmark prevents duplicates for the same chapter by returning existing bookmark', () async {
+    test('addBookmark allows multiple bookmarks per chapter and prevents duplicate at same location', () async {
       final first = await repository.addBookmark(
         bookId: testBookId,
         chapterId: testChapter1Id,
         chapterIndex: 0,
-        location: '100',
+        location: 'char:100',
         label: 'First add',
       );
       expect(first.isSuccess, isTrue);
 
+      // Same location returns existing bookmark without duplicating
+      final dup = await repository.addBookmark(
+        bookId: testBookId,
+        chapterId: testChapter1Id,
+        chapterIndex: 0,
+        location: 'char:100',
+        label: 'Duplicate attempt',
+      );
+      expect(dup.isSuccess, isTrue);
+      expect(dup.dataOrNull!.id, first.dataOrNull!.id);
+
+      // Different location in same chapter creates distinct bookmark (R01)
       final second = await repository.addBookmark(
         bookId: testBookId,
         chapterId: testChapter1Id,
         chapterIndex: 0,
-        location: '150',
-        label: 'Second add attempt',
+        location: 'char:250',
+        label: 'Second location in same chapter',
       );
       expect(second.isSuccess, isTrue);
-      expect(second.dataOrNull!.id, first.dataOrNull!.id);
+      expect(second.dataOrNull!.id, isNot(first.dataOrNull!.id));
 
       final list = (await repository.getBookmarksForBook(testBookId)).dataOrNull!;
-      expect(list.length, 1);
+      expect(list.length, 2);
+
+      // Independent deletion removes only the targeted bookmark (R03)
+      await repository.deleteBookmark(first.dataOrNull!.id);
+      final afterDelete = (await repository.getBookmarksForBook(testBookId)).dataOrNull!;
+      expect(afterDelete.length, 1);
+      expect(afterDelete.first.id, second.dataOrNull!.id);
     });
 
     test('isChapterBookmarked returns correct status', () async {

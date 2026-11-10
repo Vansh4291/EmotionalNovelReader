@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../app/di/injection.dart';
 import '../../../../core/presentation/widgets/error_view.dart';
 import '../../../../core/presentation/widgets/loading_view.dart';
 import '../../../annotations/domain/entities/highlight_entity.dart';
+import '../../../annotations/presentation/cubit/annotation_cubit.dart';
 import '../../../annotations/presentation/widgets/annotations_sheet.dart';
 import '../../../annotations/presentation/widgets/note_editor_dialog.dart';
 import '../../domain/entities/reader_preferences.dart';
 import '../cubit/reader_cubit.dart';
 import '../cubit/reader_state.dart';
+import '../services/reader_scroll_mapper.dart';
 import '../widgets/reader_preferences_sheet.dart';
 import '../widgets/table_of_contents_drawer.dart';
 
@@ -106,6 +109,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   bool _initialScrollRestored = false;
+  String? _lastHandledNavigationRequestId;
 
   @override
   void initState() {
@@ -134,31 +138,87 @@ class _ReaderScreenState extends State<ReaderScreen>
     }
   }
 
+  double _measureHeaderHeight(ReaderLoaded state, double width) {
+    final titlePainter = TextPainter(
+      text: TextSpan(
+        text: state.currentChapter.title,
+        style: TextStyle(
+          fontSize: state.preferences.fontSize + 6,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    titlePainter.layout(maxWidth: width);
+    final titleH = titlePainter.height;
+    titlePainter.dispose();
+    return 24.0 + titleH + 16.0 + 16.0 + 20.0;
+  }
+
   void _onScroll() {
     // Only record user scroll movements after initial position has been restored
     if (!_initialScrollRestored) return;
     if (_scrollController.hasClients) {
-      context
-          .read<ReaderCubit>()
-          .updateScrollPosition(_scrollController.offset);
+      final state = context.read<ReaderCubit>().state;
+      if (state is ReaderLoaded) {
+        final width = MediaQuery.of(context).size.width -
+            (state.preferences.horizontalMargin * 2);
+        final headerHeight = _measureHeaderHeight(state, width);
+        final baseStyle = TextStyle(
+          fontSize: state.preferences.fontSize,
+          height: state.preferences.lineHeight,
+          letterSpacing: 0.2,
+        );
+        final charOffset = ReaderScrollMapper.calculateCharOffset(
+          content: state.currentChapter.content,
+          scrollOffset: _scrollController.offset,
+          textStyle: baseStyle,
+          contentWidth: width,
+          headerHeight: headerHeight,
+        );
+        context.read<ReaderCubit>().updateScrollPosition(
+              _scrollController.offset,
+              visibleCharOffset: charOffset,
+            );
+      }
     }
   }
 
-  void _restoreScrollPosition(String? location) {
+  void _scrollToLocation(String location, ReaderLoaded state) {
+    final parsed = ReaderScrollMapper.parseLocation(location);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      final width = MediaQuery.of(context).size.width -
+          (state.preferences.horizontalMargin * 2);
+
+      double targetPixel;
+      if (parsed.isCharOffset) {
+        final baseStyle = TextStyle(
+          fontSize: state.preferences.fontSize,
+          height: state.preferences.lineHeight,
+          letterSpacing: 0.2,
+        );
+        final headerHeight = _measureHeaderHeight(state, width);
+        targetPixel = ReaderScrollMapper.calculatePixelOffset(
+          content: state.currentChapter.content,
+          charOffset: parsed.charOffset,
+          textStyle: baseStyle,
+          contentWidth: width,
+          headerHeight: headerHeight,
+        );
+      } else {
+        targetPixel = parsed.pixelOffset;
+      }
+
+      final maxExtent = _scrollController.position.maxScrollExtent;
+      _scrollController.jumpTo(targetPixel.clamp(0.0, maxExtent));
+    });
+  }
+
+  void _restoreScrollPosition(String? location, ReaderLoaded state) {
     if (_initialScrollRestored || location == null) return;
-    final offset = double.tryParse(location);
-    if (offset != null && offset > 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.jumpTo(
-            offset.clamp(0.0, _scrollController.position.maxScrollExtent),
-          );
-          _initialScrollRestored = true;
-        }
-      });
-    } else {
-      _initialScrollRestored = true;
-    }
+    _initialScrollRestored = true;
+    _scrollToLocation(location, state);
   }
 
   (Color backgroundColor, Color textColor) _resolveThemeColors(
@@ -253,7 +313,17 @@ class _ReaderScreenState extends State<ReaderScreen>
     return BlocConsumer<ReaderCubit, ReaderState>(
       listener: (context, state) {
         if (state is ReaderLoaded) {
-          _restoreScrollPosition(state.progress?.currentLocation);
+          if (!_initialScrollRestored) {
+            _restoreScrollPosition(state.progress?.currentLocation, state);
+          }
+          if (state.navigationRequest != null &&
+              state.navigationRequest!.requestId !=
+                  _lastHandledNavigationRequestId) {
+            _lastHandledNavigationRequestId =
+                state.navigationRequest!.requestId;
+            _scrollToLocation(state.navigationRequest!.targetLocation, state);
+            context.read<ReaderCubit>().clearNavigationRequest();
+          }
         }
       },
       builder: (context, state) {
@@ -326,9 +396,39 @@ class _ReaderScreenState extends State<ReaderScreen>
                   ),
                   tooltip: state.isCurrentChapterBookmarked
                       ? 'Remove Bookmark'
-                      : 'Bookmark Chapter',
+                      : 'Bookmark Current Location',
                   onPressed: () {
                     context.read<ReaderCubit>().toggleBookmark();
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.note_add_outlined),
+                  tooltip: 'Add Chapter Note',
+                  onPressed: () async {
+                    final result = await NoteEditorDialog.show(
+                      context: context,
+                      selectedText: state.currentChapter.title,
+                      title: 'Add Chapter Note',
+                    );
+                    if (result != null &&
+                        result.note.trim().isNotEmpty &&
+                        context.mounted) {
+                      final annCubit = getIt<AnnotationCubit>();
+                      await annCubit.createChapterNote(
+                        chapterId: state.currentChapter.id,
+                        chapterIndex: state.currentChapterIndex,
+                        chapterTitle: state.currentChapter.title,
+                        content: result.note,
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Chapter note saved'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    }
                   },
                 ),
                 IconButton(
@@ -338,8 +438,10 @@ class _ReaderScreenState extends State<ReaderScreen>
                     await AnnotationsSheet.show(
                       context: context,
                       bookId: state.book.id,
+                      currentChapterId: state.currentChapter.id,
+                      currentChapterIndex: state.currentChapterIndex,
+                      currentChapterTitle: state.currentChapter.title,
                       onNavigate: (chapterIndex, location) {
-                        _scrollController.jumpTo(0.0);
                         context.read<ReaderCubit>().goToChapter(
                               chapterIndex,
                               targetLocation: location,

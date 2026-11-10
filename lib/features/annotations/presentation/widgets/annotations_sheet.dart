@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../app/di/injection.dart';
 import '../../domain/entities/bookmark_entity.dart';
+import '../../domain/entities/chapter_note_entity.dart';
 import '../../domain/entities/highlight_entity.dart';
 import '../cubit/annotation_cubit.dart';
 import '../cubit/annotation_state.dart';
@@ -12,14 +13,23 @@ class AnnotationsSheet extends StatelessWidget {
   const AnnotationsSheet({
     super.key,
     required this.onNavigate,
+    this.currentChapterId,
+    this.currentChapterIndex,
+    this.currentChapterTitle,
   });
 
   final void Function(int chapterIndex, String? location) onNavigate;
+  final String? currentChapterId;
+  final int? currentChapterIndex;
+  final String? currentChapterTitle;
 
   static Future<void> show({
     required BuildContext context,
     required String bookId,
     required void Function(int chapterIndex, String? location) onNavigate,
+    String? currentChapterId,
+    int? currentChapterIndex,
+    String? currentChapterTitle,
   }) {
     return showModalBottomSheet<void>(
       context: context,
@@ -28,7 +38,12 @@ class AnnotationsSheet extends StatelessWidget {
       builder: (ctx) {
         return BlocProvider(
           create: (_) => getIt<AnnotationCubit>()..loadAnnotations(bookId),
-          child: AnnotationsSheet(onNavigate: onNavigate),
+          child: AnnotationsSheet(
+            onNavigate: onNavigate,
+            currentChapterId: currentChapterId,
+            currentChapterIndex: currentChapterIndex,
+            currentChapterTitle: currentChapterTitle,
+          ),
         );
       },
     );
@@ -73,6 +88,28 @@ class AnnotationsSheet extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
+                  if (currentChapterId != null)
+                    TextButton.icon(
+                      icon: const Icon(Icons.add_comment_outlined, size: 18),
+                      label: const Text('Add Note'),
+                      onPressed: () async {
+                        final res = await NoteEditorDialog.show(
+                          context: context,
+                          selectedText: currentChapterTitle ?? 'Chapter Note',
+                          title: 'Add Chapter Note',
+                        );
+                        if (res != null &&
+                            res.note.trim().isNotEmpty &&
+                            context.mounted) {
+                          await context.read<AnnotationCubit>().createChapterNote(
+                                chapterId: currentChapterId!,
+                                chapterIndex: currentChapterIndex,
+                                chapterTitle: currentChapterTitle,
+                                content: res.note,
+                              );
+                        }
+                      },
+                    ),
                   IconButton(
                     icon: const Icon(Icons.close),
                     tooltip: 'Close',
@@ -183,8 +220,11 @@ class AnnotationsSheet extends StatelessWidget {
                   if (state is AnnotationLoaded) {
                     final bookmarks = state.displayedBookmarks;
                     final highlights = state.displayedHighlights;
+                    final chapterNotes = state.displayedChapterNotes;
 
-                    if (bookmarks.isEmpty && highlights.isEmpty) {
+                    if (bookmarks.isEmpty &&
+                        highlights.isEmpty &&
+                        chapterNotes.isEmpty) {
                       return _buildEmptyState(context, state);
                     }
 
@@ -216,6 +256,44 @@ class AnnotationsSheet extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                         ],
+                        if (chapterNotes.isNotEmpty) ...[
+                          _buildSectionHeader(
+                            context,
+                            'Chapter Notes (${chapterNotes.length})',
+                            Icons.note_alt_outlined,
+                          ),
+                          ...chapterNotes.map(
+                            (cn) => _ChapterNoteTile(
+                              chapterNote: cn,
+                              onTap: () {
+                                Navigator.of(context).pop();
+                                onNavigate(cn.chapterIndex ?? 0, 'char:0');
+                              },
+                              onEdit: () async {
+                                final res = await NoteEditorDialog.show(
+                                  context: context,
+                                  selectedText:
+                                      cn.chapterTitle ?? 'Chapter Note',
+                                  initialNote: cn.content,
+                                  title: 'Edit Chapter Note',
+                                );
+                                if (res != null &&
+                                    res.note.trim().isNotEmpty &&
+                                    context.mounted) {
+                                  await context
+                                      .read<AnnotationCubit>()
+                                      .updateChapterNote(cn.id, res.note);
+                                }
+                              },
+                              onDelete: () {
+                                context
+                                    .read<AnnotationCubit>()
+                                    .deleteChapterNote(cn.id);
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                         if (highlights.isNotEmpty) ...[
                           _buildSectionHeader(
                             context,
@@ -229,7 +307,7 @@ class AnnotationsSheet extends StatelessWidget {
                                 Navigator.of(context).pop();
                                 onNavigate(
                                   h.chapterIndex ?? 0,
-                                  h.startOffset.toString(),
+                                  'char:${h.startOffset}',
                                 );
                               },
                               onDelete: () {
@@ -307,7 +385,8 @@ class AnnotationsSheet extends StatelessWidget {
     } else if (state.filter == AnnotationFilter.highlights) {
       message = 'No highlights created yet.\nSelect text while reading to highlight.';
     } else if (state.filter == AnnotationFilter.notes) {
-      message = 'No notes written yet.\nAdd a note to any highlighted text.';
+      message =
+          'No notes written yet.\nAdd a chapter note or attach notes to highlighted passages.';
     }
 
     return Center(
@@ -511,6 +590,49 @@ class _HighlightTile extends StatelessWidget {
                 ),
               ),
 
+              if (highlight.isAmbiguous) ...[
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, size: 14, color: Colors.orange),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Multiple matching passages found (ambiguous anchor)',
+                        style: theme.textTheme.labelSmall?.copyWith(color: Colors.orange.shade800),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (highlight.isUnresolved) ...[
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.help_outline_rounded, size: 14, color: Colors.red),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Passage text changed or missing',
+                        style: theme.textTheme.labelSmall?.copyWith(color: Colors.red.shade800),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               // Attached Note
               if (highlight.hasNote) ...[
                 const SizedBox(height: 8),
@@ -539,5 +661,94 @@ class _HighlightTile extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _ChapterNoteTile extends StatelessWidget {
+  const _ChapterNoteTile({
+    required this.chapterNote,
+    required this.onTap,
+    required this.onDelete,
+    required this.onEdit,
+  });
+
+  final ChapterNoteEntity chapterNote;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final chapterText = chapterNote.chapterTitle ??
+        'Chapter ${(chapterNote.chapterIndex ?? 0) + 1}';
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.note_alt_outlined,
+                    size: 16,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      chapterText,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.outline,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_note, size: 20),
+                    tooltip: 'Edit note',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: onEdit,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    tooltip: 'Delete note',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: onDelete,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                chapterNote.content,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _formatDate(chapterNote.updatedAt),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime dt) {
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
   }
 }

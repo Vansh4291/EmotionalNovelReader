@@ -10,6 +10,29 @@ sealed class ReaderState {
   const ReaderState();
 }
 
+class ReaderNavigationRequest {
+  const ReaderNavigationRequest({
+    required this.requestId,
+    required this.chapterIndex,
+    required this.targetLocation,
+  });
+
+  final String requestId;
+  final int chapterIndex;
+  final String targetLocation;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ReaderNavigationRequest &&
+          requestId == other.requestId &&
+          chapterIndex == other.chapterIndex &&
+          targetLocation == other.targetLocation;
+
+  @override
+  int get hashCode => Object.hash(requestId, chapterIndex, targetLocation);
+}
+
 final class ReaderInitial extends ReaderState {
   const ReaderInitial();
 }
@@ -28,6 +51,7 @@ final class ReaderLoaded extends ReaderState {
     this.isControlsVisible = false,
     this.bookmarks = const [],
     this.highlights = const [],
+    this.navigationRequest,
   });
 
   final BookEntity book;
@@ -38,6 +62,7 @@ final class ReaderLoaded extends ReaderState {
   final bool isControlsVisible;
   final List<BookmarkEntity> bookmarks;
   final List<HighlightEntity> highlights;
+  final ReaderNavigationRequest? navigationRequest;
 
   ChapterEntity get currentChapter => chapters[currentChapterIndex];
   bool get hasNextChapter => currentChapterIndex < chapters.length - 1;
@@ -53,6 +78,29 @@ final class ReaderLoaded extends ReaderState {
     );
   }
 
+  bool isLocationBookmarked(String location) {
+    if (bookmarks.isEmpty) return false;
+    final currentChId = currentChapter.id;
+    return bookmarks.any(
+      (b) =>
+          (b.chapterId == currentChId || b.chapterIndex == currentChapterIndex) &&
+          b.location == location,
+    );
+  }
+
+  BookmarkEntity? getBookmarkAtLocation(String location) {
+    final currentChId = currentChapter.id;
+    try {
+      return bookmarks.firstWhere(
+        (b) =>
+            (b.chapterId == currentChId || b.chapterIndex == currentChapterIndex) &&
+            b.location == location,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   ReaderLoaded copyWith({
     BookEntity? book,
     List<ChapterEntity>? chapters,
@@ -62,6 +110,8 @@ final class ReaderLoaded extends ReaderState {
     bool? isControlsVisible,
     List<BookmarkEntity>? bookmarks,
     List<HighlightEntity>? highlights,
+    ReaderNavigationRequest? navigationRequest,
+    bool clearNavigationRequest = false,
   }) {
     return ReaderLoaded(
       book: book ?? this.book,
@@ -72,6 +122,9 @@ final class ReaderLoaded extends ReaderState {
       isControlsVisible: isControlsVisible ?? this.isControlsVisible,
       bookmarks: bookmarks ?? this.bookmarks,
       highlights: highlights ?? this.highlights,
+      navigationRequest: clearNavigationRequest
+          ? null
+          : (navigationRequest ?? this.navigationRequest),
     );
   }
 
@@ -83,6 +136,7 @@ final class ReaderLoaded extends ReaderState {
           currentChapterIndex == other.currentChapterIndex &&
           isControlsVisible == other.isControlsVisible &&
           preferences == other.preferences &&
+          navigationRequest == other.navigationRequest &&
           listEquals(bookmarks, other.bookmarks) &&
           listEquals(highlights, other.highlights);
 
@@ -92,6 +146,7 @@ final class ReaderLoaded extends ReaderState {
         currentChapterIndex,
         isControlsVisible,
         preferences,
+        navigationRequest,
         bookmarks.length,
         highlights.length,
       );

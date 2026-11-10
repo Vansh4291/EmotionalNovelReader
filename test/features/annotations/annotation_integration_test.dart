@@ -78,11 +78,11 @@ void main() {
       );
       expect(b1Res.isSuccess, isTrue);
 
-      // 2. Prevent duplicate bookmark for Chapter 1
+      // 2. Prevent duplicate bookmark for Chapter 1 at the same location
       final bDupRes = await repository.addBookmark(
         bookId: bookId,
         chapterId: ch1Id,
-        location: '60.0',
+        location: '50.0',
       );
       expect(bDupRes.isSuccess, isTrue);
       expect(bDupRes.dataOrNull!.id, b1Res.dataOrNull!.id);

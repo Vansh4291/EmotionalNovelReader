@@ -4,12 +4,12 @@ import 'tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Books, Chapters, Bookmarks, Highlights, ReadingProgressTable])
+@DriftDatabase(tables: [Books, Chapters, Bookmarks, Highlights, ReadingProgressTable, ChapterNotes])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   static QueryExecutor _openConnection() {
     return driftDatabase(
@@ -63,6 +63,9 @@ class AppDatabase extends _$AppDatabase {
               FROM chapters c
               JOIN books b ON b.id = c.book_id;
             ''');
+          }
+          if (from < 4) {
+            await m.createTable(chapterNotes);
           }
         },
       );
@@ -175,12 +178,47 @@ class AppDatabase extends _$AppDatabase {
         .getSingleOrNull();
   }
 
+  Future<Bookmark?> getBookmarkForLocation(String bookId, String? chapterId, String location) {
+    if (chapterId != null) {
+      return (select(bookmarks)
+            ..where((b) =>
+                b.bookId.equals(bookId) &
+                b.chapterId.equals(chapterId) &
+                b.location.equals(location)))
+          .getSingleOrNull();
+    }
+    return (select(bookmarks)
+          ..where((b) => b.bookId.equals(bookId) & b.location.equals(location)))
+        .getSingleOrNull();
+  }
+
+  Future<List<Bookmark>> getBookmarksForChapter(String bookId, String chapterId) {
+    return (select(bookmarks)
+          ..where((b) => b.bookId.equals(bookId) & b.chapterId.equals(chapterId))
+          ..orderBy([(b) => OrderingTerm.asc(b.location)]))
+        .get();
+  }
+
   Future<int> insertBookmark(BookmarksCompanion bookmark) {
     return into(bookmarks).insert(bookmark);
   }
 
   Future<int> deleteBookmark(String bookmarkId) {
     return (delete(bookmarks)..where((b) => b.id.equals(bookmarkId))).go();
+  }
+
+  Future<int> deleteBookmarkAtLocation(String bookId, String? chapterId, String location) {
+    if (chapterId != null) {
+      return (delete(bookmarks)
+            ..where((b) =>
+                b.bookId.equals(bookId) &
+                b.chapterId.equals(chapterId) &
+                b.location.equals(location)))
+          .go();
+    }
+    return (delete(bookmarks)
+          ..where((b) => b.bookId.equals(bookId) & b.location.equals(location)))
+        .go();
   }
 
   Future<int> deleteBookmarkForChapter(String bookId, String chapterId) {
@@ -241,6 +279,53 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteHighlight(String highlightId) {
     return (delete(highlights)..where((h) => h.id.equals(highlightId))).go();
+  }
+
+  // ==========================================
+  // Standalone Chapter Notes Methods
+  // ==========================================
+
+  Stream<List<ChapterNote>> watchChapterNotesForBook(String bookId) {
+    return (select(chapterNotes)
+          ..where((cn) => cn.bookId.equals(bookId))
+          ..orderBy([(cn) => OrderingTerm.desc(cn.createdAt)]))
+        .watch();
+  }
+
+  Future<List<ChapterNote>> getChapterNotesForBook(String bookId) {
+    return (select(chapterNotes)
+          ..where((cn) => cn.bookId.equals(bookId))
+          ..orderBy([(cn) => OrderingTerm.desc(cn.createdAt)]))
+        .get();
+  }
+
+  Future<List<ChapterNote>> getChapterNotesForChapter(String bookId, String chapterId) {
+    return (select(chapterNotes)
+          ..where((cn) => cn.bookId.equals(bookId) & cn.chapterId.equals(chapterId))
+          ..orderBy([(cn) => OrderingTerm.desc(cn.createdAt)]))
+        .get();
+  }
+
+  Future<ChapterNote?> getChapterNoteById(String id) {
+    return (select(chapterNotes)..where((cn) => cn.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<int> insertChapterNote(ChapterNotesCompanion note) {
+    return into(chapterNotes).insert(note);
+  }
+
+  Future<bool> updateChapterNoteContent(String id, String content) async {
+    final rows = await (update(chapterNotes)..where((cn) => cn.id.equals(id))).write(
+      ChapterNotesCompanion(
+        content: Value(content),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
+    return rows > 0;
+  }
+
+  Future<int> deleteChapterNote(String id) {
+    return (delete(chapterNotes)..where((cn) => cn.id.equals(id))).go();
   }
 
   // ==========================================

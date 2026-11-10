@@ -31,8 +31,8 @@ void main() {
 
       // Reconcile
       final reconciled = highlight.reconcileIn(shiftedContent);
-      expect(reconciled, isNotNull);
-      expect(shiftedContent.substring(reconciled!.startOffset, reconciled.endOffset), targetWord);
+      expect(reconciled.isResolved, isTrue);
+      expect(shiftedContent.substring(reconciled.startOffset, reconciled.endOffset), targetWord);
     });
 
     test('Gujarati offsets and reconciliation', () {
@@ -55,8 +55,8 @@ void main() {
 
       const shiftedContent = 'પ્રકરણ ૧: નમસ્તે દુનિયા! આ એક સરસ પુસ્તક છે.';
       final reconciled = highlight.reconcileIn(shiftedContent);
-      expect(reconciled, isNotNull);
-      expect(shiftedContent.substring(reconciled!.startOffset, reconciled.endOffset), targetWord);
+      expect(reconciled.isResolved, isTrue);
+      expect(shiftedContent.substring(reconciled.startOffset, reconciled.endOffset), targetWord);
     });
 
     test('Japanese (Kanji and Kana) offsets and reconciliation', () {
@@ -79,8 +79,8 @@ void main() {
 
       const shiftedContent = '【第一章】吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。';
       final reconciled = highlight.reconcileIn(shiftedContent);
-      expect(reconciled, isNotNull);
-      expect(shiftedContent.substring(reconciled!.startOffset, reconciled.endOffset), targetWord);
+      expect(reconciled.isResolved, isTrue);
+      expect(shiftedContent.substring(reconciled.startOffset, reconciled.endOffset), targetWord);
     });
 
     test('Chinese (Simplified) offsets and reconciliation', () {
@@ -103,8 +103,8 @@ void main() {
 
       const modifiedContent = '老子曰：道可道，非常道；名可名，非常名。無名天地之始，有名萬物之母。';
       final reconciled = highlight.reconcileIn(modifiedContent);
-      expect(reconciled, isNotNull);
-      expect(modifiedContent.substring(reconciled!.startOffset, reconciled.endOffset), targetWord);
+      expect(reconciled.isResolved, isTrue);
+      expect(modifiedContent.substring(reconciled.startOffset, reconciled.endOffset), targetWord);
     });
 
     test('Emoji and Surrogate pairs offset integrity', () {

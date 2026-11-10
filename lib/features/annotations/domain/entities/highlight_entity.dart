@@ -1,3 +1,10 @@
+enum AnchorStatus {
+  exact,
+  reconciled,
+  ambiguous,
+  unresolved,
+}
+
 class HighlightEntity {
   const HighlightEntity({
     required this.id,
@@ -10,6 +17,7 @@ class HighlightEntity {
     required this.selectedText,
     this.note,
     this.colorValue = defaultHighlightColor,
+    this.anchorStatus = AnchorStatus.exact,
     required this.createdAt,
   });
 
@@ -51,31 +59,76 @@ class HighlightEntity {
   /// ARGB integer color value.
   final int colorValue;
 
+  /// Current anchor resolution status against the loaded chapter text.
+  final AnchorStatus anchorStatus;
+
   final DateTime createdAt;
 
   bool get hasNote => note != null && note!.trim().isNotEmpty;
+  bool get isResolved =>
+      anchorStatus == AnchorStatus.exact ||
+      anchorStatus == AnchorStatus.reconciled;
+  bool get isAmbiguous => anchorStatus == AnchorStatus.ambiguous;
+  bool get isUnresolved => anchorStatus == AnchorStatus.unresolved;
 
   /// Verifies if this anchor precisely matches the chapter content.
   bool isValidIn(String chapterContent) {
-    if (startOffset < 0 || endOffset > chapterContent.length || startOffset > endOffset) {
+    if (startOffset < 0 ||
+        endOffset > chapterContent.length ||
+        startOffset > endOffset) {
       return false;
     }
     return chapterContent.substring(startOffset, endOffset) == selectedText;
   }
 
   /// Attempts to reconcile the anchor in modified chapter content by finding the nearest occurrence.
-  HighlightEntity? reconcileIn(String chapterContent) {
-    if (isValidIn(chapterContent)) return this;
-    if (selectedText.isEmpty) return null;
+  HighlightEntity reconcileIn(String chapterContent) {
+    if (isValidIn(chapterContent)) {
+      return copyWith(anchorStatus: AnchorStatus.exact);
+    }
+    if (selectedText.isEmpty) {
+      return copyWith(anchorStatus: AnchorStatus.unresolved);
+    }
 
-    final index = chapterContent.indexOf(selectedText);
-    if (index != -1) {
+    final matches = <int>[];
+    int searchFrom = 0;
+    while (searchFrom < chapterContent.length) {
+      final idx = chapterContent.indexOf(selectedText, searchFrom);
+      if (idx == -1) break;
+      matches.add(idx);
+      searchFrom = idx + 1;
+    }
+
+    if (matches.isEmpty) {
+      return copyWith(anchorStatus: AnchorStatus.unresolved);
+    }
+
+    if (matches.length == 1) {
+      final unique = matches.first;
       return copyWith(
-        startOffset: index,
-        endOffset: index + selectedText.length,
+        startOffset: unique,
+        endOffset: unique + selectedText.length,
+        anchorStatus: AnchorStatus.reconciled,
       );
     }
-    return null;
+
+    // Multiple matches: sort by proximity to the original startOffset
+    matches.sort((a, b) =>
+        (a - startOffset).abs().compareTo((b - startOffset).abs()));
+    final bestMatch = matches[0];
+    final bestDist = (bestMatch - startOffset).abs();
+    final secondBestDist = (matches[1] - startOffset).abs();
+
+    if (bestDist < secondBestDist) {
+      return copyWith(
+        startOffset: bestMatch,
+        endOffset: bestMatch + selectedText.length,
+        anchorStatus: AnchorStatus.reconciled,
+      );
+    } else {
+      // Equidistant matches cannot be determined safely without ambiguity
+      return copyWith(anchorStatus: AnchorStatus.ambiguous);
+    }
   }
 
   HighlightEntity copyWith({
@@ -89,6 +142,7 @@ class HighlightEntity {
     String? selectedText,
     String? note,
     int? colorValue,
+    AnchorStatus? anchorStatus,
     DateTime? createdAt,
   }) {
     return HighlightEntity(
@@ -102,6 +156,7 @@ class HighlightEntity {
       selectedText: selectedText ?? this.selectedText,
       note: note ?? this.note,
       colorValue: colorValue ?? this.colorValue,
+      anchorStatus: anchorStatus ?? this.anchorStatus,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -118,7 +173,8 @@ class HighlightEntity {
           endOffset == other.endOffset &&
           selectedText == other.selectedText &&
           note == other.note &&
-          colorValue == other.colorValue;
+          colorValue == other.colorValue &&
+          anchorStatus == other.anchorStatus;
 
   @override
   int get hashCode => Object.hash(
@@ -130,5 +186,6 @@ class HighlightEntity {
         selectedText,
         note,
         colorValue,
+        anchorStatus,
       );
 }

@@ -1,5 +1,6 @@
 import '../../../../core/errors/failures.dart';
 import '../entities/bookmark_entity.dart';
+import '../entities/chapter_note_entity.dart';
 import '../entities/highlight_entity.dart';
 
 abstract interface class AnnotationRepository {
@@ -15,6 +16,12 @@ abstract interface class AnnotationRepository {
 
   Future<Result<void>> deleteBookmark(String bookmarkId);
 
+  Future<Result<void>> deleteBookmarkAtLocation({
+    required String bookId,
+    String? chapterId,
+    required String location,
+  });
+
   Future<Result<void>> deleteBookmarkForChapter({
     required String bookId,
     required String chapterId,
@@ -29,7 +36,13 @@ abstract interface class AnnotationRepository {
     required String chapterId,
   });
 
-  // Highlight & Note Operations
+  Future<Result<bool>> isLocationBookmarked({
+    required String bookId,
+    String? chapterId,
+    required String location,
+  });
+
+  // Highlight & Passage-Note Operations
   Future<Result<HighlightEntity>> createHighlight({
     required String bookId,
     required String chapterId,
@@ -67,5 +80,30 @@ abstract interface class AnnotationRepository {
   });
 
   Stream<List<HighlightEntity>> watchHighlightsForBook(String bookId);
+
+  // Standalone Chapter Note Operations
+  Future<Result<ChapterNoteEntity>> createChapterNote({
+    required String bookId,
+    required String chapterId,
+    int? chapterIndex,
+    String? chapterTitle,
+    required String content,
+  });
+
+  Future<Result<ChapterNoteEntity>> updateChapterNote({
+    required String id,
+    required String content,
+  });
+
+  Future<Result<void>> deleteChapterNote(String id);
+
+  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForBook(String bookId);
+
+  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForChapter({
+    required String bookId,
+    required String chapterId,
+  });
+
+  Stream<List<ChapterNoteEntity>> watchChapterNotesForBook(String bookId);
 }
 

@@ -1,6 +1,7 @@
 import 'package:emotional_novel_reader/core/errors/failures.dart';
 import 'package:emotional_novel_reader/core/logging/app_logger.dart';
 import 'package:emotional_novel_reader/features/annotations/domain/entities/bookmark_entity.dart';
+import 'package:emotional_novel_reader/features/annotations/domain/entities/chapter_note_entity.dart';
 import 'package:emotional_novel_reader/features/annotations/domain/entities/highlight_entity.dart';
 import 'package:emotional_novel_reader/features/annotations/domain/repositories/annotation_repository.dart';
 import 'package:emotional_novel_reader/features/library/domain/entities/book_entity.dart';
@@ -218,6 +219,94 @@ class FakeAnnotationRepository implements AnnotationRepository {
     required String chapterId,
   }) =>
       Stream.value(highlights.where((h) => h.chapterId == chapterId).toList());
+
+  @override
+  Future<Result<void>> deleteBookmarkAtLocation({
+    required String bookId,
+    String? chapterId,
+    required String location,
+  }) async {
+    bookmarks.removeWhere((b) =>
+        b.bookId == bookId &&
+        (chapterId == null || b.chapterId == chapterId) &&
+        b.location == location);
+    return const Result.success(null);
+  }
+
+  @override
+  Future<Result<bool>> isLocationBookmarked({
+    required String bookId,
+    String? chapterId,
+    required String location,
+  }) async {
+    return Result.success(
+      bookmarks.any((b) =>
+          b.bookId == bookId &&
+          (chapterId == null || b.chapterId == chapterId) &&
+          b.location == location),
+    );
+  }
+
+  @override
+  Future<Result<ChapterNoteEntity>> createChapterNote({
+    required String bookId,
+    required String chapterId,
+    int? chapterIndex,
+    String? chapterTitle,
+    required String content,
+  }) async {
+    final now = DateTime.now();
+    final cn = ChapterNoteEntity(
+      id: 'cn-test-${now.millisecondsSinceEpoch}',
+      bookId: bookId,
+      chapterId: chapterId,
+      chapterIndex: chapterIndex,
+      chapterTitle: chapterTitle,
+      content: content,
+      createdAt: now,
+      updatedAt: now,
+    );
+    return Result.success(cn);
+  }
+
+  @override
+  Future<Result<ChapterNoteEntity>> updateChapterNote({
+    required String id,
+    required String content,
+  }) async {
+    return Result.success(
+      ChapterNoteEntity(
+        id: id,
+        bookId: 'book-rdr-ann',
+        chapterId: 'ch-ann-1',
+        content: content,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+  }
+
+  @override
+  Future<Result<void>> deleteChapterNote(String id) async {
+    return const Result.success(null);
+  }
+
+  @override
+  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForBook(String bookId) async {
+    return const Result.success([]);
+  }
+
+  @override
+  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForChapter({
+    required String bookId,
+    required String chapterId,
+  }) async {
+    return const Result.success([]);
+  }
+
+  @override
+  Stream<List<ChapterNoteEntity>> watchChapterNotesForBook(String bookId) =>
+      const Stream.empty();
 }
 
 void main() {
@@ -388,12 +477,68 @@ void main() {
       expect(state.highlights.isEmpty, isTrue);
 
       // Switch to Chapter 2 with target location
-      await cubit.goToChapter(1, targetLocation: '45.0');
+      await cubit.goToChapter(1, targetLocation: 'char:25');
       state = cubit.state as ReaderLoaded;
       expect(state.currentChapterIndex, 1);
-      expect(state.progress?.currentLocation, '45.0');
+      expect(state.progress?.currentLocation, 'char:25');
       expect(state.highlights.length, 1);
       expect(state.highlights.first.selectedText, 'Waves');
+      expect(state.navigationRequest, isNotNull);
+      expect(state.navigationRequest!.targetLocation, 'char:25');
+
+      // Clear navigation request
+      cubit.clearNavigationRequest();
+      state = cubit.state as ReaderLoaded;
+      expect(state.navigationRequest, isNull);
+    });
+
+    test('R13: Highlight reconciliation is automatically executed during loadBook and goToChapter', () async {
+      // Highlight with slightly shifted offset for Chapter 1
+      // ch-1 content: 'The journey began on a misty morning with high spirits.'
+      // 'misty' is at index 23. Let's create highlight with startOffset: 20
+      annotationRepo.highlights = [
+        HighlightEntity(
+          id: 'hl-shift',
+          bookId: 'book-rdr-ann',
+          chapterId: 'ch-1',
+          startOffset: 20, // Shifted from true index 23
+          endOffset: 25,
+          selectedText: 'misty',
+          createdAt: DateTime.now(),
+        ),
+      ];
+
+      await cubit.loadBook('book-rdr-ann');
+      final state = cubit.state as ReaderLoaded;
+      expect(state.highlights.length, 1);
+      expect(state.highlights.first.anchorStatus, AnchorStatus.reconciled);
+      expect(state.highlights.first.startOffset, 23);
+      expect(state.highlights.first.endOffset, 28);
+    });
+
+    test('R01 & R05: Multiple bookmarks per chapter toggle at distinct locations', () async {
+      await cubit.loadBook('book-rdr-ann');
+
+      // Add first bookmark at char:10
+      await cubit.toggleBookmark(location: 'char:10');
+      var state = cubit.state as ReaderLoaded;
+      expect(state.bookmarks.length, 1);
+      expect(state.isLocationBookmarked('char:10'), isTrue);
+      expect(state.isLocationBookmarked('char:40'), isFalse);
+
+      // Add second bookmark at char:40 in same chapter (R01)
+      await cubit.toggleBookmark(location: 'char:40');
+      state = cubit.state as ReaderLoaded;
+      expect(state.bookmarks.length, 2);
+      expect(state.isLocationBookmarked('char:10'), isTrue);
+      expect(state.isLocationBookmarked('char:40'), isTrue);
+
+      // Toggle off only the bookmark at char:10 (R03 & R05)
+      await cubit.toggleBookmark(location: 'char:10');
+      state = cubit.state as ReaderLoaded;
+      expect(state.bookmarks.length, 1);
+      expect(state.isLocationBookmarked('char:10'), isFalse);
+      expect(state.isLocationBookmarked('char:40'), isTrue);
     });
   });
 }

@@ -19,6 +19,17 @@ class BookmarkEntity {
   final String? label;
   final DateTime createdAt;
 
+  /// Parses character offset from location string (e.g. 'char:1250' or '1250').
+  int? get charOffset {
+    if (location.startsWith('char:')) {
+      return int.tryParse(location.substring(5));
+    }
+    return int.tryParse(location);
+  }
+
+  /// Builds a canonical stable location anchor from character offset.
+  static String formatLocation(int charOffset) => 'char:$charOffset';
+
   BookmarkEntity copyWith({
     String? id,
     String? bookId,

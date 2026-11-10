@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/bookmark_entity.dart';
+import '../../domain/entities/chapter_note_entity.dart';
 import '../../domain/entities/highlight_entity.dart';
 import '../../domain/repositories/annotation_repository.dart';
 
@@ -44,6 +45,19 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
     );
   }
 
+  ChapterNoteEntity _mapChapterNote(ChapterNote cn, [Chapter? chapter]) {
+    return ChapterNoteEntity(
+      id: cn.id,
+      bookId: cn.bookId,
+      chapterId: cn.chapterId,
+      chapterIndex: chapter?.chapterIndex,
+      chapterTitle: chapter?.title,
+      content: cn.content,
+      createdAt: cn.createdAt,
+      updatedAt: cn.updatedAt,
+    );
+  }
+
   // ==========================================
   // Bookmarks Implementation
   // ==========================================
@@ -59,26 +73,24 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
   }) async {
     try {
       // Prevent duplicate bookmark for the same chapter & location
-      if (chapterId != null) {
-        final existing = await database.getBookmarkForChapter(bookId, chapterId);
-        if (existing != null) {
-          return Result.success(
-            _mapBookmark(
-              existing,
-              chapterIndex != null && chapterTitle != null
-                  ? Chapter(
-                      id: chapterId,
-                      bookId: bookId,
-                      chapterIndex: chapterIndex,
-                      title: chapterTitle,
-                      content: '',
-                      wordCount: 0,
-                      characterCount: 0,
-                    )
-                  : null,
-            ),
-          );
-        }
+      final existing = await database.getBookmarkForLocation(bookId, chapterId, location);
+      if (existing != null) {
+        return Result.success(
+          _mapBookmark(
+            existing,
+            chapterIndex != null && chapterTitle != null
+                ? Chapter(
+                    id: chapterId ?? '',
+                    bookId: bookId,
+                    chapterIndex: chapterIndex,
+                    title: chapterTitle,
+                    content: '',
+                    wordCount: 0,
+                    characterCount: 0,
+                  )
+                : null,
+          ),
+        );
       }
 
       final id = _uuid.v4();
@@ -122,6 +134,20 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
       return const Result.success(null);
     } catch (e, stack) {
       return Result.error(DatabaseFailure('Failed to delete bookmark "$bookmarkId"', e, stack));
+    }
+  }
+
+  @override
+  Future<Result<void>> deleteBookmarkAtLocation({
+    required String bookId,
+    String? chapterId,
+    required String location,
+  }) async {
+    try {
+      await database.deleteBookmarkAtLocation(bookId, chapterId, location);
+      return const Result.success(null);
+    } catch (e, stack) {
+      return Result.error(DatabaseFailure('Failed to delete bookmark at location', e, stack));
     }
   }
 
@@ -174,10 +200,24 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
     required String chapterId,
   }) async {
     try {
-      final bookmark = await database.getBookmarkForChapter(bookId, chapterId);
-      return Result.success(bookmark != null);
+      final bookmarks = await database.getBookmarksForChapter(bookId, chapterId);
+      return Result.success(bookmarks.isNotEmpty);
     } catch (e, stack) {
       return Result.error(DatabaseFailure('Failed to check chapter bookmark status', e, stack));
+    }
+  }
+
+  @override
+  Future<Result<bool>> isLocationBookmarked({
+    required String bookId,
+    String? chapterId,
+    required String location,
+  }) async {
+    try {
+      final bookmark = await database.getBookmarkForLocation(bookId, chapterId, location);
+      return Result.success(bookmark != null);
+    } catch (e, stack) {
+      return Result.error(DatabaseFailure('Failed to check location bookmark status', e, stack));
     }
   }
 
@@ -341,6 +381,130 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
       return highlights.map((h) {
         final ch = h.chapterId != null ? chapterMap[h.chapterId!] : null;
         return _mapHighlight(h, ch);
+      }).toList();
+    });
+  }
+
+  // ==========================================
+  // Standalone Chapter Notes Implementation
+  // ==========================================
+
+  @override
+  Future<Result<ChapterNoteEntity>> createChapterNote({
+    required String bookId,
+    required String chapterId,
+    int? chapterIndex,
+    String? chapterTitle,
+    required String content,
+  }) async {
+    try {
+      final id = _uuid.v4();
+      final now = DateTime.now().toUtc();
+
+      final companion = ChapterNotesCompanion.insert(
+        id: id,
+        bookId: bookId,
+        chapterId: chapterId,
+        content: content,
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await database.insertChapterNote(companion);
+
+      return Result.success(
+        ChapterNoteEntity(
+          id: id,
+          bookId: bookId,
+          chapterId: chapterId,
+          chapterIndex: chapterIndex,
+          chapterTitle: chapterTitle,
+          content: content,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+    } catch (e, stack) {
+      return Result.error(DatabaseFailure('Failed to create chapter note', e, stack));
+    }
+  }
+
+  @override
+  Future<Result<ChapterNoteEntity>> updateChapterNote({
+    required String id,
+    required String content,
+  }) async {
+    try {
+      final existing = await database.getChapterNoteById(id);
+      if (existing == null) {
+        return Result.error(NotFoundFailure('Chapter note "$id" not found'));
+      }
+
+      await database.updateChapterNoteContent(id, content);
+      final updated = existing.copyWith(
+        content: content,
+        updatedAt: DateTime.now().toUtc(),
+      );
+      final chapter = await database.getChapterById(existing.chapterId);
+      return Result.success(_mapChapterNote(updated, chapter));
+    } catch (e, stack) {
+      return Result.error(DatabaseFailure('Failed to update chapter note', e, stack));
+    }
+  }
+
+  @override
+  Future<Result<void>> deleteChapterNote(String id) async {
+    try {
+      final rows = await database.deleteChapterNote(id);
+      if (rows == 0) {
+        return Result.error(NotFoundFailure('Chapter note "$id" not found to delete'));
+      }
+      return const Result.success(null);
+    } catch (e, stack) {
+      return Result.error(DatabaseFailure('Failed to delete chapter note "$id"', e, stack));
+    }
+  }
+
+  @override
+  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForBook(String bookId) async {
+    try {
+      final notes = await database.getChapterNotesForBook(bookId);
+      final chapters = await database.getChaptersForBook(bookId);
+      final chapterMap = {for (final c in chapters) c.id: c};
+
+      final entities = notes.map((cn) {
+        final ch = chapterMap[cn.chapterId];
+        return _mapChapterNote(cn, ch);
+      }).toList();
+
+      return Result.success(entities);
+    } catch (e, stack) {
+      return Result.error(DatabaseFailure('Failed to get chapter notes for book "$bookId"', e, stack));
+    }
+  }
+
+  @override
+  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForChapter({
+    required String bookId,
+    required String chapterId,
+  }) async {
+    try {
+      final notes = await database.getChapterNotesForChapter(bookId, chapterId);
+      final chapter = await database.getChapterById(chapterId);
+      return Result.success(notes.map((cn) => _mapChapterNote(cn, chapter)).toList());
+    } catch (e, stack) {
+      return Result.error(DatabaseFailure('Failed to get chapter notes for chapter', e, stack));
+    }
+  }
+
+  @override
+  Stream<List<ChapterNoteEntity>> watchChapterNotesForBook(String bookId) {
+    return database.watchChapterNotesForBook(bookId).asyncMap((notes) async {
+      final chapters = await database.getChaptersForBook(bookId);
+      final chapterMap = {for (final c in chapters) c.id: c};
+      return notes.map((cn) {
+        final ch = chapterMap[cn.chapterId];
+        return _mapChapterNote(cn, ch);
       }).toList();
     });
   }

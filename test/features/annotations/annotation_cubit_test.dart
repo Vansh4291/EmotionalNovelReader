@@ -1,5 +1,6 @@
 import 'package:emotional_novel_reader/core/errors/failures.dart';
 import 'package:emotional_novel_reader/features/annotations/domain/entities/bookmark_entity.dart';
+import 'package:emotional_novel_reader/features/annotations/domain/entities/chapter_note_entity.dart';
 import 'package:emotional_novel_reader/features/annotations/domain/entities/highlight_entity.dart';
 import 'package:emotional_novel_reader/features/annotations/domain/repositories/annotation_repository.dart';
 import 'package:emotional_novel_reader/features/annotations/presentation/cubit/annotation_cubit.dart';
@@ -9,8 +10,10 @@ import 'package:flutter_test/flutter_test.dart';
 class FakeAnnotationRepository implements AnnotationRepository {
   List<BookmarkEntity> bookmarks = [];
   List<HighlightEntity> highlights = [];
+  List<ChapterNoteEntity> chapterNotes = [];
   bool failBookmarks = false;
   bool failHighlights = false;
+  bool failChapterNotes = false;
 
   @override
   Future<Result<BookmarkEntity>> addBookmark({
@@ -161,6 +164,102 @@ class FakeAnnotationRepository implements AnnotationRepository {
     return Stream.value(
       highlights.where((h) => h.bookId == bookId && h.chapterId == chapterId).toList(),
     );
+  }
+
+  @override
+  Future<Result<void>> deleteBookmarkAtLocation({
+    required String bookId,
+    String? chapterId,
+    required String location,
+  }) async {
+    bookmarks.removeWhere((b) =>
+        b.bookId == bookId &&
+        (chapterId == null || b.chapterId == chapterId) &&
+        b.location == location);
+    return const Result.success(null);
+  }
+
+  @override
+  Future<Result<bool>> isLocationBookmarked({
+    required String bookId,
+    String? chapterId,
+    required String location,
+  }) async {
+    return Result.success(
+      bookmarks.any((b) =>
+          b.bookId == bookId &&
+          (chapterId == null || b.chapterId == chapterId) &&
+          b.location == location),
+    );
+  }
+
+  @override
+  Future<Result<ChapterNoteEntity>> createChapterNote({
+    required String bookId,
+    required String chapterId,
+    int? chapterIndex,
+    String? chapterTitle,
+    required String content,
+  }) async {
+    final now = DateTime.now();
+    final cn = ChapterNoteEntity(
+      id: 'cn-${now.millisecondsSinceEpoch}',
+      bookId: bookId,
+      chapterId: chapterId,
+      chapterIndex: chapterIndex,
+      chapterTitle: chapterTitle,
+      content: content,
+      createdAt: now,
+      updatedAt: now,
+    );
+    chapterNotes.add(cn);
+    return Result.success(cn);
+  }
+
+  @override
+  Future<Result<ChapterNoteEntity>> updateChapterNote({
+    required String id,
+    required String content,
+  }) async {
+    final idx = chapterNotes.indexWhere((cn) => cn.id == id);
+    if (idx == -1) {
+      return const Result.error(NotFoundFailure('Chapter note not found'));
+    }
+    final updated = chapterNotes[idx].copyWith(
+      content: content,
+      updatedAt: DateTime.now(),
+    );
+    chapterNotes[idx] = updated;
+    return Result.success(updated);
+  }
+
+  @override
+  Future<Result<void>> deleteChapterNote(String id) async {
+    chapterNotes.removeWhere((cn) => cn.id == id);
+    return const Result.success(null);
+  }
+
+  @override
+  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForBook(String bookId) async {
+    if (failChapterNotes) {
+      return const Result.error(DatabaseFailure('Chapter notes load failed'));
+    }
+    return Result.success(chapterNotes.where((cn) => cn.bookId == bookId).toList());
+  }
+
+  @override
+  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForChapter({
+    required String bookId,
+    required String chapterId,
+  }) async {
+    return Result.success(
+      chapterNotes.where((cn) => cn.bookId == bookId && cn.chapterId == chapterId).toList(),
+    );
+  }
+
+  @override
+  Stream<List<ChapterNoteEntity>> watchChapterNotesForBook(String bookId) {
+    return Stream.value(chapterNotes.where((cn) => cn.bookId == bookId).toList());
   }
 }
 

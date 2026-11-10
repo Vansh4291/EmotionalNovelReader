@@ -14,6 +14,7 @@ class AnnotationCubit extends Cubit<AnnotationState> {
     emit(const AnnotationLoading());
     final bookmarksResult = await repository.getBookmarksForBook(bookId);
     final highlightsResult = await repository.getHighlightsForBook(bookId);
+    final chapterNotesResult = await repository.getChapterNotesForBook(bookId);
 
     if (bookmarksResult.isError) {
       emit(AnnotationError(bookmarksResult.failureOrNull!.message));
@@ -23,11 +24,16 @@ class AnnotationCubit extends Cubit<AnnotationState> {
       emit(AnnotationError(highlightsResult.failureOrNull!.message));
       return;
     }
+    if (chapterNotesResult.isError) {
+      emit(AnnotationError(chapterNotesResult.failureOrNull!.message));
+      return;
+    }
 
     emit(AnnotationLoaded(
       bookId: bookId,
       allBookmarks: bookmarksResult.dataOrNull ?? [],
       allHighlights: highlightsResult.dataOrNull ?? [],
+      allChapterNotes: chapterNotesResult.dataOrNull ?? [],
     ));
   }
 
@@ -102,6 +108,58 @@ class AnnotationCubit extends Cubit<AnnotationState> {
         return h.id == highlightId ? updatedEntity : h;
       }).toList(growable: false);
       emit(current.copyWith(allHighlights: updated));
+    }
+  }
+
+  Future<void> createChapterNote({
+    required String chapterId,
+    int? chapterIndex,
+    String? chapterTitle,
+    required String content,
+  }) async {
+    final current = state;
+    if (current is! AnnotationLoaded) return;
+
+    final result = await repository.createChapterNote(
+      bookId: current.bookId,
+      chapterId: chapterId,
+      chapterIndex: chapterIndex,
+      chapterTitle: chapterTitle,
+      content: content,
+    );
+    if (result.isSuccess) {
+      final updated = [result.dataOrNull!, ...current.allChapterNotes];
+      emit(current.copyWith(allChapterNotes: updated));
+    }
+  }
+
+  Future<void> updateChapterNote(String noteId, String content) async {
+    final current = state;
+    if (current is! AnnotationLoaded) return;
+
+    final result = await repository.updateChapterNote(
+      id: noteId,
+      content: content,
+    );
+    if (result.isSuccess) {
+      final updatedEntity = result.dataOrNull!;
+      final updated = current.allChapterNotes.map((cn) {
+        return cn.id == noteId ? updatedEntity : cn;
+      }).toList(growable: false);
+      emit(current.copyWith(allChapterNotes: updated));
+    }
+  }
+
+  Future<void> deleteChapterNote(String noteId) async {
+    final current = state;
+    if (current is! AnnotationLoaded) return;
+
+    final result = await repository.deleteChapterNote(noteId);
+    if (result.isSuccess) {
+      final updated = current.allChapterNotes
+          .where((cn) => cn.id != noteId)
+          .toList(growable: false);
+      emit(current.copyWith(allChapterNotes: updated));
     }
   }
 

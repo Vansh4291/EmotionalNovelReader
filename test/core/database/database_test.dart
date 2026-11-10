@@ -16,8 +16,8 @@ void main() {
   });
 
   group('Drift SQLite Database tests', () {
-    test('Initializes schema version 3 successfully', () {
-      expect(db.schemaVersion, 3);
+    test('Initializes schema version 4 successfully', () {
+      expect(db.schemaVersion, 4);
     });
 
     test('Inserts and retrieves chapters with content, count, and SHA lookup', () async {
@@ -181,6 +181,62 @@ void main() {
       expect(updatedProgress!.currentLocation, 'page-20');
       expect(updatedProgress.progressPercentage, 0.50);
       expect(updatedProgress.totalSecondsRead, 600);
+    });
+
+    test('ChapterNotes CRUD operations and queries', () async {
+      final now = DateTime.now().toUtc();
+      await db.insertBook(
+        BooksCompanion.insert(
+          id: 'book-cn-test',
+          title: 'Notes Book',
+          originalFileName: 'notes.epub',
+          filePath: '/path/notes.epub',
+          format: 'epub',
+          sha256: 'cn-sha-123',
+          fileSizeBytes: 1024,
+          createdAt: now,
+        ),
+      );
+
+      await db.insertChapters([
+        ChaptersCompanion.insert(
+          id: 'ch-cn-test',
+          bookId: 'book-cn-test',
+          chapterIndex: 0,
+          title: 'Chapter One',
+          content: const Value('Sample chapter content'),
+          wordCount: const Value(3),
+          characterCount: const Value(22),
+        ),
+      ]);
+
+      // Insert note
+      await db.insertChapterNote(
+        ChapterNotesCompanion.insert(
+          id: 'cn-1',
+          bookId: 'book-cn-test',
+          chapterId: 'ch-cn-test',
+          content: 'My standalone chapter note',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final notes = await db.getChapterNotesForBook('book-cn-test');
+      expect(notes.length, 1);
+      expect(notes.first.content, 'My standalone chapter note');
+
+      // Update note
+      final updated = await db.updateChapterNoteContent('cn-1', 'Updated note content');
+      expect(updated, isTrue);
+
+      final note = await db.getChapterNoteById('cn-1');
+      expect(note?.content, 'Updated note content');
+
+      // Delete note
+      final deletedRows = await db.deleteChapterNote('cn-1');
+      expect(deletedRows, 1);
+      expect(await db.getChapterNotesForBook('book-cn-test'), isEmpty);
     });
   });
 }
