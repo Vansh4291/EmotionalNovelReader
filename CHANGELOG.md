@@ -579,6 +579,54 @@ Example structure:
 ## [Unreleased]
 
 ### Added
+- **Phase 5: ENR-0050 Book-Content and Library Search**:
+  - Implemented full-text search (FTS5) using Drift SQLite schema v3 migration with virtual table `chapter_fts` configured with `tokenize="trigram"`.
+  - Added relational substring search fallback (`LIKE ?`) with bounded snippet extraction to ensure 100% search recall for queries under 3 characters (e.g. single/double CJK ideograms).
+  - Implemented search domain layer with `SearchResultEntity`, `BookSearchResult`, `ContentSearchResult`, and `SearchScope` (`all`, `books`, `content`).
+  - Implemented `SearchRepository` and `SearchRepositoryImpl` with BM25 ranking, dynamic `<mark>` snippet generation, book-scoped filtering, and index rebuilding.
+  - Implemented presentation layer with `SearchCubit` featuring 300ms input debouncing, stale out-of-order query response suppression via sequence tagging, and scope switching.
+  - Implemented `SearchScreen` with scope filter chips, search-as-you-type, highlighted snippet rendering, empty/error/loading views, and manual index rebuilding via options menu.
+  - Added search navigation in `app_router.dart` (`/search`, with direct reader navigation via query parameter `/reader/:bookId?chapterIndex=X`).
+  - Added dedicated search navigation actions in `LibraryScreen` and `ReaderScreen` (scoped book search).
+  - Synchronized FTS index lifecycle with `BookRepositoryImpl`: automatically indexes chapters upon document import and purges FTS entries upon book deletion.
+  - Expanded automated test suite from 70 to 97 passing tests across 18 test files (`flutter test`), including multilingual unit tests (English, Hindi, Gujarati, Japanese, Chinese), authentic SQLite schema v2-to-v3 migration tests, widget tests, and full UI search-to-reader integration tests.
+  - Implemented authentic SQLite schema v1-to-v2 migration test (`test/core/database/migration_test.dart`) using raw `sqlite3` to instantiate an authentic schema v1 database with existing books, chapters without `content`, bookmarks, and reading progress records, validating 100% data preservation, foreign keys, and default empty string initialization of `content`.
+  - Implemented bounded stream-based document copying (`StorageService.copyBookFile` using `openRead().pipe(openWrite())`), eliminating complete in-memory byte buffering during document import.
+  - Enhanced `PdfExtractor` with `FlateDecode` stream decompression using `zlib.decode` and `Inflate().getBytes()`, string extraction from kerning arrays (`[(...) ...] TJ`), hex string extraction (`<...> Tj`), character unescaping (`\(`, `\)`, `\\`, and octal `\ddd`), and multi-stream page assembly.
+  - Implemented app lifecycle observer (`WidgetsBindingObserver`) in `ReaderScreen` to immediately flush reading progress to Drift SQLite via `flushProgress()` when app enters `paused` or `inactive` states.
+  - Added direct `sqlite3: ^2.4.6` entry under `dev_dependencies` in `pubspec.yaml` to ensure clean static analysis.
+  - Expanded total automated test suite to 70 tests across 14 test files passing 100% (`flutter test`).
+- **Phase 4: Core Library, Document Import, and Reader MVP**:
+  - Implemented local library presentation (`lib/features/library/presentation/`) with list and grid view mode toggling, search query filtering against title/author, format filtering chips (All, EPUB, TXT, PDF, DOCX), and sorting options (Date Added Descending/Ascending, Title Ascending/Descending).
+  - Implemented book details screen (`/book/:id`) displaying cover image, book metadata, reading progress percentage, chapter count, and transactional book deletion workflow.
+  - Implemented signature-based format sniffer (`FormatDetector`) inspecting initial magic bytes (PDF `%PDF-`, RTF `{\rtf`, CBR `Rar!`, MOBI `BOOKMOBI`, EPUB container.xml in ZIP, DOCX `word/document.xml` in ZIP, HTML, Markdown, and TXT UTF-8 verification).
+  - Implemented multi-format document extraction suite (`lib/features/import/domain/extractors/`):
+    - `EpubExtractor`: Extracts container metadata, OPF package manifest, spine reading order, embedded cover art, and cleans XHTML chapters into structured text.
+    - `TxtExtractor`: Pattern-based chapter header detection (`Chapter \d+`, `第X章`) with heuristic ~2,500 word fallback chunking.
+    - `MarkdownExtractor`: Structured heading extraction (`#`, `##`, `###`).
+    - `HtmlExtractor`: Script tag sanitization, semantic tag filtering, clean paragraph extraction.
+    - `DocxExtractor`: Extracts paragraphs and headings from `word/document.xml`.
+    - `PdfExtractor`: Validates PDF structure, extracts uncompressed and compressed text streams, and explicitly fails with `DocumentParsingFailure` on scanned/image-only documents without OCR fallback.
+    - `ExtractorFactory`: Unified factory resolving extractors by detected format with explicit unsupported format error handling.
+  - Implemented end-to-end document import pipeline (`ImportService` and `ImportCubit`): SAF file picking, SHA-256 duplicate detection preventing redundant library entries, sandboxed copying into app storage, chapter extraction, and automatic sandbox rollback on failure leaving zero orphaned files.
+  - Implemented Reader MVP (`lib/features/reader/presentation/`): immersive reading screen (`/reader/:bookId`), toggleable app bar and bottom bar, chapter navigation (next/previous with boundary checks), Table of Contents drawer with current chapter indicator, and scroll offset tracking.
+  - Implemented 1.5-second debounced reading progress persistence in `ReaderCubit` writing chapter ID, scroll position, and progress percentage to Drift SQLite without per-scroll database thrashing, with immediate flush on exit.
+  - Implemented `ReaderPreferencesSheet` with font size controls (12-36pt), line height controls (1.2-2.4), and reader background themes (System, Light, Dark, Sepia `#F4ECD8`) adhering to 48x48dp minimum touch targets.
+  - Database schema migration v1 -> v2: Added `content` column to `Chapters` table with default constant empty string, automated migration in `AppDatabase`, and new lookup methods (`getBookBySha`, `getChapterById`, `getChapterCountForBook`).
+  - Android debug APK verified compiling cleanly with `minSdk = 31` and `compileSdk = 36` (`flutter build apk --debug`).
+- **Phase 3: Core Foundation & Data Layer**:
+  - Implemented Pragmatic Feature-First Architecture (`lib/app/`, `lib/core/`, `lib/features/`).
+  - Implemented Drift SQLite local persistence (`AppDatabase`) configured with WAL mode, `PRAGMA foreign_keys = ON`, schemaVersion = 1, and relational tables (`Books`, `Chapters`, `Bookmarks`, `Highlights`, `ReadingProgressTable`).
+  - Implemented domain entity `BookEntity` and repository interface `BookRepository` with Drift + Storage implementation `BookRepositoryImpl`.
+  - Implemented BLoC / Cubit state management with `LibraryCubit` and `LibraryState` (`Loading`, `Empty`, `Loaded`, `Error`).
+  - Implemented declarative routing via `go_router` (`lib/app/router/app_router.dart`) handling `/`, `/library`, `/settings`, and `/reader/:bookId`.
+  - Implemented UI isolate dependency injection composition root (`lib/app/di/injection.dart`) via `get_it` with test override support.
+  - Implemented sealed `Failure` hierarchy and functional `Result<T>` (`Success<T>`, `Error<T>`).
+  - Implemented sandboxed `StorageService` managing app-private storage (`app_flutter/library/books/<uuid>/original.<ext>`) with SHA-256 streaming and path traversal / ZIP slip protection.
+  - Implemented `SecureStorageService` backed by `flutter_secure_storage` with Android `EncryptedSharedPreferences`.
+  - Implemented privacy-compliant `AppLogger` redacting username paths, absolute file paths, and novel text.
+  - Implemented Material 3 theme and design tokens with accessible foundations (high contrast, semantic labels, and minimum 48x48dp touch targets).
+  - Comprehensive automated test suite with 20 unit, database, repository, security, routing, and widget tests passing 100%.
 - Fresh Android-only Flutter foundation initialized with Flutter 3.47.9 and Dart 3.13.7.
 - Minimum Android version explicitly enforced at Android 12 (API 31) in `android/app/build.gradle.kts`.
 - Feature-first clean directory structure in `lib/` with composition root `EmotionalNovelReaderApp`, Material 3 theming, app constants, failure abstraction, and module placeholders (`library`, `reader`, `audio`, `ai`, `settings`).
@@ -589,6 +637,15 @@ Example structure:
 - Comprehensive Stage A technical investigation report archived at `artifacts/PROJECT_INITIALIZATION_INVESTIGATION.md`.
 
 ### Changed
+- Reconciled Phase 4 automated test suite accounting from 63 baseline tests to 70 verified tests across 14 test files, resolving arithmetic reporting discrepancies.
+- Formalized format support matrix: Fully Supported (EPUB, TXT, Markdown, HTML, DOCX), Partially Supported (PDF text streams only), and Deferred (RTF, CBZ, CBR, MOBI, AZW, AZW3).
+- Integrated Phase 4 production dependencies in `pubspec.yaml` (`file_picker: ^8.1.7`, `archive: ^4.0.2`, `xml: ^6.5.0`).
+- Configured Android AGP `compileSdk = 36` in `android/app/build.gradle.kts` and subprojects `compileSdkVersion` override in `android/build.gradle.kts` to satisfy Android Lifecycle AAR metadata while preserving `minSdk = 31`.
+- Updated Phase 4 tasks in `TASKS.md` (`ENR-0040`, `ENR-0041`, `ENR-0042`, `ENR-0043`, and `ENR-0044`) to Completed with empirical verification evidence.
+- Accepted Phase 4 technical decisions in `DECISIONS.md` (`ENR-DEC-031`, `ENR-DEC-032`, `ENR-DEC-040`).
+- Integrated Phase 3 production dependencies in `pubspec.yaml` (`flutter_bloc`, `bloc`, `get_it`, `drift`, `drift_flutter`, `sqlite3_flutter_libs`, `path_provider`, `path`, `go_router`, `flutter_secure_storage`, `intl`, `uuid`, `crypto`, `logger`, `drift_dev`, `build_runner`, `bloc_test`, `mocktail`).
+- Updated Phase 3 tasks in `TASKS.md` (`ENR-0030`, `ENR-0031`, `ENR-0032`, `ENR-0033`, `ENR-0034`, and `ENR-0035`) to Completed with empirical verification evidence.
+- Accepted Phase 3 technical decisions in `DECISIONS.md` (`ENR-DEC-025`, `ENR-DEC-026`, `ENR-DEC-027`, `ENR-DEC-028`, `ENR-DEC-029`, `ENR-DEC-030`, `ENR-DEC-042`, `ENR-DEC-044`, `ENR-DEC-045`, `ENR-DEC-047`, `ENR-DEC-053`).
 - Reconciled Phase 1 tasks in `TASKS.md` (`ENR-0010`, `ENR-0011`, `ENR-0012`, `ENR-0013`, `ENR-0014`, and `ENR-0015` completed with empirical evidence).
 - Refactored Android Application ID and namespace to canonical `com.emotionalnovelreader.app` and aligned Kotlin package/directory structure for `MainActivity.kt` (ENR-DEC-057).
 - Hardened root `.gitignore` to ignore `.idea/libraries/`, `.idea/caches/`, and `.env*` with `.env.example` exception.
@@ -597,10 +654,16 @@ Example structure:
 ### Deprecated
 
 ### Removed
+- Removed arbitrary, unapproved 500 MB hardcoded import limit (`maxFileSizeBytes = 500 * 1024 * 1024`) from `ImportService`, replacing it with non-zero byte validation, file existence checks, and dynamic device storage space checks.
 
 ### Fixed
+- Fixed initial scroll layout pass in `ReaderScreen` overwriting saved reading progress with position 0.0 by introducing `_initialScrollRestored` synchronization guard.
+- Fixed PDF extraction handling to decompress `FlateDecode` streams via zlib/inflate, decode character kerning arrays `[(...) ...] TJ`, and parse hex-encoded string literals.
 
 ### Security
+- Hardened ZIP bomb & archive expansion defenses in `EpubExtractor` and `DocxExtractor` by enforcing limits against actual decompressed bytes as well as declared sizes: capping entry count to 5,000, cumulative uncompressed size to 250 MB (EPUB) and 150 MB (DOCX), max compression ratio to 100:1, individual chapter size to 20 MB, and rejecting negative/invalid header sizes.
+- Enhanced path traversal boundary check in `StorageService.assertSafeRelativePath` to enforce directory separator boundaries (`canonicalBase + separator`).
+- Enforced canonical internal path validation (`_isSafeArchivePath`) on EPUB OPF package paths, cover art references, and spine chapter paths, explicitly rejecting null bytes (`\x00`), absolute paths, Windows drive letters, and parent directory sequences.
 
 ## [0.1.0-beta.1] - YYYY-MM-DD
 
