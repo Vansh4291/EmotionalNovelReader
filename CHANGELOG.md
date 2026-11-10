@@ -579,8 +579,17 @@ Example structure:
 ## [Unreleased]
 
 ### Added
+- Fresh Android-only Flutter foundation initialized with Flutter 3.47.9 and Dart 3.13.7.
+- Minimum Android version explicitly enforced at Android 12 (API 31) in `android/app/build.gradle.kts`.
+- Feature-first clean directory structure in `lib/` with composition root `EmotionalNovelReaderApp`, Material 3 theming, app constants, failure abstraction, and module placeholders (`library`, `reader`, `audio`, `ai`, `settings`).
+- Strict analysis options configured in `analysis_options.yaml` (strict casts, strict inference, strict raw types).
+- Baseline smoke widget test in `test/widget_test.dart` verified and passing.
+- Root `.gitignore` created protecting user settings, build outputs, and keystores while preserving existing project metadata.
+- Full verification completed: `flutter analyze` (0 issues), `flutter test` (100% passed), and `flutter build apk --debug` (successfully built `build/app/outputs/flutter-apk/app-debug.apk`).
+- Comprehensive Stage A technical investigation report archived at `artifacts/PROJECT_INITIALIZATION_INVESTIGATION.md`.
 
 ### Changed
+- Reconciled Phase 1 tasks in `TASKS.md` (`ENR-0010`, `ENR-0011`, `ENR-0012`, `ENR-0014`, and `ENR-0015` completed with empirical evidence).
 
 ### Deprecated
 
