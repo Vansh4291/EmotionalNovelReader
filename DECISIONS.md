@@ -688,6 +688,7 @@ These entries record constraints already established during product and technica
 | ENR-DEC-022 | ADR-022 | Accessibility includes TalkBack, high contrast, dyslexia-friendly fonts, reduced motion, large controls, and focus mode. | PRODUCT / A11Y | Accepted constraint | High |
 | ENR-DEC-023 | ADR-023 | Release engineering includes signed Android artifacts, versioning, release notes, staged rollout, crash monitoring, and rollback planning. | PRODUCT / RELEASE | Accepted constraint | High |
 | ENR-DEC-024 | ADR-024 | Material architecture conflicts must be investigated, alternatives and trade-offs documented, and required approval obtained. | GOV | Accepted constraint | High |
+| ENR-DEC-057 | ADR-057 | Android Application ID is com.emotionalnovelreader.app, Android namespace is com.emotionalnovelreader.app, and Kotlin package is com.emotionalnovelreader.app. | ANDROID / CONFIG | Accepted decision | High |
 
 ### Constraint record notes
 
@@ -1162,6 +1163,32 @@ The following records establish the initial scope of investigation. Each record 
 
 **Closure criteria:** Document release gates, accountable approver, artifact provenance, and recovery/rollback procedure.
 
+## ENR-DEC-057 / ADR-057: Android Application ID, Namespace, and Kotlin Package Identity
+
+| Field | Value |
+|---|---|
+| Category | ANDROID / CONFIG |
+| Lifecycle | Accepted |
+| Approval | Approved |
+| Priority | High |
+| Permanence | Permanent |
+| Reversibility | Difficult to Reverse |
+| Target phase | Phase 1 (Stage B) |
+| Owner | Lead Architect / Tech Lead |
+| Related documents | `TASKS.md` (ENR-0012, ENR-0013), `CHANGELOG.md`, `android/app/build.gradle.kts` |
+| Related modules | Android build, app baseline |
+
+**Context:** The initial Flutter project generation produced an Android applicationId and namespace matching `com.emotionalnovelreader.emotional_novel_reader`. During the Stage B pre-commit review, this was flagged for alignment with production naming conventions.
+
+**Decision:**
+1. Android Application ID: `com.emotionalnovelreader.app`
+2. Android namespace: `com.emotionalnovelreader.app`
+3. Kotlin package: `com.emotionalnovelreader.app`
+4. Flutter Dart package name remains `emotional_novel_reader` in `pubspec.yaml` (separating Android application ID from Dart package namespace).
+5. Application display label remains `Emotional Novel Reader`.
+
+**Consequences:** Clean canonical identity for Google Play Store, Android OS package manager, and native integrations; verified with successful debug APK build and zero analysis issues.
+
 ---
 
 # 19. Full ADR record template
@@ -1510,6 +1537,7 @@ Do not treat the seed decision index as authorization to install packages, creat
 | Version | Date | Changes |
 |---|---|---|
 | 1.0-draft | 2026-11-08 | Created initial decision governance model, authority and approval rules, lifecycle and validation statuses, evidence standards, review and emergency processes, product constraint register, unresolved technical decision index, ADR templates, and AI agent instructions. |
+| 1.0.1-draft | 2026-11-10 | Recorded accepted decision ENR-DEC-057 / ADR-057 for canonical Android Application ID (`com.emotionalnovelreader.app`), namespace, and Kotlin package identity. |
 
 ---
 

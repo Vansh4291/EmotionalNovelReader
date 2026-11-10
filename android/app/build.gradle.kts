@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.emotionalnovelreader.emotional_novel_reader"
+    namespace = "com.emotionalnovelreader.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,7 +15,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.emotionalnovelreader.emotional_novel_reader"
+        applicationId = "com.emotionalnovelreader.app"
         // Enforce Android 12 (API 31) as the minimum platform version per PRD and ENR-DEC-002
         minSdk = 31
         targetSdk = flutter.targetSdkVersion

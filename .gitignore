@@ -6,12 +6,18 @@
 .DS_Store
 Thumbs.db
 
+# Environment variables
+.env*
+!.env.example
+
 # User-specific stuff
 .idea/**/workspace.xml
 .idea/**/tasks.xml
 .idea/**/usage.statistics.xml
 .idea/**/dictionaryLibrary.xml
 .idea/**/shelf/
+.idea/libraries/
+.idea/caches/
 
 # Keystore and signing files
 *.keystore
@@ -47,5 +53,5 @@ app.*.map.json
 !.idea/misc.xml
 !.idea/vcs.xml
 !.idea/deviceManager.xml
-!.idea/caches/deviceStreaming.xml
+!.idea/runConfigurations/main_dart.xml
 

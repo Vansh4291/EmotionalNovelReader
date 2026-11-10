@@ -589,7 +589,10 @@ Example structure:
 - Comprehensive Stage A technical investigation report archived at `artifacts/PROJECT_INITIALIZATION_INVESTIGATION.md`.
 
 ### Changed
-- Reconciled Phase 1 tasks in `TASKS.md` (`ENR-0010`, `ENR-0011`, `ENR-0012`, `ENR-0014`, and `ENR-0015` completed with empirical evidence).
+- Reconciled Phase 1 tasks in `TASKS.md` (`ENR-0010`, `ENR-0011`, `ENR-0012`, `ENR-0013`, `ENR-0014`, and `ENR-0015` completed with empirical evidence).
+- Refactored Android Application ID and namespace to canonical `com.emotionalnovelreader.app` and aligned Kotlin package/directory structure for `MainActivity.kt` (ENR-DEC-057).
+- Hardened root `.gitignore` to ignore `.idea/libraries/`, `.idea/caches/`, and `.env*` with `.env.example` exception.
+- Untracked `.idea/caches/deviceStreaming.xml` and `.idea/libraries/` from Git index while preserving local configuration files.
 
 ### Deprecated
 

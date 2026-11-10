@@ -358,7 +358,7 @@ The backlog is grouped by roadmap phase. The task cards below are the initial pl
 | Related to | ENR-0013 |
 
 **Subtasks**
-- [x] ENR-0012-S01 Confirm application identifier and naming requirements (`com.emotionalnovelreader.emotional_novel_reader`, "Emotional Novel Reader").
+- [x] ENR-0012-S01 Confirm application identifier and naming requirements (`com.emotionalnovelreader.app`, "Emotional Novel Reader", ENR-DEC-057).
 - [x] ENR-0012-S02 Generate the new Flutter project using the verified Flutter tooling (`flutter create --org com.emotionalnovelreader --project-name emotional_novel_reader --platforms android .`).
 - [x] ENR-0012-S03 Place project documentation in the correct repository locations without overwriting existing work (100% existing documentation preserved).
 - [x] ENR-0012-S04 Verify generated Android project configuration (`minSdk = 31` enforced, AGP 9.1.0, Kotlin 2.4.0, Gradle 9.3.1).
