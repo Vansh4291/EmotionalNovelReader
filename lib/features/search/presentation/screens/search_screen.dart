@@ -1,17 +1,15 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../domain/entities/search_result_entity.dart';
 import '../cubit/search_cubit.dart';
 import '../cubit/search_state.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({
-    super.key,
-    this.initialQuery = '',
-    this.scopedBookId,
-  });
+  const SearchScreen({super.key, this.initialQuery = '', this.scopedBookId});
 
   final String initialQuery;
   final String? scopedBookId;
@@ -167,10 +165,7 @@ class _SearchScreenState extends State<SearchScreen> {
               color: theme.colorScheme.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
-            Text(
-              'Search Your Library',
-              style: theme.textTheme.titleMedium,
-            ),
+            Text('Search Your Library', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
               'Type to search by novel title, author, or search inside full chapter text.',
@@ -236,7 +231,9 @@ class _SearchScreenState extends State<SearchScreen> {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.error,
+              ),
             ),
             const SizedBox(height: 16),
             FilledButton.tonalIcon(
@@ -302,7 +299,9 @@ class _SearchScreenState extends State<SearchScreen> {
           borderRadius: BorderRadius.circular(4),
         ),
         clipBehavior: Clip.antiAlias,
-        child: book.coverImagePath != null && File(book.coverImagePath!).existsSync()
+        child:
+            book.coverImagePath != null &&
+                File(book.coverImagePath!).existsSync()
             ? Image.file(File(book.coverImagePath!), fit: BoxFit.cover)
             : Icon(Icons.book, color: theme.colorScheme.onSurfaceVariant),
       ),
@@ -334,7 +333,9 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildContentTile(ContentSearchResult item, ThemeData theme) {
     return InkWell(
       onTap: () {
-        context.push('/reader/${item.bookId}?chapterIndex=${item.chapterIndex}');
+        context.push(
+          '/reader/${item.bookId}?chapterIndex=${item.chapterIndex}',
+        );
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -372,7 +373,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildHighlightedText(String snippet, ThemeData theme) {
     final spans = <TextSpan>[];
-    final markRegex = RegExp(r'<mark>(.*?)</mark>', caseSensitive: false, dotAll: true);
+    final markRegex = RegExp(
+      r'<mark>(.*?)</mark>',
+      caseSensitive: false,
+      dotAll: true,
+    );
     var lastIndex = 0;
 
     for (final match in markRegex.allMatches(snippet)) {
@@ -413,4 +418,3 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 }
-

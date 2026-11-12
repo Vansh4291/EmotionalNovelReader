@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:emotional_novel_reader/core/database/app_database.dart';
 import 'package:emotional_novel_reader/core/logging/app_logger.dart';
@@ -32,6 +33,20 @@ class CubitTestStorageService implements StorageService {
 
   @override
   Future<Directory> getTempDirectory() async => rootDir;
+
+  @override
+  Future<Directory> getBackupDirectory() async {
+    final d = Directory(p.join(rootDir.path, 'backups'));
+    if (!await d.exists()) await d.create(recursive: true);
+    return d;
+  }
+
+  @override
+  Future<Directory> getModelsDirectory() async {
+    final d = Directory(p.join(rootDir.path, 'ai_models'));
+    if (!await d.exists()) await d.create(recursive: true);
+    return d;
+  }
 
   @override
   Future<void> cleanupTempDirectory() async {}
@@ -74,7 +89,8 @@ class CubitTestStorageService implements StorageService {
   }
 
   @override
-  Future<String> calculateSha256(File file) async => 'dummy-sha-${file.path.hashCode}';
+  Future<String> calculateSha256(File file) async =>
+      'dummy-sha-${file.path.hashCode}';
 
   @override
   Future<void> deleteBookDirectory(String bookId) async {}
@@ -138,10 +154,7 @@ void main() {
       await cubit.pickAndImport();
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      expect(states, [
-        isA<ImportSelecting>(),
-        isA<ImportInitial>(),
-      ]);
+      expect(states, [isA<ImportSelecting>(), isA<ImportInitial>()]);
 
       await subscription.cancel();
       await cubit.close();
@@ -173,31 +186,33 @@ void main() {
       await cubit.close();
     });
 
-    test('pickAndImport transitions to ImportError on invalid empty file', () async {
-      final emptyFile = File('${tempDir.path}/empty.txt');
-      await emptyFile.writeAsString('');
+    test(
+      'pickAndImport transitions to ImportError on invalid empty file',
+      () async {
+        final emptyFile = File('${tempDir.path}/empty.txt');
+        await emptyFile.writeAsString('');
 
-      final cubit = ImportCubit(
-        importService: importService,
-        filePickerOverride: () async => emptyFile.path,
-      );
+        final cubit = ImportCubit(
+          importService: importService,
+          filePickerOverride: () async => emptyFile.path,
+        );
 
-      final states = <ImportState>[];
-      final subscription = cubit.stream.listen(states.add);
+        final states = <ImportState>[];
+        final subscription = cubit.stream.listen(states.add);
 
-      await cubit.pickAndImport();
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+        await cubit.pickAndImport();
+        await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      expect(states.last, isA<ImportError>());
-      final errorState = states.last as ImportError;
-      expect(errorState.message, contains('empty (0 bytes)'));
+        expect(states.last, isA<ImportError>());
+        final errorState = states.last as ImportError;
+        expect(errorState.message, contains('empty (0 bytes)'));
 
-      cubit.reset();
-      expect(cubit.state, isA<ImportInitial>());
+        cubit.reset();
+        expect(cubit.state, isA<ImportInitial>());
 
-      await subscription.cancel();
-      await cubit.close();
-    });
+        await subscription.cancel();
+        await cubit.close();
+      },
+    );
   });
 }
-

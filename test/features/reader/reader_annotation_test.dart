@@ -50,7 +50,9 @@ class FakeBookRepository implements BookRepository {
       Result.success(chapters.length);
 
   @override
-  Future<Result<ReadingProgressEntity?>> getReadingProgress(String bookId) async {
+  Future<Result<ReadingProgressEntity?>> getReadingProgress(
+    String bookId,
+  ) async {
     return Result.success(progress);
   }
 
@@ -61,19 +63,26 @@ class FakeBookRepository implements BookRepository {
   }
 
   @override
-  Future<Result<void>> deleteBook(String id) async => const Result.success(null);
+  Future<Result<void>> deleteBook(String id) async =>
+      const Result.success(null);
   @override
-  Future<Result<List<BookEntity>>> getAllBooks() async => Result.success(book != null ? [book!] : []);
+  Future<Result<List<BookEntity>>> getAllBooks() async =>
+      Result.success(book != null ? [book!] : []);
   @override
-  Future<Result<bool>> isDuplicateBook(String sha256) async => const Result.success(false);
+  Future<Result<bool>> isDuplicateBook(String sha256) async =>
+      const Result.success(false);
   @override
-  Future<Result<void>> saveBook(BookEntity book) async => const Result.success(null);
+  Future<Result<void>> saveBook(BookEntity book) async =>
+      const Result.success(null);
   @override
-  Future<Result<void>> saveChapters(List<ChapterEntity> chapters) async => const Result.success(null);
+  Future<Result<void>> saveChapters(List<ChapterEntity> chapters) async =>
+      const Result.success(null);
   @override
-  Stream<List<BookEntity>> watchAllBooks() => Stream.value(book != null ? [book!] : []);
+  Stream<List<BookEntity>> watchAllBooks() =>
+      Stream.value(book != null ? [book!] : []);
   @override
-  Stream<ReadingProgressEntity?> watchReadingProgress(String bookId) => const Stream.empty();
+  Stream<ReadingProgressEntity?> watchReadingProgress(String bookId) =>
+      const Stream.empty();
 }
 
 class FakeAnnotationRepository implements AnnotationRepository {
@@ -114,12 +123,16 @@ class FakeAnnotationRepository implements AnnotationRepository {
     required String bookId,
     required String chapterId,
   }) async {
-    bookmarks.removeWhere((b) => b.bookId == bookId && b.chapterId == chapterId);
+    bookmarks.removeWhere(
+      (b) => b.bookId == bookId && b.chapterId == chapterId,
+    );
     return const Result.success(null);
   }
 
   @override
-  Future<Result<List<BookmarkEntity>>> getBookmarksForBook(String bookId) async {
+  Future<Result<List<BookmarkEntity>>> getBookmarksForBook(
+    String bookId,
+  ) async {
     return Result.success(bookmarks.where((b) => b.bookId == bookId).toList());
   }
 
@@ -169,7 +182,9 @@ class FakeAnnotationRepository implements AnnotationRepository {
   }
 
   @override
-  Future<Result<List<HighlightEntity>>> getHighlightsForBook(String bookId) async {
+  Future<Result<List<HighlightEntity>>> getHighlightsForBook(
+    String bookId,
+  ) async {
     return Result.success(highlights.where((h) => h.bookId == bookId).toList());
   }
 
@@ -179,7 +194,9 @@ class FakeAnnotationRepository implements AnnotationRepository {
     required String chapterId,
   }) async {
     return Result.success(
-      highlights.where((h) => h.bookId == bookId && h.chapterId == chapterId).toList(),
+      highlights
+          .where((h) => h.bookId == bookId && h.chapterId == chapterId)
+          .toList(),
     );
   }
 
@@ -226,10 +243,12 @@ class FakeAnnotationRepository implements AnnotationRepository {
     String? chapterId,
     required String location,
   }) async {
-    bookmarks.removeWhere((b) =>
-        b.bookId == bookId &&
-        (chapterId == null || b.chapterId == chapterId) &&
-        b.location == location);
+    bookmarks.removeWhere(
+      (b) =>
+          b.bookId == bookId &&
+          (chapterId == null || b.chapterId == chapterId) &&
+          b.location == location,
+    );
     return const Result.success(null);
   }
 
@@ -240,10 +259,12 @@ class FakeAnnotationRepository implements AnnotationRepository {
     required String location,
   }) async {
     return Result.success(
-      bookmarks.any((b) =>
-          b.bookId == bookId &&
-          (chapterId == null || b.chapterId == chapterId) &&
-          b.location == location),
+      bookmarks.any(
+        (b) =>
+            b.bookId == bookId &&
+            (chapterId == null || b.chapterId == chapterId) &&
+            b.location == location,
+      ),
     );
   }
 
@@ -292,7 +313,9 @@ class FakeAnnotationRepository implements AnnotationRepository {
   }
 
   @override
-  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForBook(String bookId) async {
+  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForBook(
+    String bookId,
+  ) async {
     return const Result.success([]);
   }
 
@@ -364,40 +387,43 @@ void main() {
   });
 
   group('ReaderCubit Annotation Integration Tests', () {
-    test('loadBook initializes bookmarks and current chapter highlights', () async {
-      annotationRepo.bookmarks = [
-        BookmarkEntity(
-          id: 'b1',
-          bookId: 'book-rdr-ann',
-          chapterId: 'ch-1',
-          chapterIndex: 0,
-          chapterTitle: 'Chapter 1: Departure',
-          location: '0',
-          createdAt: DateTime.now(),
-        ),
-      ];
-      annotationRepo.highlights = [
-        HighlightEntity(
-          id: 'h1',
-          bookId: 'book-rdr-ann',
-          chapterId: 'ch-1',
-          chapterIndex: 0,
-          chapterTitle: 'Chapter 1: Departure',
-          startOffset: 0,
-          endOffset: 11,
-          selectedText: 'The journey',
-          createdAt: DateTime.now(),
-        ),
-      ];
+    test(
+      'loadBook initializes bookmarks and current chapter highlights',
+      () async {
+        annotationRepo.bookmarks = [
+          BookmarkEntity(
+            id: 'b1',
+            bookId: 'book-rdr-ann',
+            chapterId: 'ch-1',
+            chapterIndex: 0,
+            chapterTitle: 'Chapter 1: Departure',
+            location: '0',
+            createdAt: DateTime.now(),
+          ),
+        ];
+        annotationRepo.highlights = [
+          HighlightEntity(
+            id: 'h1',
+            bookId: 'book-rdr-ann',
+            chapterId: 'ch-1',
+            chapterIndex: 0,
+            chapterTitle: 'Chapter 1: Departure',
+            startOffset: 0,
+            endOffset: 11,
+            selectedText: 'The journey',
+            createdAt: DateTime.now(),
+          ),
+        ];
 
-      await cubit.loadBook('book-rdr-ann');
+        await cubit.loadBook('book-rdr-ann');
 
-      expect(cubit.state, isA<ReaderLoaded>());
-      final state = cubit.state as ReaderLoaded;
-      expect(state.bookmarks.length, 1);
-      expect(state.highlights.length, 1);
-      expect(state.isCurrentChapterBookmarked, isTrue);
-    });
+        expect(cubit.state, isA<ReaderLoaded>());
+        final state = cubit.state as ReaderLoaded;
+        expect(state.bookmarks.length, 1);
+        expect(state.highlights.length, 1);
+        expect(state.isCurrentChapterBookmarked, isTrue);
+      },
+    );
 
     test('toggleBookmark toggles chapter bookmark status accurately', () async {
       await cubit.loadBook('book-rdr-ann');
@@ -516,29 +542,32 @@ void main() {
       expect(state.highlights.first.endOffset, 28);
     });
 
-    test('R01 & R05: Multiple bookmarks per chapter toggle at distinct locations', () async {
-      await cubit.loadBook('book-rdr-ann');
+    test(
+      'R01 & R05: Multiple bookmarks per chapter toggle at distinct locations',
+      () async {
+        await cubit.loadBook('book-rdr-ann');
 
-      // Add first bookmark at char:10
-      await cubit.toggleBookmark(location: 'char:10');
-      var state = cubit.state as ReaderLoaded;
-      expect(state.bookmarks.length, 1);
-      expect(state.isLocationBookmarked('char:10'), isTrue);
-      expect(state.isLocationBookmarked('char:40'), isFalse);
+        // Add first bookmark at char:10
+        await cubit.toggleBookmark(location: 'char:10');
+        var state = cubit.state as ReaderLoaded;
+        expect(state.bookmarks.length, 1);
+        expect(state.isLocationBookmarked('char:10'), isTrue);
+        expect(state.isLocationBookmarked('char:40'), isFalse);
 
-      // Add second bookmark at char:40 in same chapter (R01)
-      await cubit.toggleBookmark(location: 'char:40');
-      state = cubit.state as ReaderLoaded;
-      expect(state.bookmarks.length, 2);
-      expect(state.isLocationBookmarked('char:10'), isTrue);
-      expect(state.isLocationBookmarked('char:40'), isTrue);
+        // Add second bookmark at char:40 in same chapter (R01)
+        await cubit.toggleBookmark(location: 'char:40');
+        state = cubit.state as ReaderLoaded;
+        expect(state.bookmarks.length, 2);
+        expect(state.isLocationBookmarked('char:10'), isTrue);
+        expect(state.isLocationBookmarked('char:40'), isTrue);
 
-      // Toggle off only the bookmark at char:10 (R03 & R05)
-      await cubit.toggleBookmark(location: 'char:10');
-      state = cubit.state as ReaderLoaded;
-      expect(state.bookmarks.length, 1);
-      expect(state.isLocationBookmarked('char:10'), isFalse);
-      expect(state.isLocationBookmarked('char:40'), isTrue);
-    });
+        // Toggle off only the bookmark at char:10 (R03 & R05)
+        await cubit.toggleBookmark(location: 'char:10');
+        state = cubit.state as ReaderLoaded;
+        expect(state.bookmarks.length, 1);
+        expect(state.isLocationBookmarked('char:10'), isFalse);
+        expect(state.isLocationBookmarked('char:40'), isTrue);
+      },
+    );
   });
 }

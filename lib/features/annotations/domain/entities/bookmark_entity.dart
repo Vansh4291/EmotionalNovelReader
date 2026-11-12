@@ -66,4 +66,3 @@ class BookmarkEntity {
   @override
   int get hashCode => Object.hash(id, bookId, chapterId, location, label);
 }
-

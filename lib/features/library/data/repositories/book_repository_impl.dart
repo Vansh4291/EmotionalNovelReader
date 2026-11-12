@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+
 import '../../../../core/database/app_database.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/storage/storage_service.dart';
@@ -9,10 +10,7 @@ import '../../domain/repositories/book_repository.dart';
 
 /// Production implementation of [BookRepository] backed by Drift SQLite and [StorageService].
 class BookRepositoryImpl implements BookRepository {
-  BookRepositoryImpl({
-    required this.database,
-    required this.storageService,
-  });
+  BookRepositoryImpl({required this.database, required this.storageService});
 
   final AppDatabase database;
   final StorageService storageService;
@@ -86,7 +84,9 @@ class BookRepositoryImpl implements BookRepository {
     );
   }
 
-  ReadingProgressTableCompanion _mapProgressToCompanion(ReadingProgressEntity entity) {
+  ReadingProgressTableCompanion _mapProgressToCompanion(
+    ReadingProgressEntity entity,
+  ) {
     return ReadingProgressTableCompanion(
       bookId: Value(entity.bookId),
       currentLocation: Value(entity.currentLocation),
@@ -99,7 +99,9 @@ class BookRepositoryImpl implements BookRepository {
 
   @override
   Stream<List<BookEntity>> watchAllBooks() {
-    return database.watchAllBooks().map((books) => books.map(_mapToEntity).toList());
+    return database.watchAllBooks().map(
+      (books) => books.map(_mapToEntity).toList(),
+    );
   }
 
   @override
@@ -108,7 +110,9 @@ class BookRepositoryImpl implements BookRepository {
       final books = await database.getAllBooks();
       return Result.success(books.map(_mapToEntity).toList());
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to query books from database', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to query books from database', e, stack),
+      );
     }
   }
 
@@ -121,7 +125,9 @@ class BookRepositoryImpl implements BookRepository {
       }
       return Result.success(_mapToEntity(book));
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to query book "$id"', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to query book "$id"', e, stack),
+      );
     }
   }
 
@@ -131,7 +137,13 @@ class BookRepositoryImpl implements BookRepository {
       final existing = await database.getBookBySha(sha256);
       return Result.success(existing != null);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to check duplicate book SHA "$sha256"', e, stack));
+      return Result.error(
+        DatabaseFailure(
+          'Failed to check duplicate book SHA "$sha256"',
+          e,
+          stack,
+        ),
+      );
     }
   }
 
@@ -147,7 +159,9 @@ class BookRepositoryImpl implements BookRepository {
       }
       return const Result.success(null);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to save book "${book.id}"', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to save book "${book.id}"', e, stack),
+      );
     }
   }
 
@@ -157,7 +171,9 @@ class BookRepositoryImpl implements BookRepository {
       // Delete book record in SQLite (cascading deletes remove chapters/bookmarks/progress)
       final deletedCount = await database.deleteBook(id);
       if (deletedCount == 0) {
-        return Result.error(NotFoundFailure('Book not found to delete with id "$id"'));
+        return Result.error(
+          NotFoundFailure('Book not found to delete with id "$id"'),
+        );
       }
 
       // Clean up FTS search index entries
@@ -168,7 +184,9 @@ class BookRepositoryImpl implements BookRepository {
 
       return const Result.success(null);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to delete book "$id"', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to delete book "$id"', e, stack),
+      );
     }
   }
 
@@ -201,7 +219,13 @@ class BookRepositoryImpl implements BookRepository {
       final chapters = await database.getChaptersForBook(bookId);
       return Result.success(chapters.map(_mapChapterToEntity).toList());
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to query chapters for book "$bookId"', e, stack));
+      return Result.error(
+        DatabaseFailure(
+          'Failed to query chapters for book "$bookId"',
+          e,
+          stack,
+        ),
+      );
     }
   }
 
@@ -210,11 +234,15 @@ class BookRepositoryImpl implements BookRepository {
     try {
       final chapter = await database.getChapterById(chapterId);
       if (chapter == null) {
-        return Result.error(NotFoundFailure('Chapter not found with id "$chapterId"'));
+        return Result.error(
+          NotFoundFailure('Chapter not found with id "$chapterId"'),
+        );
       }
       return Result.success(_mapChapterToEntity(chapter));
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to query chapter "$chapterId"', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to query chapter "$chapterId"', e, stack),
+      );
     }
   }
 
@@ -224,12 +252,20 @@ class BookRepositoryImpl implements BookRepository {
       final count = await database.getChapterCountForBook(bookId);
       return Result.success(count);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to count chapters for book "$bookId"', e, stack));
+      return Result.error(
+        DatabaseFailure(
+          'Failed to count chapters for book "$bookId"',
+          e,
+          stack,
+        ),
+      );
     }
   }
 
   @override
-  Future<Result<ReadingProgressEntity?>> getReadingProgress(String bookId) async {
+  Future<Result<ReadingProgressEntity?>> getReadingProgress(
+    String bookId,
+  ) async {
     try {
       final progress = await database.getReadingProgress(bookId);
       if (progress == null) {
@@ -237,22 +273,34 @@ class BookRepositoryImpl implements BookRepository {
       }
       return Result.success(_mapProgressToEntity(progress));
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to get reading progress for book "$bookId"', e, stack));
+      return Result.error(
+        DatabaseFailure(
+          'Failed to get reading progress for book "$bookId"',
+          e,
+          stack,
+        ),
+      );
     }
   }
 
   @override
-  Future<Result<void>> saveReadingProgress(ReadingProgressEntity progress) async {
+  Future<Result<void>> saveReadingProgress(
+    ReadingProgressEntity progress,
+  ) async {
     try {
       await database.saveReadingProgress(_mapProgressToCompanion(progress));
       return const Result.success(null);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to save reading progress', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to save reading progress', e, stack),
+      );
     }
   }
 
   @override
   Stream<ReadingProgressEntity?> watchReadingProgress(String bookId) {
-    return database.watchReadingProgress(bookId).map((data) => data != null ? _mapProgressToEntity(data) : null);
+    return database
+        .watchReadingProgress(bookId)
+        .map((data) => data != null ? _mapProgressToEntity(data) : null);
   }
 }

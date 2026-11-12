@@ -14,24 +14,27 @@ abstract interface class AppLogger {
 /// or sensitive filesystem paths leak into local diagnostic logs.
 class DefaultAppLogger implements AppLogger {
   DefaultAppLogger({Logger? logger})
-      : _logger = logger ??
-            Logger(
-              printer: PrettyPrinter(
-                methodCount: 2,
-                errorMethodCount: 8,
-                lineLength: 100,
-                colors: false,
-                printEmojis: true,
-                dateTimeFormat: DateTimeFormat.dateAndTime,
-              ),
-              output: ConsoleOutput(),
-            );
+    : _logger =
+          logger ??
+          Logger(
+            printer: PrettyPrinter(
+              methodCount: 2,
+              errorMethodCount: 8,
+              lineLength: 100,
+              colors: false,
+              printEmojis: true,
+              dateTimeFormat: DateTimeFormat.dateAndTime,
+            ),
+            output: ConsoleOutput(),
+          );
 
   final Logger _logger;
 
   // Patterns for path and PII sanitization
-  static final RegExp _userPathPattern =
-      RegExp(r'(/Users/|/home/|C:\\Users\\)[^/\\]+', caseSensitive: false);
+  static final RegExp _userPathPattern = RegExp(
+    r'(/Users/|/home/|C:\\Users\\)[^/\\]+',
+    caseSensitive: false,
+  );
 
   String _sanitize(String message) {
     // Redact machine-specific username paths
@@ -61,4 +64,3 @@ class DefaultAppLogger implements AppLogger {
     _logger.e(_sanitize(message), error: error, stackTrace: stackTrace);
   }
 }
-

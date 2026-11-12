@@ -23,4 +23,3 @@ abstract interface class BookRepository {
   Future<Result<void>> saveReadingProgress(ReadingProgressEntity progress);
   Stream<ReadingProgressEntity?> watchReadingProgress(String bookId);
 }
-

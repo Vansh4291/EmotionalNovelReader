@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:archive/archive.dart';
+
 import '../entities/detected_format.dart';
 
 /// Service responsible for sniffing and verifying document format using binary signatures.
@@ -38,7 +40,12 @@ class FormatDetector {
       await raf.close();
     }
 
-    return detectFromBytes(headerBytes, fileName: file.path, totalLength: length, file: file);
+    return detectFromBytes(
+      headerBytes,
+      fileName: file.path,
+      totalLength: length,
+      file: file,
+    );
   }
 
   /// Detects format from header bytes with optional file access for archive structure sniffing.
@@ -89,7 +96,16 @@ class FormatDetector {
 
     // 4. MOBI / AZW Check: BOOKMOBI at offset 60
     if (bytes.length >= 68) {
-      final mobiMagic = [0x42, 0x4F, 0x4F, 0x4B, 0x4D, 0x4F, 0x42, 0x49]; // BOOKMOBI
+      final mobiMagic = [
+        0x42,
+        0x4F,
+        0x4F,
+        0x4B,
+        0x4D,
+        0x4F,
+        0x42,
+        0x49,
+      ]; // BOOKMOBI
       var isMobi = true;
       for (var i = 0; i < mobiMagic.length; i++) {
         if (bytes[60 + i] != mobiMagic[i]) {
@@ -153,12 +169,15 @@ class FormatDetector {
         format: DocumentFormat.unsupported,
         mimeType: 'application/zip',
         isSupported: false,
-        description: 'Generic ZIP archive (not recognized as EPUB, DOCX, or CBZ).',
+        description:
+            'Generic ZIP archive (not recognized as EPUB, DOCX, or CBZ).',
       );
     }
 
     // 6. HTML Check: <!DOCTYPE html or <html
-    final headerAscii = String.fromCharCodes(bytes.where((b) => b >= 32 && b <= 126));
+    final headerAscii = String.fromCharCodes(
+      bytes.where((b) => b >= 32 && b <= 126),
+    );
     final trimmedAscii = headerAscii.trim().toLowerCase();
     if (trimmedAscii.startsWith('<!doctype html') ||
         trimmedAscii.startsWith('<html') ||
@@ -236,7 +255,9 @@ class FormatDetector {
     }
 
     // Check for DOCX
-    final hasWordDocument = archive.files.any((f) => f.name == 'word/document.xml');
+    final hasWordDocument = archive.files.any(
+      (f) => f.name == 'word/document.xml',
+    );
     if (hasWordDocument) {
       return const FormatDetectionResult(
         format: DocumentFormat.docx,
@@ -266,4 +287,3 @@ class FormatDetector {
     return null;
   }
 }
-

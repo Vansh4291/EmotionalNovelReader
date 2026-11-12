@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../../../annotations/domain/entities/bookmark_entity.dart';
 import '../../../annotations/domain/entities/highlight_entity.dart';
 import '../../../library/domain/entities/book_entity.dart';
@@ -74,7 +75,8 @@ final class ReaderLoaded extends ReaderState {
     if (bookmarks.isEmpty) return false;
     final currentChId = currentChapter.id;
     return bookmarks.any(
-      (b) => b.chapterId == currentChId || b.chapterIndex == currentChapterIndex,
+      (b) =>
+          b.chapterId == currentChId || b.chapterIndex == currentChapterIndex,
     );
   }
 
@@ -83,7 +85,8 @@ final class ReaderLoaded extends ReaderState {
     final currentChId = currentChapter.id;
     return bookmarks.any(
       (b) =>
-          (b.chapterId == currentChId || b.chapterIndex == currentChapterIndex) &&
+          (b.chapterId == currentChId ||
+              b.chapterIndex == currentChapterIndex) &&
           b.location == location,
     );
   }
@@ -93,7 +96,8 @@ final class ReaderLoaded extends ReaderState {
     try {
       return bookmarks.firstWhere(
         (b) =>
-            (b.chapterId == currentChId || b.chapterIndex == currentChapterIndex) &&
+            (b.chapterId == currentChId ||
+                b.chapterIndex == currentChapterIndex) &&
             b.location == location,
       );
     } catch (_) {
@@ -142,14 +146,14 @@ final class ReaderLoaded extends ReaderState {
 
   @override
   int get hashCode => Object.hash(
-        book.id,
-        currentChapterIndex,
-        isControlsVisible,
-        preferences,
-        navigationRequest,
-        bookmarks.length,
-        highlights.length,
-      );
+    book.id,
+    currentChapterIndex,
+    isControlsVisible,
+    preferences,
+    navigationRequest,
+    bookmarks.length,
+    highlights.length,
+  );
 }
 
 final class ReaderError extends ReaderState {

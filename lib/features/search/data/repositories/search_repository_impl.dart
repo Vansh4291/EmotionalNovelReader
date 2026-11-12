@@ -27,7 +27,9 @@ class SearchRepositoryImpl implements SearchRepository {
       }).toList();
       return Result.success(results);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to search book metadata: $e', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to search book metadata: $e', e, stack),
+      );
     }
   }
 
@@ -42,7 +44,11 @@ class SearchRepositoryImpl implements SearchRepository {
       if (clean.isEmpty) {
         return const Result.success([]);
       }
-      final rows = await database.searchContentFts(clean, bookId: bookId, limit: limit);
+      final rows = await database.searchContentFts(
+        clean,
+        bookId: bookId,
+        limit: limit,
+      );
       final results = rows.map((r) {
         return ContentSearchResult(
           chapterId: r['chapter_id'] as String? ?? '',
@@ -58,7 +64,9 @@ class SearchRepositoryImpl implements SearchRepository {
       }).toList();
       return Result.success(results);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to search chapter content: $e', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to search chapter content: $e', e, stack),
+      );
     }
   }
 
@@ -68,8 +76,9 @@ class SearchRepositoryImpl implements SearchRepository {
       await database.rebuildFtsIndex();
       return const Result.success(null);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to rebuild search index: $e', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to rebuild search index: $e', e, stack),
+      );
     }
   }
 }
-

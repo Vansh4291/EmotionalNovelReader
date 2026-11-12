@@ -21,8 +21,9 @@ class Books extends Table {
 /// Chapters table with cascading foreign key to parent book.
 class Chapters extends Table {
   TextColumn get id => text()();
-  TextColumn get bookId =>
-      text().customConstraint('NOT NULL REFERENCES books(id) ON DELETE CASCADE')();
+  TextColumn get bookId => text().customConstraint(
+    'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
+  )();
   IntColumn get chapterIndex => integer()();
   TextColumn get title => text()();
   TextColumn get content => text().withDefault(const Constant(''))();
@@ -37,11 +38,12 @@ class Chapters extends Table {
 /// Bookmarks table referencing book and chapter.
 class Bookmarks extends Table {
   TextColumn get id => text()();
-  TextColumn get bookId =>
-      text().customConstraint('NOT NULL REFERENCES books(id) ON DELETE CASCADE')();
-  TextColumn get chapterId => text()
-      .nullable()
-      .customConstraint('REFERENCES chapters(id) ON DELETE CASCADE')();
+  TextColumn get bookId => text().customConstraint(
+    'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
+  )();
+  TextColumn get chapterId => text().nullable().customConstraint(
+    'REFERENCES chapters(id) ON DELETE CASCADE',
+  )();
   TextColumn get location => text()(); // CFI, page index, or character offset
   TextColumn get label => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
@@ -53,16 +55,18 @@ class Bookmarks extends Table {
 /// Highlights and personal annotations table.
 class Highlights extends Table {
   TextColumn get id => text()();
-  TextColumn get bookId =>
-      text().customConstraint('NOT NULL REFERENCES books(id) ON DELETE CASCADE')();
-  TextColumn get chapterId => text()
-      .nullable()
-      .customConstraint('REFERENCES chapters(id) ON DELETE CASCADE')();
+  TextColumn get bookId => text().customConstraint(
+    'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
+  )();
+  TextColumn get chapterId => text().nullable().customConstraint(
+    'REFERENCES chapters(id) ON DELETE CASCADE',
+  )();
   TextColumn get startLocation => text()();
   TextColumn get endLocation => text()();
   TextColumn get selectedText => text()();
   TextColumn get note => text().nullable()();
-  IntColumn get colorValue => integer().withDefault(const Constant(0xFFFFEB3B))();
+  IntColumn get colorValue =>
+      integer().withDefault(const Constant(0xFFFFEB3B))();
   DateTimeColumn get createdAt => dateTime()();
 
   @override
@@ -71,13 +75,15 @@ class Highlights extends Table {
 
 /// Reading progress table maintaining 1:1 relation with books.
 class ReadingProgressTable extends Table {
-  TextColumn get bookId =>
-      text().customConstraint('NOT NULL REFERENCES books(id) ON DELETE CASCADE')();
+  TextColumn get bookId => text().customConstraint(
+    'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
+  )();
   TextColumn get currentLocation => text()();
-  TextColumn get currentChapterId => text()
-      .nullable()
-      .customConstraint('REFERENCES chapters(id) ON DELETE SET NULL')();
-  RealColumn get progressPercentage => real().withDefault(const Constant(0.0))();
+  TextColumn get currentChapterId => text().nullable().customConstraint(
+    'REFERENCES chapters(id) ON DELETE SET NULL',
+  )();
+  RealColumn get progressPercentage =>
+      real().withDefault(const Constant(0.0))();
   IntColumn get totalSecondsRead => integer().withDefault(const Constant(0))();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -88,10 +94,12 @@ class ReadingProgressTable extends Table {
 /// Standalone chapter-level notes table.
 class ChapterNotes extends Table {
   TextColumn get id => text()();
-  TextColumn get bookId =>
-      text().customConstraint('NOT NULL REFERENCES books(id) ON DELETE CASCADE')();
-  TextColumn get chapterId =>
-      text().customConstraint('NOT NULL REFERENCES chapters(id) ON DELETE CASCADE')();
+  TextColumn get bookId => text().customConstraint(
+    'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
+  )();
+  TextColumn get chapterId => text().customConstraint(
+    'NOT NULL REFERENCES chapters(id) ON DELETE CASCADE',
+  )();
   TextColumn get content => text()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
@@ -100,4 +108,34 @@ class ChapterNotes extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Reading sessions table tracking individual reading activities for statistics.
+class ReadingSessions extends Table {
+  TextColumn get id => text()();
+  TextColumn get bookId => text().customConstraint(
+    'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
+  )();
+  TextColumn get chapterId => text().nullable().customConstraint(
+    'REFERENCES chapters(id) ON DELETE SET NULL',
+  )();
+  DateTimeColumn get startTime => dateTime()();
+  DateTimeColumn get endTime => dateTime()();
+  IntColumn get durationSeconds => integer()();
+  IntColumn get charactersRead => integer().withDefault(const Constant(0))();
+  IntColumn get chaptersCompleted => integer().withDefault(const Constant(0))();
 
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Reading goals table storing user-defined daily reading targets.
+class ReadingGoals extends Table {
+  TextColumn get id => text()();
+  TextColumn get goalType => text()(); // 'time_minutes', 'chapters'
+  IntColumn get targetValue => integer()();
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

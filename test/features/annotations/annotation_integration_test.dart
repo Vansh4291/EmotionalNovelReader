@@ -45,7 +45,9 @@ void main() {
           bookId: bookId,
           chapterIndex: 0,
           title: 'Chapter 1: The Clockwork City',
-          content: const Value('In the center of the clockwork city, a bronze bell tolled twelve times.'),
+          content: const Value(
+            'In the center of the clockwork city, a bronze bell tolled twelve times.',
+          ),
           wordCount: const Value(12),
           characterCount: const Value(71),
         ),
@@ -54,7 +56,9 @@ void main() {
           bookId: bookId,
           chapterIndex: 1,
           title: 'Chapter 2: The Gearmaker',
-          content: const Value('The old gearmaker peered through his magnifying lens with immense focus.'),
+          content: const Value(
+            'The old gearmaker peered through his magnifying lens with immense focus.',
+          ),
           wordCount: const Value(11),
           characterCount: const Value(69),
         ),
@@ -139,7 +143,10 @@ void main() {
       state = cubit.state as AnnotationLoaded;
       expect(state.displayedBookmarks.isEmpty, isTrue);
       expect(state.displayedHighlights.length, 1);
-      expect(state.displayedHighlights.first.note, contains('Symbolism of mortality'));
+      expect(
+        state.displayedHighlights.first.note,
+        contains('Symbolism of mortality'),
+      );
 
       // 9. Search within annotations
       cubit.setFilter(AnnotationFilter.all);
@@ -152,12 +159,22 @@ void main() {
       // 10. Update note
       await cubit.updateNote(h2Res.dataOrNull!.id, 'Updated symbolism note');
       state = cubit.state as AnnotationLoaded;
-      expect(state.allHighlights.firstWhere((h) => h.id == h2Res.dataOrNull!.id).note, 'Updated symbolism note');
+      expect(
+        state.allHighlights
+            .firstWhere((h) => h.id == h2Res.dataOrNull!.id)
+            .note,
+        'Updated symbolism note',
+      );
 
       // 11. Update color
       await cubit.updateColor(h1Res.dataOrNull!.id, 0xFFA5D6A7); // Green
       state = cubit.state as AnnotationLoaded;
-      expect(state.allHighlights.firstWhere((h) => h.id == h1Res.dataOrNull!.id).colorValue, 0xFFA5D6A7);
+      expect(
+        state.allHighlights
+            .firstWhere((h) => h.id == h1Res.dataOrNull!.id)
+            .colorValue,
+        0xFFA5D6A7,
+      );
 
       // 12. Delete highlight
       await cubit.deleteHighlight(h1Res.dataOrNull!.id);
@@ -166,85 +183,101 @@ void main() {
 
       // 13. Cascade Delete on Book Deletion
       await db.deleteBook(bookId);
-      final remainingBookmarks = (await repository.getBookmarksForBook(bookId)).dataOrNull!;
-      final remainingHighlights = (await repository.getHighlightsForBook(bookId)).dataOrNull!;
+      final remainingBookmarks = (await repository.getBookmarksForBook(bookId))
+          .dataOrNull!;
+      final remainingHighlights = (await repository.getHighlightsForBook(
+        bookId,
+      )).dataOrNull!;
       expect(remainingBookmarks.isEmpty, isTrue);
       expect(remainingHighlights.isEmpty, isTrue);
     });
 
-    testWidgets('HighlightColorPicker renders all standard colors and responds to selection', (tester) async {
-      int selectedColor = HighlightEntity.defaultHighlightColor;
+    testWidgets(
+      'HighlightColorPicker renders all standard colors and responds to selection',
+      (tester) async {
+        int selectedColor = HighlightEntity.defaultHighlightColor;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: StatefulBuilder(
-              builder: (context, setState) {
-                return HighlightColorPicker(
-                  selectedColor: selectedColor,
-                  onColorSelected: (c) {
-                    setState(() => selectedColor = c);
-                  },
-                );
-              },
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: StatefulBuilder(
+                builder: (context, setState) {
+                  return HighlightColorPicker(
+                    selectedColor: selectedColor,
+                    onColorSelected: (c) {
+                      setState(() => selectedColor = c);
+                    },
+                  );
+                },
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Expect 5 color circles rendered
-      expect(find.byType(InkWell), findsNWidgets(5));
-      expect(find.byIcon(Icons.check), findsOneWidget);
+        // Expect 5 color circles rendered
+        expect(find.byType(InkWell), findsNWidgets(5));
+        expect(find.byIcon(Icons.check), findsOneWidget);
 
-      // Tap the second circle (Green: 0xFFA5D6A7)
-      await tester.tap(find.byType(InkWell).at(1));
-      await tester.pumpAndSettle();
+        // Tap the second circle (Green: 0xFFA5D6A7)
+        await tester.tap(find.byType(InkWell).at(1));
+        await tester.pumpAndSettle();
 
-      expect(selectedColor, 0xFFA5D6A7);
-    });
+        expect(selectedColor, 0xFFA5D6A7);
+      },
+    );
 
-    testWidgets('NoteEditorDialog displays selected text excerpt, allows typing, and returns result', (tester) async {
-      NoteEditorResult? dialogResult;
+    testWidgets(
+      'NoteEditorDialog displays selected text excerpt, allows typing, and returns result',
+      (tester) async {
+        NoteEditorResult? dialogResult;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
-                  onPressed: () async {
-                    dialogResult = await NoteEditorDialog.show(
-                      context: context,
-                      selectedText: 'A mysterious key was found inside the drawer.',
-                      title: 'Add Note',
-                    );
-                  },
-                  child: const Text('Open Dialog'),
-                );
-              },
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () async {
+                      dialogResult = await NoteEditorDialog.show(
+                        context: context,
+                        selectedText:
+                            'A mysterious key was found inside the drawer.',
+                        title: 'Add Note',
+                      );
+                    },
+                    child: const Text('Open Dialog'),
+                  );
+                },
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Open dialog
-      await tester.tap(find.text('Open Dialog'));
-      await tester.pumpAndSettle();
+        // Open dialog
+        await tester.tap(find.text('Open Dialog'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Add Note'), findsOneWidget);
-      expect(find.text('A mysterious key was found inside the drawer.'), findsOneWidget);
+        expect(find.text('Add Note'), findsOneWidget);
+        expect(
+          find.text('A mysterious key was found inside the drawer.'),
+          findsOneWidget,
+        );
 
-      // Enter text into the note text field
-      await tester.enterText(find.byType(TextField), 'This key unlocks the tower.');
-      await tester.pump();
+        // Enter text into the note text field
+        await tester.enterText(
+          find.byType(TextField),
+          'This key unlocks the tower.',
+        );
+        await tester.pump();
 
-      // Tap Save button
-      await tester.tap(find.text('Save'));
-      await tester.pumpAndSettle();
+        // Tap Save button
+        await tester.tap(find.text('Save'));
+        await tester.pumpAndSettle();
 
-      expect(dialogResult, isNotNull);
-      expect(dialogResult!.note, 'This key unlocks the tower.');
-      expect(dialogResult!.colorValue, HighlightEntity.defaultHighlightColor);
-    });
+        expect(dialogResult, isNotNull);
+        expect(dialogResult!.note, 'This key unlocks the tower.');
+        expect(dialogResult!.colorValue, HighlightEntity.defaultHighlightColor);
+      },
+    );
   });
 }

@@ -19,14 +19,17 @@ void main() {
     await getIt.reset();
   });
 
-  testWidgets('App renders successfully and displays application name in AppBar', (WidgetTester tester) async {
-    await tester.pumpWidget(const EmotionalNovelReaderApp());
-    await tester.pumpAndSettle();
+  testWidgets(
+    'App renders successfully and displays application name in AppBar',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(const EmotionalNovelReaderApp());
+      await tester.pumpAndSettle();
 
-    expect(find.text(AppConstants.appName), findsOneWidget);
+      expect(find.text(AppConstants.appName), findsOneWidget);
 
-    // Clean up widget tree and flush any Drift stream cleanup timers
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 100));
-  });
+      // Clean up widget tree and flush any Drift stream cleanup timers
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  );
 }

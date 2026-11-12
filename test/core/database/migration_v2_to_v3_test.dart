@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:emotional_novel_reader/core/database/app_database.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,7 +11,9 @@ void main() {
   AppDatabase? appDb;
 
   setUp(() {
-    tempDir = Directory.systemTemp.createTempSync('enr_migration_v2_to_v3_test_');
+    tempDir = Directory.systemTemp.createTempSync(
+      'enr_migration_v2_to_v3_test_',
+    );
     dbFile = File('${tempDir.path}/legacy_v2.db');
   });
 
@@ -103,7 +106,7 @@ void main() {
       appDb = AppDatabase(NativeDatabase(dbFile));
 
       // Trigger database open and verify schema version
-      expect(appDb!.schemaVersion, 4);
+      expect(appDb!.schemaVersion, 5);
 
       // 3. Verify existing data preserved intact
       final migratedBook = await appDb!.getBookById('book-v2-1');

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:path/path.dart' as p;
+
 import '../../../../core/errors/failures.dart';
 import 'document_extractor.dart';
 import 'extracted_book_data.dart';
@@ -20,25 +22,37 @@ class HtmlExtractor implements DocumentExtractor {
       final rawHtml = utf8.decode(bytes, allowMalformed: true);
 
       if (rawHtml.trim().isEmpty) {
-        return const Result.error(DocumentParsingFailure('HTML document is empty'));
+        return const Result.error(
+          DocumentParsingFailure('HTML document is empty'),
+        );
       }
 
       onProgress?.call(0.5, 'Sanitizing and parsing headings...');
       // Strip script and style tags completely
       final sanitizedHtml = rawHtml
-          .replaceAll(RegExp(r'<script[^>]*>[\s\S]*?</script>', caseSensitive: false), '')
-          .replaceAll(RegExp(r'<style[^>]*>[\s\S]*?</style>', caseSensitive: false), '');
+          .replaceAll(
+            RegExp(r'<script[^>]*>[\s\S]*?</script>', caseSensitive: false),
+            '',
+          )
+          .replaceAll(
+            RegExp(r'<style[^>]*>[\s\S]*?</style>', caseSensitive: false),
+            '',
+          );
 
       // Extract title
-      final titleMatch = RegExp(r'<title[^>]*>(.*?)</title>', caseSensitive: false).firstMatch(sanitizedHtml);
+      final titleMatch = RegExp(
+        r'<title[^>]*>(.*?)</title>',
+        caseSensitive: false,
+      ).firstMatch(sanitizedHtml);
       final title = titleMatch?.group(1)?.trim().isNotEmpty == true
           ? titleMatch!.group(1)!.trim()
           : p.basenameWithoutExtension(file.path);
 
       // Look for H1/H2 tags for chapters
-      final headingMatches = RegExp(r'<h[12][^>]*>(.*?)</h[12]>', caseSensitive: false)
-          .allMatches(sanitizedHtml)
-          .toList();
+      final headingMatches = RegExp(
+        r'<h[12][^>]*>(.*?)</h[12]>',
+        caseSensitive: false,
+      ).allMatches(sanitizedHtml).toList();
 
       final chapters = <ExtractedChapterData>[];
 
@@ -47,7 +61,9 @@ class HtmlExtractor implements DocumentExtractor {
           final heading = headingMatches[i];
           final chapterTitle = _stripTags(heading.group(1)!).trim();
           final start = heading.start;
-          final end = i + 1 < headingMatches.length ? headingMatches[i + 1].start : sanitizedHtml.length;
+          final end = i + 1 < headingMatches.length
+              ? headingMatches[i + 1].start
+              : sanitizedHtml.length;
           final sectionHtml = sanitizedHtml.substring(start, end);
           final text = _cleanHtmlText(sectionHtml);
 
@@ -55,7 +71,9 @@ class HtmlExtractor implements DocumentExtractor {
             chapters.add(
               ExtractedChapterData(
                 index: chapters.length,
-                title: chapterTitle.isNotEmpty ? chapterTitle : 'Chapter ${chapters.length + 1}',
+                title: chapterTitle.isNotEmpty
+                    ? chapterTitle
+                    : 'Chapter ${chapters.length + 1}',
                 content: text,
                 wordCount: _calculateWordCount(text),
                 characterCount: text.length,
@@ -80,15 +98,15 @@ class HtmlExtractor implements DocumentExtractor {
 
       onProgress?.call(1.0, 'HTML extraction complete.');
       return Result.success(
-        ExtractedBookData(
-          title: title,
-          format: 'html',
-          chapters: chapters,
-        ),
+        ExtractedBookData(title: title, format: 'html', chapters: chapters),
       );
     } catch (e, stack) {
       return Result.error(
-        DocumentParsingFailure('Failed to extract HTML file: ${e.toString()}', e, stack),
+        DocumentParsingFailure(
+          'Failed to extract HTML file: ${e.toString()}',
+          e,
+          stack,
+        ),
       );
     }
   }
@@ -118,4 +136,3 @@ class HtmlExtractor implements DocumentExtractor {
     return text.trim().split(RegExp(r'\s+')).length;
   }
 }
-

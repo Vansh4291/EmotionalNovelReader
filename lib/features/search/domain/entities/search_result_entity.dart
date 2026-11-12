@@ -44,4 +44,3 @@ class ContentSearchResult {
   final int? matchPosition;
   final double rank;
 }
-

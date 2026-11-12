@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 /// Structured parsed location representation distinguishing character offsets
 /// from legacy pixel scroll offsets.
 class ParsedLocation {
-  const ParsedLocation({
-    required this.isCharOffset,
-    required this.value,
-  });
+  const ParsedLocation({required this.isCharOffset, required this.value});
 
   final bool isCharOffset;
   final double value;
@@ -99,4 +96,3 @@ class ReaderScrollMapper {
     return textPosition.offset.clamp(0, content.length);
   }
 }
-

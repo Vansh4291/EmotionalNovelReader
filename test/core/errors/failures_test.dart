@@ -9,7 +9,12 @@ void main() {
 
       expect(failure.message, 'Query failed');
       expect(failure.cause, cause);
-      expect(failure.toString(), contains('DatabaseFailure: Query failed (Cause: Exception: Disk error)'));
+      expect(
+        failure.toString(),
+        contains(
+          'DatabaseFailure: Query failed (Cause: Exception: Disk error)',
+        ),
+      );
     });
 
     test('StorageFailure correctly formats without cause', () {
@@ -71,4 +76,3 @@ void main() {
     });
   });
 }
-

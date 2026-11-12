@@ -12,4 +12,3 @@ abstract interface class SearchRepository {
 
   Future<Result<void>> reindexAllContent();
 }
-

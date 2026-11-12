@@ -61,28 +61,27 @@ sealed class Result<T> {
   bool get isError => this is Error<T>;
 
   T? get dataOrNull => switch (this) {
-        Success<T>(data: final data) => data,
-        Error<T>() => null,
-      };
+    Success<T>(data: final data) => data,
+    Error<T>() => null,
+  };
 
   Failure? get failureOrNull => switch (this) {
-        Success<T>() => null,
-        Error<T>(failure: final failure) => failure,
-      };
+    Success<T>() => null,
+    Error<T>(failure: final failure) => failure,
+  };
 
   R fold<R>({
     required R Function(T data) onSuccess,
     required R Function(Failure failure) onError,
-  }) =>
-      switch (this) {
-        Success<T>(data: final data) => onSuccess(data),
-        Error<T>(failure: final failure) => onError(failure),
-      };
+  }) => switch (this) {
+    Success<T>(data: final data) => onSuccess(data),
+    Error<T>(failure: final failure) => onError(failure),
+  };
 
   Result<R> map<R>(R Function(T data) transform) => switch (this) {
-        Success<T>(data: final data) => Result.success(transform(data)),
-        Error<T>(failure: final failure) => Result.error(failure),
-      };
+    Success<T>(data: final data) => Result.success(transform(data)),
+    Error<T>(failure: final failure) => Result.error(failure),
+  };
 }
 
 final class Success<T> extends Result<T> {
@@ -92,7 +91,9 @@ final class Success<T> extends Result<T> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Success<T> && runtimeType == other.runtimeType && data == other.data;
+      other is Success<T> &&
+          runtimeType == other.runtimeType &&
+          data == other.data;
 
   @override
   int get hashCode => data.hashCode;

@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:archive/archive.dart';
 import 'package:path/path.dart' as p;
 import 'package:xml/xml.dart';
+
 import '../../../../core/errors/failures.dart';
 import 'document_extractor.dart';
 import 'extracted_book_data.dart';
@@ -16,7 +18,8 @@ class EpubExtractor implements DocumentExtractor {
   static const int maxArchiveEntries = 5000;
   static const int maxUncompressedArchiveBytes = 250 * 1024 * 1024; // 250 MB
   static const double maxCompressionRatio = 100.0;
-  static const int maxChapterFileBytes = 20 * 1024 * 1024; // 20 MB per XHTML file
+  static const int maxChapterFileBytes =
+      20 * 1024 * 1024; // 20 MB per XHTML file
 
   static bool _isSafeArchivePath(String path) {
     if (path.contains('\x00')) return false;
@@ -44,7 +47,9 @@ class EpubExtractor implements DocumentExtractor {
       // ZIP bomb protection: entry count and cumulative uncompressed size
       if (archive.length > maxArchiveEntries) {
         return Result.error(
-          SecurityFailure('Archive contains too many entries (${archive.length}) - potential ZIP bomb.'),
+          SecurityFailure(
+            'Archive contains too many entries (${archive.length}) - potential ZIP bomb.',
+          ),
         );
       }
 
@@ -52,13 +57,17 @@ class EpubExtractor implements DocumentExtractor {
       for (final archiveFile in archive) {
         if (archiveFile.size < 0) {
           return const Result.error(
-            SecurityFailure('Archive contains entry with invalid or negative size.'),
+            SecurityFailure(
+              'Archive contains entry with invalid or negative size.',
+            ),
           );
         }
         totalUncompressedBytes += archiveFile.size;
         if (totalUncompressedBytes > maxUncompressedArchiveBytes) {
           return const Result.error(
-            SecurityFailure('Archive uncompressed size exceeds resource safety threshold (250 MB).'),
+            SecurityFailure(
+              'Archive uncompressed size exceeds resource safety threshold (250 MB).',
+            ),
           );
         }
       }
@@ -67,7 +76,9 @@ class EpubExtractor implements DocumentExtractor {
           totalUncompressedBytes > 10 * 1024 * 1024 &&
           (totalUncompressedBytes / bytes.length > maxCompressionRatio)) {
         return const Result.error(
-          SecurityFailure('Suspicious archive compression ratio exceeding 100:1 - potential ZIP bomb.'),
+          SecurityFailure(
+            'Suspicious archive compression ratio exceeding 100:1 - potential ZIP bomb.',
+          ),
         );
       }
 
@@ -76,24 +87,32 @@ class EpubExtractor implements DocumentExtractor {
       final containerFile = archive.findFile('META-INF/container.xml');
       if (containerFile == null) {
         return const Result.error(
-          DocumentParsingFailure('Invalid EPUB: Missing META-INF/container.xml'),
+          DocumentParsingFailure(
+            'Invalid EPUB: Missing META-INF/container.xml',
+          ),
         );
       }
 
       final containerXml = utf8.decode(containerFile.content as List<int>);
       final containerDoc = XmlDocument.parse(containerXml);
-      final rootfileElement = containerDoc.findAllElements('rootfile').firstOrNull;
+      final rootfileElement = containerDoc
+          .findAllElements('rootfile')
+          .firstOrNull;
       final opfPath = rootfileElement?.getAttribute('full-path');
 
       if (opfPath == null || opfPath.isEmpty) {
         return const Result.error(
-          DocumentParsingFailure('Invalid EPUB: Missing rootfile full-path attribute in container.xml'),
+          DocumentParsingFailure(
+            'Invalid EPUB: Missing rootfile full-path attribute in container.xml',
+          ),
         );
       }
 
       if (!_isSafeArchivePath(opfPath)) {
         return Result.error(
-          SecurityFailure('Path traversal detected in container.xml full-path: "$opfPath"'),
+          SecurityFailure(
+            'Path traversal detected in container.xml full-path: "$opfPath"',
+          ),
         );
       }
 
@@ -102,7 +121,9 @@ class EpubExtractor implements DocumentExtractor {
       final opfFile = archive.findFile(opfPath);
       if (opfFile == null) {
         return Result.error(
-          DocumentParsingFailure('Invalid EPUB: Package file not found at "$opfPath"'),
+          DocumentParsingFailure(
+            'Invalid EPUB: Package file not found at "$opfPath"',
+          ),
         );
       }
 
@@ -129,7 +150,8 @@ class EpubExtractor implements DocumentExtractor {
         final properties = item.getAttribute('properties');
         if (id != null && href != null) {
           manifestMap[id] = href;
-          if (properties?.contains('cover-image') == true || id.toLowerCase().contains('cover')) {
+          if (properties?.contains('cover-image') == true ||
+              id.toLowerCase().contains('cover')) {
             coverItemId ??= id;
           }
         }
@@ -139,7 +161,9 @@ class EpubExtractor implements DocumentExtractor {
       Uint8List? coverBytes;
       if (coverItemId != null && manifestMap.containsKey(coverItemId)) {
         final coverHref = manifestMap[coverItemId]!;
-        final fullCoverPath = opfDir == '.' ? coverHref : p.posix.normalize('$opfDir/$coverHref');
+        final fullCoverPath = opfDir == '.'
+            ? coverHref
+            : p.posix.normalize('$opfDir/$coverHref');
         if (_isSafeArchivePath(fullCoverPath)) {
           final coverFile = archive.findFile(fullCoverPath);
           if (coverFile != null && coverFile.size <= maxChapterFileBytes) {
@@ -153,7 +177,9 @@ class EpubExtractor implements DocumentExtractor {
       final itemrefs = opfDoc.findAllElements('itemref').toList();
       if (itemrefs.isEmpty) {
         return const Result.error(
-          DocumentParsingFailure('Invalid EPUB: Spine contains no readable chapter items'),
+          DocumentParsingFailure(
+            'Invalid EPUB: Spine contains no readable chapter items',
+          ),
         );
       }
 
@@ -166,25 +192,36 @@ class EpubExtractor implements DocumentExtractor {
         if (idref == null || !manifestMap.containsKey(idref)) continue;
 
         final href = manifestMap[idref]!;
-        final fullChapterPath = opfDir == '.' ? href : p.posix.normalize('$opfDir/$href');
+        final fullChapterPath = opfDir == '.'
+            ? href
+            : p.posix.normalize('$opfDir/$href');
 
         // Prevent archive path traversal using robust canonical path verification
         if (!_isSafeArchivePath(fullChapterPath)) continue;
 
         final chapterFile = archive.findFile(fullChapterPath);
-        if (chapterFile == null || chapterFile.size < 0 || chapterFile.size > maxChapterFileBytes) continue;
+        if (chapterFile == null ||
+            chapterFile.size < 0 ||
+            chapterFile.size > maxChapterFileBytes) {
+          continue;
+        }
 
         final contentBytes = chapterFile.content as List<int>;
         if (contentBytes.length > maxChapterFileBytes) continue;
         cumulativeExtractedBytes += contentBytes.length;
         if (cumulativeExtractedBytes > maxUncompressedArchiveBytes) {
           return const Result.error(
-            SecurityFailure('Actual extracted bytes exceed uncompressed budget (250 MB).'),
+            SecurityFailure(
+              'Actual extracted bytes exceed uncompressed budget (250 MB).',
+            ),
           );
         }
 
         final rawXhtml = utf8.decode(contentBytes, allowMalformed: true);
-        final (extractedTitle, textContent) = _parseXhtmlChapter(rawXhtml, chapterIndex + 1);
+        final (extractedTitle, textContent) = _parseXhtmlChapter(
+          rawXhtml,
+          chapterIndex + 1,
+        );
 
         if (textContent.trim().isEmpty) continue;
 
@@ -209,7 +246,9 @@ class EpubExtractor implements DocumentExtractor {
 
       if (chapters.isEmpty) {
         return const Result.error(
-          DocumentParsingFailure('EPUB extraction produced no readable chapter content'),
+          DocumentParsingFailure(
+            'EPUB extraction produced no readable chapter content',
+          ),
         );
       }
 
@@ -225,13 +264,20 @@ class EpubExtractor implements DocumentExtractor {
       );
     } catch (e, stack) {
       return Result.error(
-        DocumentParsingFailure('Failed to extract EPUB file: ${e.toString()}', e, stack),
+        DocumentParsingFailure(
+          'Failed to extract EPUB file: ${e.toString()}',
+          e,
+          stack,
+        ),
       );
     }
   }
 
   /// Parses XHTML chapter content, stripping HTML tags while preserving paragraph spacing.
-  (String, String) _parseXhtmlChapter(String rawXhtml, int defaultChapterNumber) {
+  (String, String) _parseXhtmlChapter(
+    String rawXhtml,
+    int defaultChapterNumber,
+  ) {
     String chapterTitle = 'Chapter $defaultChapterNumber';
     String textContent = '';
 
@@ -239,7 +285,11 @@ class EpubExtractor implements DocumentExtractor {
       final doc = XmlDocument.parse(rawXhtml);
 
       // Check title or heading tags
-      final titleTag = doc.findAllElements('title').firstOrNull?.innerText.trim();
+      final titleTag = doc
+          .findAllElements('title')
+          .firstOrNull
+          ?.innerText
+          .trim();
       final h1Tag = doc.findAllElements('h1').firstOrNull?.innerText.trim();
       final h2Tag = doc.findAllElements('h2').firstOrNull?.innerText.trim();
 
@@ -283,8 +333,14 @@ class EpubExtractor implements DocumentExtractor {
 
   String _stripHtmlRegex(String html) {
     return html
-        .replaceAll(RegExp(r'<script[^>]*>[\s\S]*?</script>', caseSensitive: false), '')
-        .replaceAll(RegExp(r'<style[^>]*>[\s\S]*?</style>', caseSensitive: false), '')
+        .replaceAll(
+          RegExp(r'<script[^>]*>[\s\S]*?</script>', caseSensitive: false),
+          '',
+        )
+        .replaceAll(
+          RegExp(r'<style[^>]*>[\s\S]*?</style>', caseSensitive: false),
+          '',
+        )
         .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n')
         .replaceAll(RegExp(r'</p>', caseSensitive: false), '\n\n')
         .replaceAll(RegExp(r'<[^>]+>'), '')
@@ -303,4 +359,3 @@ class EpubExtractor implements DocumentExtractor {
     return text.trim().split(RegExp(r'\s+')).length;
   }
 }
-

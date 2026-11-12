@@ -1,24 +1,10 @@
 import '../../domain/entities/book_entity.dart';
 
-enum LibrarySortOption {
-  dateAddedDesc,
-  dateAddedAsc,
-  titleAsc,
-  titleDesc,
-}
+enum LibrarySortOption { dateAddedDesc, dateAddedAsc, titleAsc, titleDesc }
 
-enum LibraryFilterOption {
-  all,
-  epub,
-  txt,
-  pdf,
-  docx,
-}
+enum LibraryFilterOption { all, epub, txt, pdf, docx }
 
-enum LibraryViewMode {
-  list,
-  grid,
-}
+enum LibraryViewMode { list, grid }
 
 sealed class LibraryState {
   const LibraryState();
@@ -54,7 +40,9 @@ final class LibraryLoaded extends LibraryState {
     // Apply format filter
     if (filterOption != LibraryFilterOption.all) {
       final targetFormat = filterOption.name.toLowerCase();
-      result = result.where((b) => b.format.toLowerCase() == targetFormat).toList();
+      result = result
+          .where((b) => b.format.toLowerCase() == targetFormat)
+          .toList();
     }
 
     // Apply search query
@@ -74,9 +62,13 @@ final class LibraryLoaded extends LibraryState {
       case LibrarySortOption.dateAddedAsc:
         result.sort((a, b) => a.createdAt.compareTo(b.createdAt));
       case LibrarySortOption.titleAsc:
-        result.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+        result.sort(
+          (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+        );
       case LibrarySortOption.titleDesc:
-        result.sort((a, b) => b.title.toLowerCase().compareTo(a.title.toLowerCase()));
+        result.sort(
+          (a, b) => b.title.toLowerCase().compareTo(a.title.toLowerCase()),
+        );
     }
 
     return result;
@@ -112,7 +104,8 @@ final class LibraryLoaded extends LibraryState {
           _listEquals(allBooks, other.allBooks);
 
   @override
-  int get hashCode => Object.hash(sortOption, filterOption, searchQuery, viewMode, allBooks);
+  int get hashCode =>
+      Object.hash(sortOption, filterOption, searchQuery, viewMode, allBooks);
 
   static bool _listEquals(List<BookEntity> a, List<BookEntity> b) {
     if (a.length != b.length) return false;
@@ -130,7 +123,9 @@ final class LibraryError extends LibraryState {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is LibraryError && runtimeType == other.runtimeType && message == other.message;
+      other is LibraryError &&
+          runtimeType == other.runtimeType &&
+          message == other.message;
 
   @override
   int get hashCode => message.hashCode;

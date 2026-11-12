@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+
 import '../../../../app/di/injection.dart';
 import '../../../../core/presentation/widgets/loading_view.dart';
 import '../../domain/entities/book_entity.dart';
@@ -54,7 +56,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     }
 
     final chaptersResult = await _bookRepository.getChapters(widget.bookId);
-    final progressResult = await _bookRepository.getReadingProgress(widget.bookId);
+    final progressResult = await _bookRepository.getReadingProgress(
+      widget.bookId,
+    );
 
     setState(() {
       _book = bookResult.dataOrNull;
@@ -85,7 +89,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               await widget.libraryCubit.deleteBook(widget.bookId);
@@ -120,7 +126,11 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+                Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: theme.colorScheme.error,
+                ),
                 const SizedBox(height: 16),
                 Text(_errorMessage ?? 'Book not found'),
                 const SizedBox(height: 16),
@@ -137,7 +147,8 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
 
     final book = _book!;
     final progressPercent = (_progress?.progressPercentage ?? 0.0) * 100;
-    final hasCover = book.coverImagePath != null && File(book.coverImagePath!).existsSync();
+    final hasCover =
+        book.coverImagePath != null && File(book.coverImagePath!).existsSync();
 
     return Scaffold(
       appBar: AppBar(
@@ -184,7 +195,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                     children: [
                       Text(
                         book.title,
-                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -220,7 +233,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                       children: [
                         Text(
                           'Reading Progress',
-                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         Text(
                           '${progressPercent.toInt()}%',
@@ -242,7 +257,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                       child: FilledButton.icon(
                         icon: const Icon(Icons.play_arrow_rounded),
                         label: Text(
-                          progressPercent > 0 ? 'Continue Reading' : 'Start Reading',
+                          progressPercent > 0
+                              ? 'Continue Reading'
+                              : 'Start Reading',
                         ),
                         onPressed: () {
                           context.push('/reader/${book.id}');
@@ -258,7 +275,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             // File & Storage Metadata
             Text(
               'File Information',
-              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             Card(
@@ -266,13 +285,21 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    _InfoRow(label: 'File Size', value: _formatFileSize(book.fileSizeBytes)),
+                    _InfoRow(
+                      label: 'File Size',
+                      value: _formatFileSize(book.fileSizeBytes),
+                    ),
                     const Divider(height: 16),
-                    _InfoRow(label: 'Total Chapters', value: '${_chapters.length}'),
+                    _InfoRow(
+                      label: 'Total Chapters',
+                      value: '${_chapters.length}',
+                    ),
                     const Divider(height: 16),
                     _InfoRow(
                       label: 'Imported Date',
-                      value: DateFormat.yMMMd().format(book.createdAt.toLocal()),
+                      value: DateFormat.yMMMd().format(
+                        book.createdAt.toLocal(),
+                      ),
                     ),
                     const Divider(height: 16),
                     _InfoRow(
@@ -288,7 +315,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             // Chapters Preview
             Text(
               'Chapters (${_chapters.length})',
-              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             ListView.separated(
@@ -301,7 +330,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 return ListTile(
                   dense: true,
                   title: Text(ch.title),
-                  trailing: ch.wordCount > 0 ? Text('${ch.wordCount} words') : null,
+                  trailing: ch.wordCount > 0
+                      ? Text('${ch.wordCount} words')
+                      : null,
                 );
               },
             ),
@@ -341,4 +372,3 @@ class _InfoRow extends StatelessWidget {
     );
   }
 }
-

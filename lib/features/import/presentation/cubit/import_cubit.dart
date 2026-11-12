@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as p;
+
 import '../../domain/services/import_service.dart';
 import 'import_state.dart';
 
@@ -9,10 +11,8 @@ typedef FilePickerFn = Future<String?> Function();
 
 /// Cubit managing document selection via SAF and the end-to-end import pipeline.
 class ImportCubit extends Cubit<ImportState> {
-  ImportCubit({
-    required this.importService,
-    this.filePickerOverride,
-  }) : super(const ImportInitial());
+  ImportCubit({required this.importService, this.filePickerOverride})
+    : super(const ImportInitial());
 
   final ImportService importService;
   final FilePickerFn? filePickerOverride;
@@ -67,12 +67,24 @@ class ImportCubit extends Cubit<ImportState> {
 
   Future<void> importFile(File file) async {
     final fileName = p.basename(file.path);
-    emit(ImportInProgress(fileName: fileName, progress: 0.05, status: 'Starting import...'));
+    emit(
+      ImportInProgress(
+        fileName: fileName,
+        progress: 0.05,
+        status: 'Starting import...',
+      ),
+    );
 
     final result = await importService.importDocument(
       file,
       onProgress: (progress, status) {
-        emit(ImportInProgress(fileName: fileName, progress: progress, status: status));
+        emit(
+          ImportInProgress(
+            fileName: fileName,
+            progress: progress,
+            status: status,
+          ),
+        );
       },
     );
 
@@ -90,4 +102,3 @@ class ImportCubit extends Cubit<ImportState> {
     emit(const ImportInitial());
   }
 }
-

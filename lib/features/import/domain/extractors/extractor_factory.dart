@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import '../../../../core/errors/failures.dart';
 import '../entities/detected_format.dart';
 import 'document_extractor.dart';
@@ -43,4 +44,3 @@ class _DeferredOrUnsupportedExtractor implements DocumentExtractor {
     );
   }
 }
-

@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/presentation/widgets/empty_view.dart';
 import '../../../../core/presentation/widgets/error_view.dart';
 import '../../../../core/presentation/widgets/loading_view.dart';
@@ -45,6 +47,11 @@ class LibraryScreen extends StatelessWidget {
               tooltip: 'Search Library and Content',
               onPressed: () => context.push('/search'),
             ),
+            IconButton(
+              icon: const Icon(Icons.insights_rounded),
+              tooltip: 'Reading Statistics & Goals',
+              onPressed: () => context.push('/statistics'),
+            ),
             BlocBuilder<LibraryCubit, LibraryState>(
               builder: (context, state) {
                 if (state is! LibraryLoaded) return const SizedBox.shrink();
@@ -58,14 +65,16 @@ class LibraryScreen extends StatelessWidget {
                   tooltip: state.viewMode == LibraryViewMode.list
                       ? 'Switch to Grid View'
                       : 'Switch to List View',
-                  onPressed: () => context.read<LibraryCubit>().toggleViewMode(),
+                  onPressed: () =>
+                      context.read<LibraryCubit>().toggleViewMode(),
                 );
               },
             ),
             PopupMenuButton<LibrarySortOption>(
               icon: const Icon(Icons.sort_rounded),
               tooltip: 'Sort Options',
-              onSelected: (option) => context.read<LibraryCubit>().setSortOption(option),
+              onSelected: (option) =>
+                  context.read<LibraryCubit>().setSortOption(option),
               itemBuilder: (context) => [
                 const PopupMenuItem(
                   value: LibrarySortOption.dateAddedDesc,
@@ -106,7 +115,10 @@ class LibraryScreen extends StatelessWidget {
               builder: (context, importState) {
                 if (importState is ImportInProgress) {
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     color: Theme.of(context).colorScheme.primaryContainer,
                     child: Row(
                       children: [
@@ -115,15 +127,20 @@ class LibraryScreen extends StatelessWidget {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            value: importState.progress > 0 ? importState.progress : null,
+                            value: importState.progress > 0
+                                ? importState.progress
+                                : null,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             '${importState.status} (${(importState.progress * 100).toInt()}%)',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer,
                                   fontWeight: FontWeight.w600,
                                 ),
                             maxLines: 1,
@@ -147,42 +164,55 @@ class LibraryScreen extends StatelessWidget {
 
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
                       _FilterChip(
                         label: 'All',
-                        isSelected: state.filterOption == LibraryFilterOption.all,
-                        onSelected: () =>
-                            context.read<LibraryCubit>().setFilterOption(LibraryFilterOption.all),
+                        isSelected:
+                            state.filterOption == LibraryFilterOption.all,
+                        onSelected: () => context
+                            .read<LibraryCubit>()
+                            .setFilterOption(LibraryFilterOption.all),
                       ),
                       const SizedBox(width: 8),
                       _FilterChip(
                         label: 'EPUB',
-                        isSelected: state.filterOption == LibraryFilterOption.epub,
-                        onSelected: () =>
-                            context.read<LibraryCubit>().setFilterOption(LibraryFilterOption.epub),
+                        isSelected:
+                            state.filterOption == LibraryFilterOption.epub,
+                        onSelected: () => context
+                            .read<LibraryCubit>()
+                            .setFilterOption(LibraryFilterOption.epub),
                       ),
                       const SizedBox(width: 8),
                       _FilterChip(
                         label: 'TXT',
-                        isSelected: state.filterOption == LibraryFilterOption.txt,
-                        onSelected: () =>
-                            context.read<LibraryCubit>().setFilterOption(LibraryFilterOption.txt),
+                        isSelected:
+                            state.filterOption == LibraryFilterOption.txt,
+                        onSelected: () => context
+                            .read<LibraryCubit>()
+                            .setFilterOption(LibraryFilterOption.txt),
                       ),
                       const SizedBox(width: 8),
                       _FilterChip(
                         label: 'PDF',
-                        isSelected: state.filterOption == LibraryFilterOption.pdf,
-                        onSelected: () =>
-                            context.read<LibraryCubit>().setFilterOption(LibraryFilterOption.pdf),
+                        isSelected:
+                            state.filterOption == LibraryFilterOption.pdf,
+                        onSelected: () => context
+                            .read<LibraryCubit>()
+                            .setFilterOption(LibraryFilterOption.pdf),
                       ),
                       const SizedBox(width: 8),
                       _FilterChip(
                         label: 'DOCX',
-                        isSelected: state.filterOption == LibraryFilterOption.docx,
-                        onSelected: () =>
-                            context.read<LibraryCubit>().setFilterOption(LibraryFilterOption.docx),
+                        isSelected:
+                            state.filterOption == LibraryFilterOption.docx,
+                        onSelected: () => context
+                            .read<LibraryCubit>()
+                            .setFilterOption(LibraryFilterOption.docx),
                       ),
                     ],
                   ),
@@ -196,29 +226,35 @@ class LibraryScreen extends StatelessWidget {
                 builder: (context, state) {
                   return switch (state) {
                     LibraryInitial() || LibraryLoading() => const LoadingView(
-                        message: 'Loading bookshelf...',
-                      ),
+                      message: 'Loading bookshelf...',
+                    ),
                     LibraryError(:final message) => ErrorView(
-                        message: message,
-                        onRetry: () => context.read<LibraryCubit>().loadBooks(),
-                      ),
-                    LibraryLoaded(:final allBooks, :final displayedBooks, :final viewMode) =>
+                      message: message,
+                      onRetry: () => context.read<LibraryCubit>().loadBooks(),
+                    ),
+                    LibraryLoaded(
+                      :final allBooks,
+                      :final displayedBooks,
+                      :final viewMode,
+                    ) =>
                       allBooks.isEmpty
                           ? EmptyView(
                               title: 'Your Library is Empty',
-                              message:
-                                  'Import your favorite EPUB, PDF, or TXT novels to begin your offline reading journey.',
+                              message: 'Import your favorite EPUB, PDF, or TXT novels to begin your offline reading journey.',
                               icon: Icons.menu_book_outlined,
                               actionLabel: 'Import Novel',
-                              onAction: () => context.read<ImportCubit>().pickAndImport(),
+                              onAction: () =>
+                                  context.read<ImportCubit>().pickAndImport(),
                             )
                           : displayedBooks.isEmpty
-                              ? const Center(
-                                  child: Text('No novels match your filter or search query.'),
-                                )
-                              : viewMode == LibraryViewMode.list
-                                  ? _buildListView(context, displayedBooks)
-                                  : _buildGridView(context, displayedBooks),
+                          ? const Center(
+                              child: Text(
+                                'No novels match your filter or search query.',
+                              ),
+                            )
+                          : viewMode == LibraryViewMode.list
+                          ? _buildListView(context, displayedBooks)
+                          : _buildGridView(context, displayedBooks),
                   };
                 },
               ),
@@ -235,12 +271,17 @@ class LibraryScreen extends StatelessWidget {
       padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 80),
       itemBuilder: (context, index) {
         final book = books[index];
-        final hasCover = book.coverImagePath != null && File(book.coverImagePath!).existsSync();
+        final hasCover =
+            book.coverImagePath != null &&
+            File(book.coverImagePath!).existsSync();
 
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
             leading: ClipRRect(
               borderRadius: BorderRadius.circular(6),
               child: Container(
@@ -248,10 +289,7 @@ class LibraryScreen extends StatelessWidget {
                 height: 60,
                 color: Theme.of(context).colorScheme.primaryContainer,
                 child: hasCover
-                    ? Image.file(
-                        File(book.coverImagePath!),
-                        fit: BoxFit.cover,
-                      )
+                    ? Image.file(File(book.coverImagePath!), fit: BoxFit.cover)
                     : Icon(
                         Icons.book_rounded,
                         color: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -295,7 +333,9 @@ class LibraryScreen extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         final book = books[index];
-        final hasCover = book.coverImagePath != null && File(book.coverImagePath!).existsSync();
+        final hasCover =
+            book.coverImagePath != null &&
+            File(book.coverImagePath!).existsSync();
 
         return Card(
           clipBehavior: Clip.antiAlias,
@@ -318,7 +358,9 @@ class LibraryScreen extends StatelessWidget {
                         : Icon(
                             Icons.auto_stories,
                             size: 48,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer,
                           ),
                   ),
                 ),
@@ -331,7 +373,10 @@ class LibraryScreen extends StatelessWidget {
                         book.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(

@@ -36,7 +36,9 @@ void main() {
         bookId: 'book-en',
         chapterIndex: 0,
         title: 'Chapter 1',
-        content: const Value('It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.'),
+        content: const Value(
+          'It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.',
+        ),
         wordCount: const Value(23),
         characterCount: const Value(118),
       ),
@@ -45,7 +47,9 @@ void main() {
         bookId: 'book-en',
         chapterIndex: 1,
         title: 'Chapter 2',
-        content: const Value('Mr. Bennet was among the earliest of those who waited on Mr. Bingley.'),
+        content: const Value(
+          'Mr. Bennet was among the earliest of those who waited on Mr. Bingley.',
+        ),
         wordCount: const Value(13),
         characterCount: const Value(69),
       ),
@@ -71,7 +75,9 @@ void main() {
         bookId: 'book-hi',
         chapterIndex: 0,
         title: 'पहला अध्याय',
-        content: const Value('होरी बैलों को सानी-पानी देकर अपनी लाठी संभालता हुआ बाहर निकला। उसका मन चिंता से भरा था।'),
+        content: const Value(
+          'होरी बैलों को सानी-पानी देकर अपनी लाठी संभालता हुआ बाहर निकला। उसका मन चिंता से भरा था।',
+        ),
         wordCount: const Value(17),
         characterCount: const Value(87),
       ),
@@ -97,7 +103,9 @@ void main() {
         bookId: 'book-gu',
         chapterIndex: 0,
         title: 'પ્રથમ પ્રકરણ',
-        content: const Value('સુવર્ણપુરની સુંદર સવારે સરસ્વતીચંદ્ર નવી દિશામાં પ્રયાણ કરે છે.'),
+        content: const Value(
+          'સુવર્ણપુરની સુંદર સવારે સરસ્વતીચંદ્ર નવી દિશામાં પ્રયાણ કરે છે.',
+        ),
         wordCount: const Value(9),
         characterCount: const Value(60),
       ),
@@ -164,15 +172,20 @@ void main() {
   });
 
   group('SearchRepository Multilingual and FTS tests', () {
-    test('English full-text search matches and returns snippet with mark tags', () async {
-      final result = await repository.searchContent('universally acknowledged');
-      expect(result.isSuccess, isTrue);
-      final matches = result.dataOrNull!;
-      expect(matches, isNotEmpty);
-      expect(matches.first.bookTitle, 'Pride and Prejudice');
-      expect(matches.first.chapterTitle, 'Chapter 1');
-      expect(matches.first.snippet, contains('<mark>'));
-    });
+    test(
+      'English full-text search matches and returns snippet with mark tags',
+      () async {
+        final result = await repository.searchContent(
+          'universally acknowledged',
+        );
+        expect(result.isSuccess, isTrue);
+        final matches = result.dataOrNull!;
+        expect(matches, isNotEmpty);
+        expect(matches.first.bookTitle, 'Pride and Prejudice');
+        expect(matches.first.chapterTitle, 'Chapter 1');
+        expect(matches.first.snippet, contains('<mark>'));
+      },
+    );
 
     test('Hindi (Devanagari) full-text search matches accurately', () async {
       final result = await repository.searchContent('चिंता');
@@ -194,75 +207,99 @@ void main() {
       expect(matches.first.snippet, contains('સુવર્ણપુર'));
     });
 
-    test('Japanese continuous text 3+ chars matches via trigram tokenizer', () async {
-      final result = await repository.searchContent('見当がつかぬ');
-      expect(result.isSuccess, isTrue);
-      final matches = result.dataOrNull!;
-      expect(matches, isNotEmpty);
-      expect(matches.first.bookId, 'book-ja');
-      expect(matches.first.chapterTitle, '一');
-    });
+    test(
+      'Japanese continuous text 3+ chars matches via trigram tokenizer',
+      () async {
+        final result = await repository.searchContent('見当がつかぬ');
+        expect(result.isSuccess, isTrue);
+        final matches = result.dataOrNull!;
+        expect(matches, isNotEmpty);
+        expect(matches.first.bookId, 'book-ja');
+        expect(matches.first.chapterTitle, '一');
+      },
+    );
 
-    test('Japanese short query (<3 chars) matches via fallback substring search', () async {
-      // "猫" is a 1-character ideogram, below trigram 3-char minimum
-      final result = await repository.searchContent('猫');
-      expect(result.isSuccess, isTrue);
-      final matches = result.dataOrNull!;
-      expect(matches, isNotEmpty);
-      expect(matches.first.bookId, 'book-ja');
-      expect(matches.first.snippet, contains('<mark>猫</mark>'));
-    });
+    test(
+      'Japanese short query (<3 chars) matches via fallback substring search',
+      () async {
+        // "猫" is a 1-character ideogram, below trigram 3-char minimum
+        final result = await repository.searchContent('猫');
+        expect(result.isSuccess, isTrue);
+        final matches = result.dataOrNull!;
+        expect(matches, isNotEmpty);
+        expect(matches.first.bookId, 'book-ja');
+        expect(matches.first.snippet, contains('<mark>猫</mark>'));
+      },
+    );
 
-    test('Chinese continuous text matches via trigram and substring fallback', () async {
-      // 3+ character search
-      final longResult = await repository.searchContent('一把辛酸泪');
-      expect(longResult.isSuccess, isTrue);
-      expect(longResult.dataOrNull!, isNotEmpty);
-      expect(longResult.dataOrNull!.first.bookId, 'book-zh');
+    test(
+      'Chinese continuous text matches via trigram and substring fallback',
+      () async {
+        // 3+ character search
+        final longResult = await repository.searchContent('一把辛酸泪');
+        expect(longResult.isSuccess, isTrue);
+        expect(longResult.dataOrNull!, isNotEmpty);
+        expect(longResult.dataOrNull!.first.bookId, 'book-zh');
 
-      // 2-character short search
-      final shortResult = await repository.searchContent('林黛玉');
-      expect(shortResult.isSuccess, isTrue);
-      expect(shortResult.dataOrNull!, isNotEmpty);
-      expect(shortResult.dataOrNull!.first.bookId, 'book-zh');
-      expect(shortResult.dataOrNull!.first.snippet, contains('<mark>林黛玉</mark>'));
-    });
+        // 2-character short search
+        final shortResult = await repository.searchContent('林黛玉');
+        expect(shortResult.isSuccess, isTrue);
+        expect(shortResult.dataOrNull!, isNotEmpty);
+        expect(shortResult.dataOrNull!.first.bookId, 'book-zh');
+        expect(
+          shortResult.dataOrNull!.first.snippet,
+          contains('<mark>林黛玉</mark>'),
+        );
+      },
+    );
 
-    test('Book metadata search matches title and author across languages', () async {
-      // English author
-      final enAuthor = await repository.searchBooks('Jane Austen');
-      expect(enAuthor.isSuccess, isTrue);
-      expect(enAuthor.dataOrNull!.first.title, 'Pride and Prejudice');
+    test(
+      'Book metadata search matches title and author across languages',
+      () async {
+        // English author
+        final enAuthor = await repository.searchBooks('Jane Austen');
+        expect(enAuthor.isSuccess, isTrue);
+        expect(enAuthor.dataOrNull!.first.title, 'Pride and Prejudice');
 
-      // Hindi author
-      final hiAuthor = await repository.searchBooks('प्रेमचंद');
-      expect(hiAuthor.isSuccess, isTrue);
-      expect(hiAuthor.dataOrNull!.first.id, 'book-hi');
+        // Hindi author
+        final hiAuthor = await repository.searchBooks('प्रेमचंद');
+        expect(hiAuthor.isSuccess, isTrue);
+        expect(hiAuthor.dataOrNull!.first.id, 'book-hi');
 
-      // Japanese title
-      final jaTitle = await repository.searchBooks('吾輩は猫');
-      expect(jaTitle.isSuccess, isTrue);
-      expect(jaTitle.dataOrNull!.first.id, 'book-ja');
+        // Japanese title
+        final jaTitle = await repository.searchBooks('吾輩は猫');
+        expect(jaTitle.isSuccess, isTrue);
+        expect(jaTitle.dataOrNull!.first.id, 'book-ja');
 
-      // Chinese author
-      final zhAuthor = await repository.searchBooks('曹雪芹');
-      expect(zhAuthor.isSuccess, isTrue);
-      expect(zhAuthor.dataOrNull!.first.id, 'book-zh');
-    });
+        // Chinese author
+        final zhAuthor = await repository.searchBooks('曹雪芹');
+        expect(zhAuthor.isSuccess, isTrue);
+        expect(zhAuthor.dataOrNull!.first.id, 'book-zh');
+      },
+    );
 
-    test('Scoped book content search restricts results to the target book', () async {
-      // Search 'Chapter' scoped to book-en
-      final scoped = await repository.searchContent('Chapter', bookId: 'book-en');
-      expect(scoped.isSuccess, isTrue);
-      for (final match in scoped.dataOrNull!) {
-        expect(match.bookId, 'book-en');
-      }
+    test(
+      'Scoped book content search restricts results to the target book',
+      () async {
+        // Search 'Chapter' scoped to book-en
+        final scoped = await repository.searchContent(
+          'Chapter',
+          bookId: 'book-en',
+        );
+        expect(scoped.isSuccess, isTrue);
+        for (final match in scoped.dataOrNull!) {
+          expect(match.bookId, 'book-en');
+        }
 
-      // Search scoped to book-hi for an English word yields empty list
-      final emptyScoped = await repository.searchContent('Bingley', bookId: 'book-hi');
-      expect(emptyScoped.isSuccess, isTrue);
-      expect(emptyScoped.dataOrNull!, isEmpty);
-    });
+        // Search scoped to book-hi for an English word yields empty list
+        final emptyScoped = await repository.searchContent(
+          'Bingley',
+          bookId: 'book-hi',
+        );
+        expect(emptyScoped.isSuccess, isTrue);
+        expect(emptyScoped.dataOrNull!, isEmpty);
+      },
+    );
 
     test('Rebuild index repopulates FTS index cleanly', () async {
       final rebuildResult = await repository.reindexAllContent();

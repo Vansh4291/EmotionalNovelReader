@@ -49,7 +49,9 @@ class FakeAnnotationRepository implements AnnotationRepository {
     required String bookId,
     required String chapterId,
   }) async {
-    bookmarks.removeWhere((b) => b.bookId == bookId && b.chapterId == chapterId);
+    bookmarks.removeWhere(
+      (b) => b.bookId == bookId && b.chapterId == chapterId,
+    );
     return const Result.success(null);
   }
 
@@ -60,7 +62,9 @@ class FakeAnnotationRepository implements AnnotationRepository {
   }
 
   @override
-  Future<Result<List<BookmarkEntity>>> getBookmarksForBook(String bookId) async {
+  Future<Result<List<BookmarkEntity>>> getBookmarksForBook(
+    String bookId,
+  ) async {
     if (failBookmarks) {
       return const Result.error(DatabaseFailure('Bookmark load failed'));
     }
@@ -68,7 +72,9 @@ class FakeAnnotationRepository implements AnnotationRepository {
   }
 
   @override
-  Future<Result<List<HighlightEntity>>> getHighlightsForBook(String bookId) async {
+  Future<Result<List<HighlightEntity>>> getHighlightsForBook(
+    String bookId,
+  ) async {
     if (failHighlights) {
       return const Result.error(DatabaseFailure('Highlight load failed'));
     }
@@ -81,7 +87,9 @@ class FakeAnnotationRepository implements AnnotationRepository {
     required String chapterId,
   }) async {
     return Result.success(
-      highlights.where((h) => h.bookId == bookId && h.chapterId == chapterId).toList(),
+      highlights
+          .where((h) => h.bookId == bookId && h.chapterId == chapterId)
+          .toList(),
     );
   }
 
@@ -162,7 +170,9 @@ class FakeAnnotationRepository implements AnnotationRepository {
     required String chapterId,
   }) {
     return Stream.value(
-      highlights.where((h) => h.bookId == bookId && h.chapterId == chapterId).toList(),
+      highlights
+          .where((h) => h.bookId == bookId && h.chapterId == chapterId)
+          .toList(),
     );
   }
 
@@ -172,10 +182,12 @@ class FakeAnnotationRepository implements AnnotationRepository {
     String? chapterId,
     required String location,
   }) async {
-    bookmarks.removeWhere((b) =>
-        b.bookId == bookId &&
-        (chapterId == null || b.chapterId == chapterId) &&
-        b.location == location);
+    bookmarks.removeWhere(
+      (b) =>
+          b.bookId == bookId &&
+          (chapterId == null || b.chapterId == chapterId) &&
+          b.location == location,
+    );
     return const Result.success(null);
   }
 
@@ -186,10 +198,12 @@ class FakeAnnotationRepository implements AnnotationRepository {
     required String location,
   }) async {
     return Result.success(
-      bookmarks.any((b) =>
-          b.bookId == bookId &&
-          (chapterId == null || b.chapterId == chapterId) &&
-          b.location == location),
+      bookmarks.any(
+        (b) =>
+            b.bookId == bookId &&
+            (chapterId == null || b.chapterId == chapterId) &&
+            b.location == location,
+      ),
     );
   }
 
@@ -240,11 +254,15 @@ class FakeAnnotationRepository implements AnnotationRepository {
   }
 
   @override
-  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForBook(String bookId) async {
+  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForBook(
+    String bookId,
+  ) async {
     if (failChapterNotes) {
       return const Result.error(DatabaseFailure('Chapter notes load failed'));
     }
-    return Result.success(chapterNotes.where((cn) => cn.bookId == bookId).toList());
+    return Result.success(
+      chapterNotes.where((cn) => cn.bookId == bookId).toList(),
+    );
   }
 
   @override
@@ -253,13 +271,17 @@ class FakeAnnotationRepository implements AnnotationRepository {
     required String chapterId,
   }) async {
     return Result.success(
-      chapterNotes.where((cn) => cn.bookId == bookId && cn.chapterId == chapterId).toList(),
+      chapterNotes
+          .where((cn) => cn.bookId == bookId && cn.chapterId == chapterId)
+          .toList(),
     );
   }
 
   @override
   Stream<List<ChapterNoteEntity>> watchChapterNotesForBook(String bookId) {
-    return Stream.value(chapterNotes.where((cn) => cn.bookId == bookId).toList());
+    return Stream.value(
+      chapterNotes.where((cn) => cn.bookId == bookId).toList(),
+    );
   }
 }
 
@@ -283,163 +305,175 @@ void main() {
       expect(cubit.state, isA<AnnotationInitial>());
     });
 
-    test('loadAnnotations emits [AnnotationLoading, AnnotationLoaded] on success', () async {
-      repository.bookmarks = [
-        BookmarkEntity(
-          id: 'b1',
-          bookId: testBookId,
-          chapterId: 'ch1',
-          chapterIndex: 0,
-          chapterTitle: 'Chapter 1',
-          location: '0',
-          createdAt: DateTime.now(),
-        ),
-      ];
-      repository.highlights = [
-        HighlightEntity(
-          id: 'h1',
-          bookId: testBookId,
-          chapterId: 'ch1',
-          chapterIndex: 0,
-          chapterTitle: 'Chapter 1',
-          startOffset: 0,
-          endOffset: 10,
-          selectedText: 'Test text',
-          note: 'A deep note',
-          createdAt: DateTime.now(),
-        ),
-      ];
+    test(
+      'loadAnnotations emits [AnnotationLoading, AnnotationLoaded] on success',
+      () async {
+        repository.bookmarks = [
+          BookmarkEntity(
+            id: 'b1',
+            bookId: testBookId,
+            chapterId: 'ch1',
+            chapterIndex: 0,
+            chapterTitle: 'Chapter 1',
+            location: '0',
+            createdAt: DateTime.now(),
+          ),
+        ];
+        repository.highlights = [
+          HighlightEntity(
+            id: 'h1',
+            bookId: testBookId,
+            chapterId: 'ch1',
+            chapterIndex: 0,
+            chapterTitle: 'Chapter 1',
+            startOffset: 0,
+            endOffset: 10,
+            selectedText: 'Test text',
+            note: 'A deep note',
+            createdAt: DateTime.now(),
+          ),
+        ];
 
-      await cubit.loadAnnotations(testBookId);
+        await cubit.loadAnnotations(testBookId);
 
-      expect(cubit.state, isA<AnnotationLoaded>());
-      final state = cubit.state as AnnotationLoaded;
-      expect(state.bookId, testBookId);
-      expect(state.allBookmarks.length, 1);
-      expect(state.allHighlights.length, 1);
-      expect(state.filter, AnnotationFilter.all);
-      expect(state.displayedBookmarks.length, 1);
-      expect(state.displayedHighlights.length, 1);
-    });
+        expect(cubit.state, isA<AnnotationLoaded>());
+        final state = cubit.state as AnnotationLoaded;
+        expect(state.bookId, testBookId);
+        expect(state.allBookmarks.length, 1);
+        expect(state.allHighlights.length, 1);
+        expect(state.filter, AnnotationFilter.all);
+        expect(state.displayedBookmarks.length, 1);
+        expect(state.displayedHighlights.length, 1);
+      },
+    );
 
-    test('loadAnnotations emits [AnnotationLoading, AnnotationError] on failure', () async {
-      repository.failBookmarks = true;
-      await cubit.loadAnnotations(testBookId);
-      expect(cubit.state, isA<AnnotationError>());
-    });
+    test(
+      'loadAnnotations emits [AnnotationLoading, AnnotationError] on failure',
+      () async {
+        repository.failBookmarks = true;
+        await cubit.loadAnnotations(testBookId);
+        expect(cubit.state, isA<AnnotationError>());
+      },
+    );
 
-    test('Filtering updates displayedBookmarks and displayedHighlights correctly', () async {
-      repository.bookmarks = [
-        BookmarkEntity(
-          id: 'b1',
-          bookId: testBookId,
-          chapterId: 'ch1',
-          location: '0',
-          createdAt: DateTime.now(),
-        ),
-      ];
-      repository.highlights = [
-        HighlightEntity(
-          id: 'h1',
-          bookId: testBookId,
-          chapterId: 'ch1',
-          startOffset: 0,
-          endOffset: 5,
-          selectedText: 'Text 1',
-          createdAt: DateTime.now(),
-        ),
-        HighlightEntity(
-          id: 'h2',
-          bookId: testBookId,
-          chapterId: 'ch1',
-          startOffset: 10,
-          endOffset: 20,
-          selectedText: 'Text 2',
-          note: 'Remark on text 2',
-          createdAt: DateTime.now(),
-        ),
-      ];
+    test(
+      'Filtering updates displayedBookmarks and displayedHighlights correctly',
+      () async {
+        repository.bookmarks = [
+          BookmarkEntity(
+            id: 'b1',
+            bookId: testBookId,
+            chapterId: 'ch1',
+            location: '0',
+            createdAt: DateTime.now(),
+          ),
+        ];
+        repository.highlights = [
+          HighlightEntity(
+            id: 'h1',
+            bookId: testBookId,
+            chapterId: 'ch1',
+            startOffset: 0,
+            endOffset: 5,
+            selectedText: 'Text 1',
+            createdAt: DateTime.now(),
+          ),
+          HighlightEntity(
+            id: 'h2',
+            bookId: testBookId,
+            chapterId: 'ch1',
+            startOffset: 10,
+            endOffset: 20,
+            selectedText: 'Text 2',
+            note: 'Remark on text 2',
+            createdAt: DateTime.now(),
+          ),
+        ];
 
-      await cubit.loadAnnotations(testBookId);
-      var state = cubit.state as AnnotationLoaded;
-      expect(state.displayedBookmarks.length, 1);
-      expect(state.displayedHighlights.length, 2);
+        await cubit.loadAnnotations(testBookId);
+        var state = cubit.state as AnnotationLoaded;
+        expect(state.displayedBookmarks.length, 1);
+        expect(state.displayedHighlights.length, 2);
 
-      // Bookmarks only
-      cubit.setFilter(AnnotationFilter.bookmarks);
-      state = cubit.state as AnnotationLoaded;
-      expect(state.displayedBookmarks.length, 1);
-      expect(state.displayedHighlights.isEmpty, isTrue);
+        // Bookmarks only
+        cubit.setFilter(AnnotationFilter.bookmarks);
+        state = cubit.state as AnnotationLoaded;
+        expect(state.displayedBookmarks.length, 1);
+        expect(state.displayedHighlights.isEmpty, isTrue);
 
-      // Highlights only
-      cubit.setFilter(AnnotationFilter.highlights);
-      state = cubit.state as AnnotationLoaded;
-      expect(state.displayedBookmarks.isEmpty, isTrue);
-      expect(state.displayedHighlights.length, 2);
+        // Highlights only
+        cubit.setFilter(AnnotationFilter.highlights);
+        state = cubit.state as AnnotationLoaded;
+        expect(state.displayedBookmarks.isEmpty, isTrue);
+        expect(state.displayedHighlights.length, 2);
 
-      // Notes only
-      cubit.setFilter(AnnotationFilter.notes);
-      state = cubit.state as AnnotationLoaded;
-      expect(state.displayedBookmarks.isEmpty, isTrue);
-      expect(state.displayedHighlights.length, 1);
-      expect(state.displayedHighlights.first.id, 'h2');
-    });
+        // Notes only
+        cubit.setFilter(AnnotationFilter.notes);
+        state = cubit.state as AnnotationLoaded;
+        expect(state.displayedBookmarks.isEmpty, isTrue);
+        expect(state.displayedHighlights.length, 1);
+        expect(state.displayedHighlights.first.id, 'h2');
+      },
+    );
 
-    test('Search query matches across chapters, labels, text, and notes', () async {
-      repository.bookmarks = [
-        BookmarkEntity(
-          id: 'b1',
-          bookId: testBookId,
-          chapterTitle: 'Awakening of Heroes',
-          location: '0',
-          createdAt: DateTime.now(),
-        ),
-        BookmarkEntity(
-          id: 'b2',
-          bookId: testBookId,
-          chapterTitle: 'Silent Forest',
-          label: 'Secret Passage',
-          location: '50',
-          createdAt: DateTime.now(),
-        ),
-      ];
-      repository.highlights = [
-        HighlightEntity(
-          id: 'h1',
-          bookId: testBookId,
-          startOffset: 0,
-          endOffset: 10,
-          selectedText: 'The crystal glowed brightly',
-          createdAt: DateTime.now(),
-        ),
-        HighlightEntity(
-          id: 'h2',
-          bookId: testBookId,
-          startOffset: 15,
-          endOffset: 25,
-          selectedText: 'Under the ancient oak',
-          note: 'Remember this secret passage',
-          createdAt: DateTime.now(),
-        ),
-      ];
+    test(
+      'Search query matches across chapters, labels, text, and notes',
+      () async {
+        repository.bookmarks = [
+          BookmarkEntity(
+            id: 'b1',
+            bookId: testBookId,
+            chapterTitle: 'Awakening of Heroes',
+            location: '0',
+            createdAt: DateTime.now(),
+          ),
+          BookmarkEntity(
+            id: 'b2',
+            bookId: testBookId,
+            chapterTitle: 'Silent Forest',
+            label: 'Secret Passage',
+            location: '50',
+            createdAt: DateTime.now(),
+          ),
+        ];
+        repository.highlights = [
+          HighlightEntity(
+            id: 'h1',
+            bookId: testBookId,
+            startOffset: 0,
+            endOffset: 10,
+            selectedText: 'The crystal glowed brightly',
+            createdAt: DateTime.now(),
+          ),
+          HighlightEntity(
+            id: 'h2',
+            bookId: testBookId,
+            startOffset: 15,
+            endOffset: 25,
+            selectedText: 'Under the ancient oak',
+            note: 'Remember this secret passage',
+            createdAt: DateTime.now(),
+          ),
+        ];
 
-      await cubit.loadAnnotations(testBookId);
+        await cubit.loadAnnotations(testBookId);
 
-      // Search 'crystal'
-      cubit.setSearchQuery('crystal');
-      var state = cubit.state as AnnotationLoaded;
-      expect(state.displayedBookmarks.isEmpty, isTrue);
-      expect(state.displayedHighlights.length, 1);
-      expect(state.displayedHighlights.first.id, 'h1');
+        // Search 'crystal'
+        cubit.setSearchQuery('crystal');
+        var state = cubit.state as AnnotationLoaded;
+        expect(state.displayedBookmarks.isEmpty, isTrue);
+        expect(state.displayedHighlights.length, 1);
+        expect(state.displayedHighlights.first.id, 'h1');
 
-      // Search 'secret' (matches b2 label and h2 note)
-      cubit.setSearchQuery('secret');
-      state = cubit.state as AnnotationLoaded;
-      expect(state.displayedBookmarks.length, 1);
-      expect(state.displayedBookmarks.first.id, 'b2');
-      expect(state.displayedHighlights.length, 1);
-      expect(state.displayedHighlights.first.id, 'h2');
-    });
+        // Search 'secret' (matches b2 label and h2 note)
+        cubit.setSearchQuery('secret');
+        state = cubit.state as AnnotationLoaded;
+        expect(state.displayedBookmarks.length, 1);
+        expect(state.displayedBookmarks.first.id, 'b2');
+        expect(state.displayedHighlights.length, 1);
+        expect(state.displayedHighlights.first.id, 'h2');
+      },
+    );
 
     test('deleteBookmark, deleteHighlight, updateNote, updateColor update state directly', () async {
       repository.bookmarks = [
@@ -485,4 +519,3 @@ void main() {
     });
   });
 }
-

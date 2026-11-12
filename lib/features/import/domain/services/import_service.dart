@@ -1,6 +1,8 @@
 import 'dart:io';
+
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
+
 import '../../../../core/errors/failures.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/storage/storage_service.dart';
@@ -40,18 +42,23 @@ class ImportService {
       // 1. File existence and readability check
       onProgress?.call(0.05, 'Validating file...');
       if (!await sourceFile.exists()) {
-        return const Result.error(ValidationFailure('Selected file does not exist.'));
+        return const Result.error(
+          ValidationFailure('Selected file does not exist.'),
+        );
       }
 
       final fileSizeBytes = await sourceFile.length();
       if (fileSizeBytes == 0) {
-        return const Result.error(ValidationFailure('File is empty (0 bytes).'));
+        return const Result.error(
+          ValidationFailure('File is empty (0 bytes).'),
+        );
       }
 
       // 2. Format detection
       onProgress?.call(0.15, 'Sniffing format signature...');
       final detection = await formatDetector.detect(sourceFile);
-      if (!detection.isSupported || detection.format == DocumentFormat.unsupported) {
+      if (!detection.isSupported ||
+          detection.format == DocumentFormat.unsupported) {
         return Result.error(
           ValidationFailure(
             'Format "${detection.format.displayName}" is not supported: ${detection.description}',
@@ -66,7 +73,9 @@ class ImportService {
 
       if (isDuplicateResult.isSuccess && isDuplicateResult.dataOrNull == true) {
         return const Result.error(
-          ValidationFailure('This novel has already been imported into your library.'),
+          ValidationFailure(
+            'This novel has already been imported into your library.',
+          ),
         );
       }
 
@@ -111,7 +120,8 @@ class ImportService {
 
       // 6. Save cover image if present
       String? coverImagePath;
-      if (extractedData.coverImageBytes != null && extractedData.coverImageBytes!.isNotEmpty) {
+      if (extractedData.coverImageBytes != null &&
+          extractedData.coverImageBytes!.isNotEmpty) {
         try {
           coverImagePath = await storageService.saveCoverImage(
             bookId: bookId,
@@ -127,7 +137,9 @@ class ImportService {
       final now = DateTime.now().toUtc();
       final bookEntity = BookEntity(
         id: bookId,
-        title: extractedData.title.isNotEmpty ? extractedData.title : p.basenameWithoutExtension(originalFileName),
+        title: extractedData.title.isNotEmpty
+            ? extractedData.title
+            : p.basenameWithoutExtension(originalFileName),
         author: extractedData.author,
         originalFileName: originalFileName,
         filePath: destinationFilePath,
@@ -177,7 +189,9 @@ class ImportService {
       await bookRepository.saveReadingProgress(initialProgress);
 
       onProgress?.call(1.0, 'Import completed successfully!');
-      logger.info('Successfully imported "${bookEntity.title}" ($bookId) with ${chapters.length} chapters.');
+      logger.info(
+        'Successfully imported "${bookEntity.title}" ($bookId) with ${chapters.length} chapters.',
+      );
       return Result.success(bookEntity);
     } catch (e, stack) {
       if (createdBookId != null) {
@@ -188,9 +202,12 @@ class ImportService {
       }
       logger.error('Import failed unexpectedly: ${e.toString()}', e, stack);
       return Result.error(
-        UnexpectedFailure('Import failed unexpectedly: ${e.toString()}', e, stack),
+        UnexpectedFailure(
+          'Import failed unexpectedly: ${e.toString()}',
+          e,
+          stack,
+        ),
       );
     }
   }
 }
-

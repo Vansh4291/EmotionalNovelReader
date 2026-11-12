@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:path/path.dart' as p;
+
 import '../../../../core/errors/failures.dart';
 import 'document_extractor.dart';
 import 'extracted_book_data.dart';
@@ -9,7 +11,10 @@ import 'extracted_book_data.dart';
 class MarkdownExtractor implements DocumentExtractor {
   const MarkdownExtractor();
 
-  static final RegExp _headingPattern = RegExp(r'^(#{1,3})\s+(.+)$', multiLine: true);
+  static final RegExp _headingPattern = RegExp(
+    r'^(#{1,3})\s+(.+)$',
+    multiLine: true,
+  );
 
   @override
   Future<Result<ExtractedBookData>> extract(
@@ -19,10 +24,14 @@ class MarkdownExtractor implements DocumentExtractor {
     try {
       onProgress?.call(0.1, 'Reading Markdown file...');
       final bytes = await file.readAsBytes();
-      final rawText = utf8.decode(bytes, allowMalformed: true).replaceAll('\r\n', '\n');
+      final rawText = utf8
+          .decode(bytes, allowMalformed: true)
+          .replaceAll('\r\n', '\n');
 
       if (rawText.trim().isEmpty) {
-        return const Result.error(DocumentParsingFailure('Markdown file is empty'));
+        return const Result.error(
+          DocumentParsingFailure('Markdown file is empty'),
+        );
       }
 
       final matches = _headingPattern.allMatches(rawText).toList();
@@ -44,7 +53,9 @@ class MarkdownExtractor implements DocumentExtractor {
             final match = chapterMatches[i];
             final chapterTitle = match.group(2)!.trim();
             final start = match.start;
-            final end = i + 1 < chapterMatches.length ? chapterMatches[i + 1].start : rawText.length;
+            final end = i + 1 < chapterMatches.length
+                ? chapterMatches[i + 1].start
+                : rawText.length;
             final body = rawText.substring(start, end).trim();
 
             chapters.add(
@@ -75,15 +86,15 @@ class MarkdownExtractor implements DocumentExtractor {
 
       onProgress?.call(1.0, 'Markdown extraction complete.');
       return Result.success(
-        ExtractedBookData(
-          title: title,
-          format: 'markdown',
-          chapters: chapters,
-        ),
+        ExtractedBookData(title: title, format: 'markdown', chapters: chapters),
       );
     } catch (e, stack) {
       return Result.error(
-        DocumentParsingFailure('Failed to extract Markdown file: ${e.toString()}', e, stack),
+        DocumentParsingFailure(
+          'Failed to extract Markdown file: ${e.toString()}',
+          e,
+          stack,
+        ),
       );
     }
   }
@@ -93,4 +104,3 @@ class MarkdownExtractor implements DocumentExtractor {
     return text.trim().split(RegExp(r'\s+')).length;
   }
 }
-

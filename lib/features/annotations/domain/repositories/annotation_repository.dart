@@ -106,4 +106,3 @@ abstract interface class AnnotationRepository {
 
   Stream<List<ChapterNoteEntity>> watchChapterNotesForBook(String bookId);
 }
-

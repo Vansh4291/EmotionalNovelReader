@@ -19,16 +19,19 @@ void main() {
   });
 
   group('Navigation & Routing tests', () {
-    testWidgets('App starts on /library route and renders empty state initially', (tester) async {
-      await tester.pumpWidget(const EmotionalNovelReaderApp());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'App starts on /library route and renders empty state initially',
+      (tester) async {
+        await tester.pumpWidget(const EmotionalNovelReaderApp());
+        await tester.pumpAndSettle();
 
-      expect(find.text('Emotional Novel Reader'), findsOneWidget);
-      expect(find.text('Your Library is Empty'), findsOneWidget);
+        expect(find.text('Emotional Novel Reader'), findsOneWidget);
+        expect(find.text('Your Library is Empty'), findsOneWidget);
 
-      // Clean up widget tree and flush any Drift stream cleanup timers
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump(const Duration(milliseconds: 100));
-    });
+        // Clean up widget tree and flush any Drift stream cleanup timers
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump(const Duration(milliseconds: 100));
+      },
+    );
   });
 }

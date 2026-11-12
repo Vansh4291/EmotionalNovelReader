@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import '../../../../core/errors/failures.dart';
 import 'extracted_book_data.dart';
 
@@ -9,4 +10,3 @@ abstract interface class DocumentExtractor {
     void Function(double progress, String status)? onProgress,
   });
 }
-

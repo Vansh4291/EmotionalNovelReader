@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:emotional_novel_reader/core/errors/failures.dart';
 import 'package:emotional_novel_reader/features/library/domain/entities/book_entity.dart';
 import 'package:emotional_novel_reader/features/library/domain/entities/chapter_entity.dart';
@@ -34,7 +35,8 @@ class MockBookRepository implements BookRepository {
   }
 
   @override
-  Future<Result<bool>> isDuplicateBook(String sha256) async => const Result.success(false);
+  Future<Result<bool>> isDuplicateBook(String sha256) async =>
+      const Result.success(false);
 
   @override
   Future<Result<void>> saveBook(BookEntity book) async {
@@ -66,15 +68,18 @@ class MockBookRepository implements BookRepository {
       const Result.error(NotFoundFailure('Not found'));
 
   @override
-  Future<Result<int>> getChapterCount(String bookId) async => const Result.success(0);
+  Future<Result<int>> getChapterCount(String bookId) async =>
+      const Result.success(0);
 
   @override
-  Future<Result<ReadingProgressEntity?>> getReadingProgress(String bookId) async =>
-      const Result.success(null);
+  Future<Result<ReadingProgressEntity?>> getReadingProgress(
+    String bookId,
+  ) async => const Result.success(null);
 
   @override
-  Future<Result<void>> saveReadingProgress(ReadingProgressEntity progress) async =>
-      const Result.success(null);
+  Future<Result<void>> saveReadingProgress(
+    ReadingProgressEntity progress,
+  ) async => const Result.success(null);
 
   @override
   Stream<ReadingProgressEntity?> watchReadingProgress(String bookId) =>
@@ -140,15 +145,18 @@ void main() {
       expect(cubit.state, isA<LibraryInitial>());
     });
 
-    test('loadBooks emits LibraryLoaded with repository books reactively', () async {
-      repository.emitBooks([bookA, bookB]);
-      cubit.loadBooks();
+    test(
+      'loadBooks emits LibraryLoaded with repository books reactively',
+      () async {
+        repository.emitBooks([bookA, bookB]);
+        cubit.loadBooks();
 
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      expect(cubit.state, isA<LibraryLoaded>());
-      final loaded = cubit.state as LibraryLoaded;
-      expect(loaded.allBooks.length, 2);
-    });
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        expect(cubit.state, isA<LibraryLoaded>());
+        final loaded = cubit.state as LibraryLoaded;
+        expect(loaded.allBooks.length, 2);
+      },
+    );
 
     test('Filtering by format filters books appropriately', () async {
       repository.emitBooks([bookA, bookB, bookC]);
@@ -158,7 +166,10 @@ void main() {
       cubit.setFilterOption(LibraryFilterOption.epub);
       final loadedEpub = cubit.state as LibraryLoaded;
       expect(loadedEpub.displayedBooks.length, 2);
-      expect(loadedEpub.displayedBooks.every((b) => b.format == 'epub'), isTrue);
+      expect(
+        loadedEpub.displayedBooks.every((b) => b.format == 'epub'),
+        isTrue,
+      );
 
       cubit.setFilterOption(LibraryFilterOption.txt);
       final loadedTxt = cubit.state as LibraryLoaded;

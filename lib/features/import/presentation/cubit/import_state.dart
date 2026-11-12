@@ -41,7 +41,8 @@ final class ImportSuccess extends ImportState {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is ImportSuccess && book.id == other.book.id;
+      identical(this, other) ||
+      other is ImportSuccess && book.id == other.book.id;
 
   @override
   int get hashCode => book.id.hashCode;
@@ -53,9 +54,9 @@ final class ImportError extends ImportState {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is ImportError && message == other.message;
+      identical(this, other) ||
+      other is ImportError && message == other.message;
 
   @override
   int get hashCode => message.hashCode;
 }
-

@@ -47,4 +47,3 @@ class SearchError extends SearchState {
   const SearchError(this.message);
   final String message;
 }
-

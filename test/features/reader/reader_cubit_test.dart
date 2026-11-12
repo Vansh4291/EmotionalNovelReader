@@ -50,12 +50,16 @@ class MockReaderBookRepository implements BookRepository {
       Result.success(chapters.length);
 
   @override
-  Future<Result<ReadingProgressEntity?>> getReadingProgress(String bookId) async {
+  Future<Result<ReadingProgressEntity?>> getReadingProgress(
+    String bookId,
+  ) async {
     return Result.success(savedProgress);
   }
 
   @override
-  Future<Result<void>> saveReadingProgress(ReadingProgressEntity progress) async {
+  Future<Result<void>> saveReadingProgress(
+    ReadingProgressEntity progress,
+  ) async {
     savedProgress = progress;
     return const Result.success(null);
   }
@@ -63,13 +67,17 @@ class MockReaderBookRepository implements BookRepository {
   @override
   Stream<List<BookEntity>> watchAllBooks() => const Stream.empty();
   @override
-  Future<Result<List<BookEntity>>> getAllBooks() async => const Result.success([]);
+  Future<Result<List<BookEntity>>> getAllBooks() async =>
+      const Result.success([]);
   @override
-  Future<Result<bool>> isDuplicateBook(String sha256) async => const Result.success(false);
+  Future<Result<bool>> isDuplicateBook(String sha256) async =>
+      const Result.success(false);
   @override
-  Future<Result<void>> saveBook(BookEntity book) async => const Result.success(null);
+  Future<Result<void>> saveBook(BookEntity book) async =>
+      const Result.success(null);
   @override
-  Future<Result<void>> deleteBook(String id) async => const Result.success(null);
+  Future<Result<void>> deleteBook(String id) async =>
+      const Result.success(null);
   @override
   Future<Result<void>> saveChapters(List<ChapterEntity> chapters) async =>
       const Result.success(null);
@@ -131,21 +139,24 @@ void main() {
       expect(cubit.state, isA<ReaderInitial>());
     });
 
-    test('loadBook successfully loads book and chapters into ReaderLoaded', () async {
-      repository.book = testBook;
-      repository.chapters = [chapter1, chapter2];
+    test(
+      'loadBook successfully loads book and chapters into ReaderLoaded',
+      () async {
+        repository.book = testBook;
+        repository.chapters = [chapter1, chapter2];
 
-      await cubit.loadBook('book-100');
+        await cubit.loadBook('book-100');
 
-      expect(cubit.state, isA<ReaderLoaded>());
-      final loaded = cubit.state as ReaderLoaded;
-      expect(loaded.book.title, 'Sword Art Online');
-      expect(loaded.chapters.length, 2);
-      expect(loaded.currentChapterIndex, 0);
-      expect(loaded.currentChapter.id, 'ch-1');
-      expect(loaded.hasNextChapter, isTrue);
-      expect(loaded.hasPreviousChapter, isFalse);
-    });
+        expect(cubit.state, isA<ReaderLoaded>());
+        final loaded = cubit.state as ReaderLoaded;
+        expect(loaded.book.title, 'Sword Art Online');
+        expect(loaded.chapters.length, 2);
+        expect(loaded.currentChapterIndex, 0);
+        expect(loaded.currentChapter.id, 'ch-1');
+        expect(loaded.hasNextChapter, isTrue);
+        expect(loaded.hasPreviousChapter, isFalse);
+      },
+    );
 
     test('loadBook fails with ReaderError when book is missing', () async {
       repository.book = null;
@@ -156,16 +167,19 @@ void main() {
       expect(err.message, contains('Book not found'));
     });
 
-    test('loadBook fails with ReaderError when chapters list is empty', () async {
-      repository.book = testBook;
-      repository.chapters = [];
+    test(
+      'loadBook fails with ReaderError when chapters list is empty',
+      () async {
+        repository.book = testBook;
+        repository.chapters = [];
 
-      await cubit.loadBook('book-100');
+        await cubit.loadBook('book-100');
 
-      expect(cubit.state, isA<ReaderError>());
-      final err = cubit.state as ReaderError;
-      expect(err.message, contains('no readable chapters'));
-    });
+        expect(cubit.state, isA<ReaderError>());
+        final err = cubit.state as ReaderError;
+        expect(err.message, contains('no readable chapters'));
+      },
+    );
 
     test('Chapter navigation works with boundary checks', () async {
       repository.book = testBook;

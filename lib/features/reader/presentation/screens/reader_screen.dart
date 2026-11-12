@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../app/di/injection.dart';
 import '../../../../core/presentation/widgets/error_view.dart';
 import '../../../../core/presentation/widgets/loading_view.dart';
 import '../../../annotations/domain/entities/highlight_entity.dart';
 import '../../../annotations/presentation/cubit/annotation_cubit.dart';
+import '../../../ai/presentation/cubit/ai_chat_cubit.dart';
+import '../../../ai/presentation/widgets/ai_companion_sheet.dart';
 import '../../../annotations/presentation/widgets/annotations_sheet.dart';
 import '../../../annotations/presentation/widgets/note_editor_dialog.dart';
 import '../../domain/entities/reader_preferences.dart';
+import '../../../tts/domain/entities/tts_entities.dart';
+import '../../../tts/presentation/cubit/tts_cubit.dart';
+import '../../../tts/presentation/widgets/tts_control_sheet.dart';
 import '../cubit/reader_cubit.dart';
 import '../cubit/reader_state.dart';
 import '../services/reader_scroll_mapper.dart';
@@ -34,17 +40,20 @@ class ReaderScreen extends StatefulWidget {
       return [TextSpan(text: content, style: baseStyle)];
     }
 
-    final validHighlights = highlights
-        .where((h) =>
-            h.startOffset >= 0 &&
-            h.endOffset <= content.length &&
-            h.startOffset < h.endOffset)
-        .toList()
-      ..sort((a, b) {
-        final cmp = a.startOffset.compareTo(b.startOffset);
-        if (cmp != 0) return cmp;
-        return a.endOffset.compareTo(b.endOffset);
-      });
+    final validHighlights =
+        highlights
+            .where(
+              (h) =>
+                  h.startOffset >= 0 &&
+                  h.endOffset <= content.length &&
+                  h.startOffset < h.endOffset,
+            )
+            .toList()
+          ..sort((a, b) {
+            final cmp = a.startOffset.compareTo(b.startOffset);
+            if (cmp != 0) return cmp;
+            return a.endOffset.compareTo(b.endOffset);
+          });
 
     if (validHighlights.isEmpty) {
       return [TextSpan(text: content, style: baseStyle)];
@@ -90,12 +99,7 @@ class ReaderScreen extends StatefulWidget {
     }
 
     if (cursor < content.length) {
-      spans.add(
-        TextSpan(
-          text: content.substring(cursor),
-          style: baseStyle,
-        ),
-      );
+      spans.add(TextSpan(text: content.substring(cursor), style: baseStyle));
     }
 
     return spans;
@@ -110,15 +114,31 @@ class _ReaderScreenState extends State<ReaderScreen>
   final ScrollController _scrollController = ScrollController();
   bool _initialScrollRestored = false;
   String? _lastHandledNavigationRequestId;
+  late final TtsCubit _ttsCubit;
+  AiChatCubit? _aiChatCubit;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _ttsCubit = getIt<TtsCubit>()..initialize();
+    _ttsCubit.onSentenceChanged = (sentence) {
+      final readerState = context.read<ReaderCubit>().state;
+      if (readerState is ReaderLoaded) {
+        _onTtsSentenceChanged(sentence, readerState);
+      }
+    };
+    _ttsCubit.onChapterCompleted = () {
+      final readerCubit = context.read<ReaderCubit>();
+      final state = readerCubit.state;
+      if (state is ReaderLoaded && state.hasNextChapter) {
+        readerCubit.nextChapter();
+      }
+    };
     context.read<ReaderCubit>().loadBook(
-          widget.bookId,
-          initialChapterIndex: widget.initialChapterIndex,
-        );
+      widget.bookId,
+      initialChapterIndex: widget.initialChapterIndex,
+    );
     _scrollController.addListener(_onScroll);
   }
 
@@ -127,14 +147,60 @@ class _ReaderScreenState extends State<ReaderScreen>
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _ttsCubit.close();
+    _aiChatCubit?.close();
     super.dispose();
+  }
+
+  void _openAiCompanion(ReaderLoaded state) {
+    _aiChatCubit ??= getIt<AiChatCubit>(
+      param1: (
+        bookId: state.book.id,
+        bookTitle: state.book.title,
+        currentChapterIndex: state.currentChapterIndex,
+      ),
+    );
+    _aiChatCubit!.updatePosition(state.currentChapterIndex);
+    AiCompanionSheet.show(
+      context: context,
+      cubit: _aiChatCubit!,
+      currentChapterExcerpt: state.currentChapter.content,
+    );
+  }
+
+  void _onTtsSentenceChanged(TtsSentence sentence, ReaderLoaded state) {
+    if (!_scrollController.hasClients) return;
+    final width =
+        MediaQuery.of(context).size.width -
+        (state.preferences.horizontalMargin * 2);
+    final headerH = _measureHeaderHeight(state, width);
+    final targetY = ReaderScrollMapper.calculatePixelOffset(
+      content: state.currentChapter.content,
+      charOffset: sentence.charStart,
+      textStyle: TextStyle(
+        fontSize: state.preferences.fontSize,
+        height: state.preferences.lineHeight,
+      ),
+      contentWidth: width,
+      headerHeight: headerH,
+    );
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        targetY.clamp(0.0, _scrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
+      context.read<ReaderCubit>().pauseReading();
       context.read<ReaderCubit>().flushProgress();
+    } else if (state == AppLifecycleState.resumed) {
+      context.read<ReaderCubit>().resumeReading();
     }
   }
 
@@ -161,7 +227,8 @@ class _ReaderScreenState extends State<ReaderScreen>
     if (_scrollController.hasClients) {
       final state = context.read<ReaderCubit>().state;
       if (state is ReaderLoaded) {
-        final width = MediaQuery.of(context).size.width -
+        final width =
+            MediaQuery.of(context).size.width -
             (state.preferences.horizontalMargin * 2);
         final headerHeight = _measureHeaderHeight(state, width);
         final baseStyle = TextStyle(
@@ -177,9 +244,9 @@ class _ReaderScreenState extends State<ReaderScreen>
           headerHeight: headerHeight,
         );
         context.read<ReaderCubit>().updateScrollPosition(
-              _scrollController.offset,
-              visibleCharOffset: charOffset,
-            );
+          _scrollController.offset,
+          visibleCharOffset: charOffset,
+        );
       }
     }
   }
@@ -188,7 +255,8 @@ class _ReaderScreenState extends State<ReaderScreen>
     final parsed = ReaderScrollMapper.parseLocation(location);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
-      final width = MediaQuery.of(context).size.width -
+      final width =
+          MediaQuery.of(context).size.width -
           (state.preferences.horizontalMargin * 2);
 
       double targetPixel;
@@ -228,21 +296,21 @@ class _ReaderScreenState extends State<ReaderScreen>
     final theme = Theme.of(context);
     return switch (mode) {
       ReaderThemeMode.light => (
-          const Color(0xFFFAF9F6),
-          const Color(0xFF1E1E1E),
-        ),
+        const Color(0xFFFAF9F6),
+        const Color(0xFF1E1E1E),
+      ),
       ReaderThemeMode.dark => (
-          const Color(0xFF121212),
-          const Color(0xFFE0E0E0),
-        ),
+        const Color(0xFF121212),
+        const Color(0xFFE0E0E0),
+      ),
       ReaderThemeMode.sepia => (
-          const Color(0xFFFBF0D9),
-          const Color(0xFF5F4B32),
-        ),
+        const Color(0xFFFBF0D9),
+        const Color(0xFF5F4B32),
+      ),
       ReaderThemeMode.system => (
-          theme.colorScheme.surface,
-          theme.colorScheme.onSurface,
-        ),
+        theme.colorScheme.surface,
+        theme.colorScheme.onSurface,
+      ),
     };
   }
 
@@ -273,10 +341,10 @@ class _ReaderScreenState extends State<ReaderScreen>
         onPressed: () async {
           editableTextState.hideToolbar();
           await context.read<ReaderCubit>().addHighlight(
-                startOffset: selection.start,
-                endOffset: selection.end,
-                selectedText: selectedText,
-              );
+            startOffset: selection.start,
+            endOffset: selection.end,
+            selectedText: selectedText,
+          );
         },
       ),
       ContextMenuButtonItem(
@@ -290,12 +358,12 @@ class _ReaderScreenState extends State<ReaderScreen>
           );
           if (result != null && context.mounted) {
             await context.read<ReaderCubit>().addHighlight(
-                  startOffset: selection.start,
-                  endOffset: selection.end,
-                  selectedText: selectedText,
-                  note: result.note,
-                  colorValue: result.colorValue,
-                );
+              startOffset: selection.start,
+              endOffset: selection.end,
+              selectedText: selectedText,
+              note: result.note,
+              colorValue: result.colorValue,
+            );
           }
         },
       ),
@@ -324,21 +392,30 @@ class _ReaderScreenState extends State<ReaderScreen>
             _scrollToLocation(state.navigationRequest!.targetLocation, state);
             context.read<ReaderCubit>().clearNavigationRequest();
           }
+          if (_ttsCubit.state.chapterId != state.currentChapter.id) {
+            _ttsCubit.loadChapter(
+              bookId: state.book.id,
+              chapterId: state.currentChapter.id,
+              chapterTitle: state.currentChapter.title,
+              content: state.currentChapter.content,
+              autoPlay: _ttsCubit.state.isPlaying,
+            );
+          }
         }
       },
       builder: (context, state) {
         return switch (state) {
           ReaderInitial() || ReaderLoading() => const Scaffold(
-              body: LoadingView(message: 'Opening novel...'),
-            ),
+            body: LoadingView(message: 'Opening novel...'),
+          ),
           ReaderError(:final message) => Scaffold(
-              appBar: AppBar(title: const Text('Reader')),
-              body: ErrorView(
-                message: message,
-                onRetry: () =>
-                    context.read<ReaderCubit>().loadBook(widget.bookId),
-              ),
+            appBar: AppBar(title: const Text('Reader')),
+            body: ErrorView(
+              message: message,
+              onRetry: () =>
+                  context.read<ReaderCubit>().loadBook(widget.bookId),
             ),
+          ),
           ReaderLoaded() => _buildReaderScaffold(context, state),
         };
       },
@@ -346,9 +423,12 @@ class _ReaderScreenState extends State<ReaderScreen>
   }
 
   Widget _buildReaderScaffold(BuildContext context, ReaderLoaded state) {
-    final (bgColor, textColor) =
-        _resolveThemeColors(context, state.preferences.themeMode);
-    final isDark = Theme.of(context).brightness == Brightness.dark ||
+    final (bgColor, textColor) = _resolveThemeColors(
+      context,
+      state.preferences.themeMode,
+    );
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark ||
         state.preferences.themeMode == ReaderThemeMode.dark;
 
     return Scaffold(
@@ -443,9 +523,9 @@ class _ReaderScreenState extends State<ReaderScreen>
                       currentChapterTitle: state.currentChapter.title,
                       onNavigate: (chapterIndex, location) {
                         context.read<ReaderCubit>().goToChapter(
-                              chapterIndex,
-                              targetLocation: location,
-                            );
+                          chapterIndex,
+                          targetLocation: location,
+                        );
                       },
                     );
                     if (context.mounted) {
@@ -459,6 +539,26 @@ class _ReaderScreenState extends State<ReaderScreen>
                   onPressed: () {
                     context.push('/search?bookId=${state.book.id}');
                   },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.record_voice_over_rounded),
+                  tooltip: 'Read Aloud (TTS)',
+                  onPressed: () {
+                    if (_ttsCubit.state.chapterId != state.currentChapter.id) {
+                      _ttsCubit.loadChapter(
+                        bookId: state.book.id,
+                        chapterId: state.currentChapter.id,
+                        chapterTitle: state.currentChapter.title,
+                        content: state.currentChapter.content,
+                      );
+                    }
+                    TtsControlSheet.show(context, _ttsCubit);
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.auto_awesome_rounded),
+                  tooltip: 'AI Reading Companion',
+                  onPressed: () => _openAiCompanion(state),
                 ),
                 IconButton(
                   icon: const Icon(Icons.format_size_rounded),
@@ -478,8 +578,9 @@ class _ReaderScreenState extends State<ReaderScreen>
               ],
             )
           : null,
-      bottomNavigationBar:
-          state.isControlsVisible ? _buildBottomBar(context, state) : null,
+      bottomNavigationBar: state.isControlsVisible
+          ? _buildBottomBar(context, state)
+          : null,
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: () => context.read<ReaderCubit>().toggleControls(),
@@ -521,11 +622,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                     ),
                   ),
                   contextMenuBuilder: (context, editableTextState) {
-                    return _buildContextMenu(
-                      context,
-                      editableTextState,
-                      state,
-                    );
+                    return _buildContextMenu(context, editableTextState, state);
                   },
                 ),
                 const SizedBox(height: 60),

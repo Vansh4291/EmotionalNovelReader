@@ -38,7 +38,9 @@ void main() {
         bookId: testBookId,
         chapterIndex: 0,
         title: 'Chapter 1: The Arrival',
-        content: const Value('This is the first chapter content. It has many sentences to highlight.'),
+        content: const Value(
+          'This is the first chapter content. It has many sentences to highlight.',
+        ),
         wordCount: const Value(12),
         characterCount: const Value(70),
       ),
@@ -47,7 +49,9 @@ void main() {
         bookId: testBookId,
         chapterIndex: 1,
         title: 'Chapter 2: The Journey',
-        content: const Value('This is the second chapter with another exciting adventure.'),
+        content: const Value(
+          'This is the second chapter with another exciting adventure.',
+        ),
         wordCount: const Value(9),
         characterCount: const Value(59),
       ),
@@ -118,18 +122,26 @@ void main() {
       expect(second.isSuccess, isTrue);
       expect(second.dataOrNull!.id, isNot(first.dataOrNull!.id));
 
-      final list = (await repository.getBookmarksForBook(testBookId)).dataOrNull!;
+      final list = (await repository.getBookmarksForBook(testBookId))
+          .dataOrNull!;
       expect(list.length, 2);
 
       // Independent deletion removes only the targeted bookmark (R03)
       await repository.deleteBookmark(first.dataOrNull!.id);
-      final afterDelete = (await repository.getBookmarksForBook(testBookId)).dataOrNull!;
+      final afterDelete = (await repository.getBookmarksForBook(testBookId))
+          .dataOrNull!;
       expect(afterDelete.length, 1);
       expect(afterDelete.first.id, second.dataOrNull!.id);
     });
 
     test('isChapterBookmarked returns correct status', () async {
-      expect((await repository.isChapterBookmarked(bookId: testBookId, chapterId: testChapter1Id)).dataOrNull, isFalse);
+      expect(
+        (await repository.isChapterBookmarked(
+          bookId: testBookId,
+          chapterId: testChapter1Id,
+        )).dataOrNull,
+        isFalse,
+      );
 
       await repository.addBookmark(
         bookId: testBookId,
@@ -137,8 +149,20 @@ void main() {
         location: '0',
       );
 
-      expect((await repository.isChapterBookmarked(bookId: testBookId, chapterId: testChapter1Id)).dataOrNull, isTrue);
-      expect((await repository.isChapterBookmarked(bookId: testBookId, chapterId: testChapter2Id)).dataOrNull, isFalse);
+      expect(
+        (await repository.isChapterBookmarked(
+          bookId: testBookId,
+          chapterId: testChapter1Id,
+        )).dataOrNull,
+        isTrue,
+      );
+      expect(
+        (await repository.isChapterBookmarked(
+          bookId: testBookId,
+          chapterId: testChapter2Id,
+        )).dataOrNull,
+        isFalse,
+      );
     });
 
     test('deleteBookmark removes bookmark by ID', () async {
@@ -151,7 +175,8 @@ void main() {
       final delRes = await repository.deleteBookmark(added.id);
       expect(delRes.isSuccess, isTrue);
 
-      final list = (await repository.getBookmarksForBook(testBookId)).dataOrNull!;
+      final list = (await repository.getBookmarksForBook(testBookId))
+          .dataOrNull!;
       expect(list.isEmpty, isTrue);
     });
 
@@ -168,32 +193,41 @@ void main() {
       );
       expect(delRes.isSuccess, isTrue);
 
-      expect((await repository.isChapterBookmarked(bookId: testBookId, chapterId: testChapter1Id)).dataOrNull, isFalse);
+      expect(
+        (await repository.isChapterBookmarked(
+          bookId: testBookId,
+          chapterId: testChapter1Id,
+        )).dataOrNull,
+        isFalse,
+      );
     });
   });
 
   group('Highlight & Note Repository Operations', () {
-    test('createHighlight persists and returns valid highlight with defaults', () async {
-      final res = await repository.createHighlight(
-        bookId: testBookId,
-        chapterId: testChapter1Id,
-        chapterIndex: 0,
-        chapterTitle: 'Chapter 1: The Arrival',
-        startOffset: 12,
-        endOffset: 25,
-        selectedText: 'first chapter',
-      );
+    test(
+      'createHighlight persists and returns valid highlight with defaults',
+      () async {
+        final res = await repository.createHighlight(
+          bookId: testBookId,
+          chapterId: testChapter1Id,
+          chapterIndex: 0,
+          chapterTitle: 'Chapter 1: The Arrival',
+          startOffset: 12,
+          endOffset: 25,
+          selectedText: 'first chapter',
+        );
 
-      expect(res.isSuccess, isTrue);
-      final hl = res.dataOrNull!;
-      expect(hl.bookId, testBookId);
-      expect(hl.chapterId, testChapter1Id);
-      expect(hl.startOffset, 12);
-      expect(hl.endOffset, 25);
-      expect(hl.selectedText, 'first chapter');
-      expect(hl.colorValue, HighlightEntity.defaultHighlightColor);
-      expect(hl.hasNote, isFalse);
-    });
+        expect(res.isSuccess, isTrue);
+        final hl = res.dataOrNull!;
+        expect(hl.bookId, testBookId);
+        expect(hl.chapterId, testChapter1Id);
+        expect(hl.startOffset, 12);
+        expect(hl.endOffset, 25);
+        expect(hl.selectedText, 'first chapter');
+        expect(hl.colorValue, HighlightEntity.defaultHighlightColor);
+        expect(hl.hasNote, isFalse);
+      },
+    );
 
     test('createHighlight with custom note and color', () async {
       final res = await repository.createHighlight(
@@ -266,7 +300,8 @@ void main() {
       final delRes = await repository.deleteHighlight(created.id);
       expect(delRes.isSuccess, isTrue);
 
-      final list = (await repository.getHighlightsForBook(testBookId)).dataOrNull!;
+      final list = (await repository.getHighlightsForBook(testBookId))
+          .dataOrNull!;
       expect(list.isEmpty, isTrue);
     });
 
@@ -298,35 +333,57 @@ void main() {
       )).dataOrNull!;
       expect(ch2List.length, 1);
 
-      final allList = (await repository.getHighlightsForBook(testBookId)).dataOrNull!;
+      final allList = (await repository.getHighlightsForBook(testBookId))
+          .dataOrNull!;
       expect(allList.length, 2);
     });
 
-    test('Cascade deletion purges bookmarks and highlights when book is deleted', () async {
-      await repository.addBookmark(
-        bookId: testBookId,
-        chapterId: testChapter1Id,
-        location: '10',
-      );
-      await repository.createHighlight(
-        bookId: testBookId,
-        chapterId: testChapter1Id,
-        startOffset: 0,
-        endOffset: 4,
-        selectedText: 'This',
-      );
+    test(
+      'Cascade deletion purges bookmarks and highlights when book is deleted',
+      () async {
+        await repository.addBookmark(
+          bookId: testBookId,
+          chapterId: testChapter1Id,
+          location: '10',
+        );
+        await repository.createHighlight(
+          bookId: testBookId,
+          chapterId: testChapter1Id,
+          startOffset: 0,
+          endOffset: 4,
+          selectedText: 'This',
+        );
 
-      // Verify exist
-      expect((await repository.getBookmarksForBook(testBookId)).dataOrNull!.length, 1);
-      expect((await repository.getHighlightsForBook(testBookId)).dataOrNull!.length, 1);
+        // Verify exist
+        expect(
+          (await repository.getBookmarksForBook(testBookId)).dataOrNull!.length,
+          1,
+        );
+        expect(
+          (await repository.getHighlightsForBook(testBookId))
+              .dataOrNull!
+              .length,
+          1,
+        );
 
-      // Delete book
-      await db.deleteBook(testBookId);
+        // Delete book
+        await db.deleteBook(testBookId);
 
-      // Verify cascade deleted
-      expect((await repository.getBookmarksForBook(testBookId)).dataOrNull!.isEmpty, isTrue);
-      expect((await repository.getHighlightsForBook(testBookId)).dataOrNull!.isEmpty, isTrue);
-    });
+        // Verify cascade deleted
+        expect(
+          (await repository.getBookmarksForBook(testBookId))
+              .dataOrNull!
+              .isEmpty,
+          isTrue,
+        );
+        expect(
+          (await repository.getHighlightsForBook(testBookId))
+              .dataOrNull!
+              .isEmpty,
+          isTrue,
+        );
+      },
+    );
   });
 
   group('Reactive Stream Watchers', () {

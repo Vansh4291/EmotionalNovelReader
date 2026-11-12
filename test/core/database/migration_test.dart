@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:emotional_novel_reader/core/database/app_database.dart';
@@ -100,7 +101,7 @@ void main() {
       appDb = AppDatabase(NativeDatabase(dbFile));
 
       // Trigger database open and migration
-      expect(appDb!.schemaVersion, 4);
+      expect(appDb!.schemaVersion, 5);
 
       // 3. Verify existing data preserved intact
       final migratedBook = await appDb!.getBookById('book-v1');
@@ -113,7 +114,10 @@ void main() {
       final migratedChapter = await appDb!.getChapterById('ch-v1-1');
       expect(migratedChapter, isNotNull);
       expect(migratedChapter!.title, 'Chapter 1: The Wheat Peddler');
-      expect(migratedChapter.content, ''); // Default constant value from v2 migration
+      expect(
+        migratedChapter.content,
+        '',
+      ); // Default constant value from v2 migration
       expect(migratedChapter.wordCount, 1200);
 
       // Verify existing reading progress survived intact

@@ -1,4 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import '../errors/failures.dart';
 
 /// Contract for securely storing sensitive user credentials (API keys, backup passwords).
@@ -13,13 +14,14 @@ abstract interface class SecureStorageService {
 /// Implementation using Android EncryptedSharedPreferences backed by hardware KeyStore.
 class DefaultSecureStorageService implements SecureStorageService {
   DefaultSecureStorageService({FlutterSecureStorage? storage})
-      : _storage = storage ??
-            const FlutterSecureStorage(
-              aOptions: AndroidOptions(
-                encryptedSharedPreferences: true,
-                resetOnError: true,
-              ),
-            );
+    : _storage =
+          storage ??
+          const FlutterSecureStorage(
+            aOptions: AndroidOptions(
+              encryptedSharedPreferences: true,
+              resetOnError: true,
+            ),
+          );
 
   final FlutterSecureStorage _storage;
 
@@ -55,7 +57,11 @@ class DefaultSecureStorageService implements SecureStorageService {
     try {
       return await _storage.containsKey(key: key);
     } catch (e, stack) {
-      throw SecurityFailure('Failed to check existence of secure key "$key"', e, stack);
+      throw SecurityFailure(
+        'Failed to check existence of secure key "$key"',
+        e,
+        stack,
+      );
     }
   }
 
@@ -68,4 +74,3 @@ class DefaultSecureStorageService implements SecureStorageService {
     }
   }
 }
-

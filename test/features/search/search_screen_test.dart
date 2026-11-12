@@ -45,10 +45,8 @@ void main() {
   Widget createWidget({String? scopedBookId, String initialQuery = ''}) {
     return MaterialApp(
       home: BlocProvider<SearchCubit>(
-        create: (_) => SearchCubit(
-          searchRepository: mockRepo,
-          scopedBookId: scopedBookId,
-        ),
+        create: (_) =>
+            SearchCubit(searchRepository: mockRepo, scopedBookId: scopedBookId),
         child: SearchScreen(
           scopedBookId: scopedBookId,
           initialQuery: initialQuery,
@@ -58,64 +56,79 @@ void main() {
   }
 
   group('SearchScreen widget tests', () {
-    testWidgets('Renders search input with initial placeholder', (tester) async {
+    testWidgets('Renders search input with initial placeholder', (
+      tester,
+    ) async {
       await tester.pumpWidget(createWidget());
       expect(find.byType(TextField), findsOneWidget);
-      expect(find.text('Search books, authors, chapter text...'), findsOneWidget);
+      expect(
+        find.text('Search books, authors, chapter text...'),
+        findsOneWidget,
+      );
       expect(find.text('Search Your Library'), findsOneWidget);
     });
 
-    testWidgets('Renders scope chips when not scoped to a book', (tester) async {
+    testWidgets('Renders scope chips when not scoped to a book', (
+      tester,
+    ) async {
       await tester.pumpWidget(createWidget());
       expect(find.text('All'), findsOneWidget);
       expect(find.text('Books'), findsOneWidget);
       expect(find.text('Chapter Content'), findsOneWidget);
     });
 
-    testWidgets('Hides scope chips when scoped to a specific book', (tester) async {
+    testWidgets('Hides scope chips when scoped to a specific book', (
+      tester,
+    ) async {
       await tester.pumpWidget(createWidget(scopedBookId: 'book-123'));
       expect(find.text('Search within this book...'), findsOneWidget);
       expect(find.text('Books'), findsNothing);
       expect(find.text('Chapter Content'), findsNothing);
     });
 
-    testWidgets('Displays book and content search results with snippet highlighting', (tester) async {
-      mockRepo.books = [
-        const BookSearchResult(
-          id: 'b1',
-          title: 'Foundation',
-          author: 'Isaac Asimov',
-          format: 'epub',
-        ),
-      ];
-      mockRepo.content = [
-        const ContentSearchResult(
-          chapterId: 'c1',
-          bookId: 'b1',
-          chapterIndex: 0,
-          bookTitle: 'Foundation',
-          chapterTitle: 'Psychohistory',
-          snippet: 'Hari Seldon was born in the <mark>Galactic</mark> Empire.',
-        ),
-      ];
+    testWidgets(
+      'Displays book and content search results with snippet highlighting',
+      (tester) async {
+        mockRepo.books = [
+          const BookSearchResult(
+            id: 'b1',
+            title: 'Foundation',
+            author: 'Isaac Asimov',
+            format: 'epub',
+          ),
+        ];
+        mockRepo.content = [
+          const ContentSearchResult(
+            chapterId: 'c1',
+            bookId: 'b1',
+            chapterIndex: 0,
+            bookTitle: 'Foundation',
+            chapterTitle: 'Psychohistory',
+            snippet:
+                'Hari Seldon was born in the <mark>Galactic</mark> Empire.',
+          ),
+        ];
 
-      await tester.pumpWidget(createWidget());
+        await tester.pumpWidget(createWidget());
 
-      // Enter query and wait for debounce
-      await tester.enterText(find.byType(TextField), 'Galactic');
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pump();
+        // Enter query and wait for debounce
+        await tester.enterText(find.byType(TextField), 'Galactic');
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pump();
 
-      expect(find.text('Books (1)'), findsOneWidget);
-      expect(find.text('Foundation'), findsOneWidget);
-      expect(find.text('Isaac Asimov'), findsOneWidget);
+        expect(find.text('Books (1)'), findsOneWidget);
+        expect(find.text('Foundation'), findsOneWidget);
+        expect(find.text('Isaac Asimov'), findsOneWidget);
 
-      expect(find.text('Chapter Content (1)'), findsOneWidget);
-      expect(find.textContaining('Psychohistory'), findsOneWidget);
-      expect(find.textContaining('Galactic'), findsOneWidget);
-    });
+        expect(find.text('Chapter Content (1)'), findsOneWidget);
+        expect(find.textContaining('Psychohistory'), findsOneWidget);
+        expect(find.textContaining('Galactic'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Displays empty state message when no results found', (tester) async {
+    testWidgets('Displays empty state message when no results found', (
+      tester,
+    ) async {
       mockRepo.books = [];
       mockRepo.content = [];
 
@@ -124,7 +137,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 350));
       await tester.pump();
 
-      expect(find.textContaining('No books or chapter text found matching "Unicorns"'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'No books or chapter text found matching "Unicorns"',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('Displays error view when repository fails', (tester) async {

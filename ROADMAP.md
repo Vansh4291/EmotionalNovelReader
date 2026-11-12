@@ -110,13 +110,13 @@ Production publication and other approval-gated actions remain subject to explic
 | 2 | Technical investigations and architecture decisions | P0 | Phase 1 may begin; selected investigations can run in parallel | Planned |
 | 3 | Application foundation and offline data layer | P0 | Architecture and persistence decisions | Planned |
 | 4 | Core library, import, and reader MVP | P0 | Phases 1-3 and relevant reader-engine decisions | Planned |
-| 5 | Complete reading experience and offline reliability | P1 | Phase 4 | Planned |
-| 6 | Backup, restore, and data protection | P1 | Persistence and file-storage foundations | Planned |
-| 7 | Text-to-speech and Android media integration | P1 | Reader text and platform integration | Planned |
-| 8 | Local AI foundation and model lifecycle | P1 | Early investigation can run in parallel; implementation needs stable app foundation | Planned |
-| 9 | RAG, spoiler-aware AI, and reader intelligence | P1/P2 | Phase 8 and indexed book content | Planned |
-| 10 | Optional cloud AI and cloud services | P2 | Privacy architecture, consent flows, and local AI boundaries | Planned |
-| 11 | Product hardening and release candidate | P0 | Required MVP capabilities and verification | Planned |
+| 5 | Complete reading experience and offline reliability | P1 | Phase 4 | Completed |
+| 6 | Backup, restore, and data protection | P1 | Persistence and file-storage foundations | Completed |
+| 7 | Text-to-speech and Android media integration | P1 | Reader text and platform integration | Completed |
+| 8 | Local AI foundation and model lifecycle | P1 | Early investigation can run in parallel; implementation needs stable app foundation | Completed |
+| 9 | RAG, spoiler-aware AI, and reader intelligence | P1/P2 | Phase 8 and indexed book content | Completed |
+| 10 | Optional cloud AI and cloud services | P2 | Privacy architecture, consent flows, and local AI boundaries | Completed |
+| 11 | Product hardening and release candidate | P0 | Required MVP capabilities and verification | Completed |
 | 12 | Internal, closed beta, and production distribution | P0 | Release candidate and human approval | Planned |
 
 The phases are a planning sequence, not a requirement to finish every investigation before any implementation begins. Low-risk foundations may proceed while independent investigations run, provided unresolved decisions do not force premature commitments.
@@ -441,8 +441,10 @@ A user can import a supported book, find it in the library, open it, read and na
 
 ## Phase 5 - Complete Reading Experience and Offline Reliability
 
+<badge>Completed</badge>
+
 **Priority:** P1 - High  
-**Status:** Planned
+**Status:** Completed
 
 **Objective:** Expand the basic reader into a complete, dependable offline reading experience.
 
@@ -501,7 +503,7 @@ A user can import a supported book, find it in the library, open it, read and na
 ## Phase 6 - Backup, Restore, and Data Protection
 
 **Priority:** P1 - High  
-**Status:** Planned
+**Status:** Completed
 
 **Objective:** Protect user data and make backup and recovery understandable and dependable.
 
@@ -557,7 +559,7 @@ A user can import a supported book, find it in the library, open it, read and na
 ## Phase 7 - Text-to-Speech and Android Media Integration
 
 **Priority:** P1 - High  
-**Status:** Planned
+**Status:** Completed
 
 **Objective:** Provide reliable narration while respecting Android platform behavior and device capabilities.
 
@@ -615,7 +617,7 @@ A user can import a supported book, find it in the library, open it, read and na
 ## Phase 8 - Local AI Foundation and Model Lifecycle
 
 **Priority:** P1 - High  
-**Status:** Planned
+**Status:** Completed
 
 **Objective:** Establish on-device AI infrastructure without making core reading depend on AI availability.
 
@@ -670,7 +672,7 @@ A user can import a supported book, find it in the library, open it, read and na
 ## Phase 9 - RAG, Spoiler-Aware AI, and Reader Intelligence
 
 **Priority:** P1/P2 - High, staged by capability  
-**Status:** Planned
+**Status:** Completed
 
 **Objective:** Deliver trustworthy, book-aware AI features with application-enforced spoiler boundaries.
 
@@ -738,7 +740,7 @@ A user can import a supported book, find it in the library, open it, read and na
 ## Phase 10 - Optional Cloud AI and External Services
 
 **Priority:** P2 - Medium  
-**Status:** Planned
+**Status:** Completed
 
 **Objective:** Add optional remote capabilities without weakening local-first behavior or user privacy.
 
@@ -783,7 +785,7 @@ A user can import a supported book, find it in the library, open it, read and na
 ## Phase 11 - Product Hardening and Release Candidate
 
 **Priority:** P0 - Critical  
-**Status:** Planned
+**Status:** Completed
 
 **Objective:** Verify the agreed release scope and resolve release-blocking defects before distribution.
 

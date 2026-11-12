@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:archive/archive.dart';
 import 'package:path/path.dart' as p;
 import 'package:xml/xml.dart';
+
 import '../../../../core/errors/failures.dart';
 import 'document_extractor.dart';
 import 'extracted_book_data.dart';
@@ -27,7 +29,9 @@ class DocxExtractor implements DocumentExtractor {
 
       if (archive.length > maxArchiveEntries) {
         return Result.error(
-          SecurityFailure('Archive contains too many entries (${archive.length}) - potential ZIP bomb.'),
+          SecurityFailure(
+            'Archive contains too many entries (${archive.length}) - potential ZIP bomb.',
+          ),
         );
       }
 
@@ -35,13 +39,17 @@ class DocxExtractor implements DocumentExtractor {
       for (final f in archive) {
         if (f.size < 0) {
           return const Result.error(
-            SecurityFailure('Archive contains entry with invalid or negative size.'),
+            SecurityFailure(
+              'Archive contains entry with invalid or negative size.',
+            ),
           );
         }
         totalUncompressedBytes += f.size;
         if (totalUncompressedBytes > maxUncompressedArchiveBytes) {
           return const Result.error(
-            SecurityFailure('Archive uncompressed size exceeds resource safety threshold (150 MB).'),
+            SecurityFailure(
+              'Archive uncompressed size exceeds resource safety threshold (150 MB).',
+            ),
           );
         }
       }
@@ -50,7 +58,9 @@ class DocxExtractor implements DocumentExtractor {
           totalUncompressedBytes > 10 * 1024 * 1024 &&
           (totalUncompressedBytes / bytes.length > maxCompressionRatio)) {
         return const Result.error(
-          SecurityFailure('Suspicious archive compression ratio exceeding 100:1 - potential ZIP bomb.'),
+          SecurityFailure(
+            'Suspicious archive compression ratio exceeding 100:1 - potential ZIP bomb.',
+          ),
         );
       }
 
@@ -64,7 +74,9 @@ class DocxExtractor implements DocumentExtractor {
       final docXmlBytes = docXmlFile.content as List<int>;
       if (docXmlBytes.length > maxUncompressedArchiveBytes) {
         return const Result.error(
-          SecurityFailure('Actual extracted XML size exceeds uncompressed threshold (150 MB).'),
+          SecurityFailure(
+            'Actual extracted XML size exceeds uncompressed threshold (150 MB).',
+          ),
         );
       }
 
@@ -79,17 +91,25 @@ class DocxExtractor implements DocumentExtractor {
       final paragraphs = <(bool isHeading, String text)>[];
       for (final pElement in xmlDoc.findAllElements('w:p')) {
         // Check if paragraph style is Heading
-        final style = pElement.findAllElements('w:pStyle').firstOrNull?.getAttribute('w:val');
+        final style = pElement
+            .findAllElements('w:pStyle')
+            .firstOrNull
+            ?.getAttribute('w:val');
         final isHeading = style?.toLowerCase().contains('heading') == true;
 
-        final textRuns = pElement.findAllElements('w:t').map((e) => e.innerText).join();
+        final textRuns = pElement
+            .findAllElements('w:t')
+            .map((e) => e.innerText)
+            .join();
         if (textRuns.trim().isNotEmpty) {
           paragraphs.add((isHeading, textRuns.trim()));
         }
       }
 
       if (paragraphs.isEmpty) {
-        return const Result.error(DocumentParsingFailure('DOCX document contains no text'));
+        return const Result.error(
+          DocumentParsingFailure('DOCX document contains no text'),
+        );
       }
 
       onProgress?.call(0.7, 'Assembling chapters...');
@@ -136,15 +156,15 @@ class DocxExtractor implements DocumentExtractor {
 
       onProgress?.call(1.0, 'DOCX extraction complete.');
       return Result.success(
-        ExtractedBookData(
-          title: title,
-          format: 'docx',
-          chapters: chapters,
-        ),
+        ExtractedBookData(title: title, format: 'docx', chapters: chapters),
       );
     } catch (e, stack) {
       return Result.error(
-        DocumentParsingFailure('Failed to extract DOCX file: ${e.toString()}', e, stack),
+        DocumentParsingFailure(
+          'Failed to extract DOCX file: ${e.toString()}',
+          e,
+          stack,
+        ),
       );
     }
   }
@@ -154,4 +174,3 @@ class DocxExtractor implements DocumentExtractor {
     return text.trim().split(RegExp(r'\s+')).length;
   }
 }
-

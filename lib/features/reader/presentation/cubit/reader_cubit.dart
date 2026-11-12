@@ -1,11 +1,14 @@
 import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/logging/app_logger.dart';
 import '../../../annotations/domain/entities/bookmark_entity.dart';
 import '../../../annotations/domain/entities/highlight_entity.dart';
 import '../../../annotations/domain/repositories/annotation_repository.dart';
 import '../../../library/domain/entities/reading_progress_entity.dart';
 import '../../../library/domain/repositories/book_repository.dart';
+import '../../../statistics/domain/services/reading_session_tracker.dart';
 import '../../domain/entities/reader_preferences.dart';
 import 'reader_state.dart';
 
@@ -16,11 +19,13 @@ class ReaderCubit extends Cubit<ReaderState> {
     required this.bookRepository,
     required this.logger,
     this.annotationRepository,
+    this.sessionTracker,
   }) : super(const ReaderInitial());
 
   final BookRepository bookRepository;
   final AppLogger logger;
   final AnnotationRepository? annotationRepository;
+  final ReadingSessionTracker? sessionTracker;
 
   Timer? _debounceTimer;
   ReadingProgressEntity? _pendingProgress;
@@ -55,8 +60,9 @@ class ReaderCubit extends Cubit<ReaderState> {
         initialChapterIndex < chapters.length) {
       targetChapterIndex = initialChapterIndex;
     } else if (progress?.currentChapterId != null) {
-      final foundIndex =
-          chapters.indexWhere((c) => c.id == progress!.currentChapterId);
+      final foundIndex = chapters.indexWhere(
+        (c) => c.id == progress!.currentChapterId,
+      );
       if (foundIndex != -1) {
         targetChapterIndex = foundIndex;
       }
@@ -91,6 +97,19 @@ class ReaderCubit extends Cubit<ReaderState> {
         highlights: highlights,
       ),
     );
+
+    sessionTracker?.startSession(
+      bookId: bookId,
+      chapterId: chapters[targetChapterIndex].id,
+    );
+  }
+
+  void pauseReading() {
+    sessionTracker?.pauseSession();
+  }
+
+  void resumeReading() {
+    sessionTracker?.resumeSession();
   }
 
   void toggleControls() {
@@ -155,8 +174,9 @@ class ReaderCubit extends Cubit<ReaderState> {
       );
       if (hRes.isSuccess) {
         final raw = hRes.dataOrNull ?? const [];
-        highlights =
-            raw.map((h) => h.reconcileIn(targetChapter.content)).toList();
+        highlights = raw
+            .map((h) => h.reconcileIn(targetChapter.content))
+            .toList();
       }
     }
 
@@ -168,6 +188,11 @@ class ReaderCubit extends Cubit<ReaderState> {
         navigationRequest: navReq,
         clearNavigationRequest: navReq == null,
       ),
+    );
+
+    sessionTracker?.updateChapter(
+      targetChapter.id,
+      chapterCompleted: index > s.currentChapterIndex,
     );
 
     await bookRepository.saveReadingProgress(updatedProgress);
@@ -227,9 +252,11 @@ class ReaderCubit extends Cubit<ReaderState> {
       existing = s.getBookmarkAtLocation(targetLoc);
       if (existing == null && s.isCurrentChapterBookmarked) {
         final chapterBookmarks = s.bookmarks
-            .where((b) =>
-                b.chapterId == currentChapter.id ||
-                b.chapterIndex == s.currentChapterIndex)
+            .where(
+              (b) =>
+                  b.chapterId == currentChapter.id ||
+                  b.chapterIndex == s.currentChapterIndex,
+            )
             .toList();
         if (chapterBookmarks.length == 1) {
           existing = chapterBookmarks.first;
@@ -299,8 +326,9 @@ class ReaderCubit extends Cubit<ReaderState> {
 
     final res = await annotationRepository!.deleteHighlight(highlightId);
     if (res.isSuccess) {
-      final updated =
-          s.highlights.where((h) => h.id != highlightId).toList(growable: false);
+      final updated = s.highlights
+          .where((h) => h.id != highlightId)
+          .toList(growable: false);
       emit(s.copyWith(highlights: updated));
     }
   }
@@ -357,10 +385,12 @@ class ReaderCubit extends Cubit<ReaderState> {
     final reconciled = rawHighlights
         .map((h) => h.reconcileIn(s.currentChapter.content))
         .toList();
-    emit(s.copyWith(
-      bookmarks: bRes.dataOrNull ?? s.bookmarks,
-      highlights: reconciled,
-    ));
+    emit(
+      s.copyWith(
+        bookmarks: bRes.dataOrNull ?? s.bookmarks,
+        highlights: reconciled,
+      ),
+    );
   }
 
   /// Immediately persists any pending reading progress write to local database without waiting for debounce.
@@ -380,6 +410,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   @override
   Future<void> close() async {
+    await sessionTracker?.endSession();
     await _flushProgressSave();
     return super.close();
   }

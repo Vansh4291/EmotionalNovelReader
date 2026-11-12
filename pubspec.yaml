@@ -57,6 +57,9 @@ dependencies:
   # Secure Storage (ENR-DEC-053)
   flutter_secure_storage: ^9.2.4
 
+  # Text-to-Speech & Narration (ENR-DEC-039)
+  flutter_tts: ^4.2.2
+
   # Document Picking & SAF Integration (ENR-DEC-030, ENR-DEC-040)
   file_picker: ^8.1.7
 

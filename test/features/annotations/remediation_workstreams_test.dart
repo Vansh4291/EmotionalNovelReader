@@ -72,95 +72,103 @@ void main() {
     await database.close();
   });
 
-  group('Workstream A: Bookmark Granularity, Stability & Duplicate Prevention', () {
-    test('R01 & R02: Multiple bookmarks can exist at distinct locations within one chapter, preventing duplicates at same location', () async {
-      // 1. Add first bookmark at location char:50
-      final b1 = await repository.addBookmark(
-        bookId: testBookId,
-        chapterId: testCh1Id,
-        chapterIndex: 0,
-        chapterTitle: 'Chapter I',
-        location: 'char:50',
-        label: 'First passage',
-      );
-      expect(b1.isSuccess, isTrue);
+  group(
+    'Workstream A: Bookmark Granularity, Stability & Duplicate Prevention',
+    () {
+      test('R01 & R02: Multiple bookmarks can exist at distinct locations within one chapter, preventing duplicates at same location', () async {
+        // 1. Add first bookmark at location char:50
+        final b1 = await repository.addBookmark(
+          bookId: testBookId,
+          chapterId: testCh1Id,
+          chapterIndex: 0,
+          chapterTitle: 'Chapter I',
+          location: 'char:50',
+          label: 'First passage',
+        );
+        expect(b1.isSuccess, isTrue);
 
-      // 2. Duplicate attempt at exact same location char:50 (R02)
-      final dup = await repository.addBookmark(
-        bookId: testBookId,
-        chapterId: testCh1Id,
-        chapterIndex: 0,
-        chapterTitle: 'Chapter I',
-        location: 'char:50',
-        label: 'Duplicate attempt',
-      );
-      expect(dup.isSuccess, isTrue);
-      expect(dup.dataOrNull!.id, b1.dataOrNull!.id);
+        // 2. Duplicate attempt at exact same location char:50 (R02)
+        final dup = await repository.addBookmark(
+          bookId: testBookId,
+          chapterId: testCh1Id,
+          chapterIndex: 0,
+          chapterTitle: 'Chapter I',
+          location: 'char:50',
+          label: 'Duplicate attempt',
+        );
+        expect(dup.isSuccess, isTrue);
+        expect(dup.dataOrNull!.id, b1.dataOrNull!.id);
 
-      // 3. Add second bookmark at different location char:140 in same chapter (R01)
-      final b2 = await repository.addBookmark(
-        bookId: testBookId,
-        chapterId: testCh1Id,
-        chapterIndex: 0,
-        chapterTitle: 'Chapter I',
-        location: 'char:140',
-        label: 'Second passage',
-      );
-      expect(b2.isSuccess, isTrue);
-      expect(b2.dataOrNull!.id, isNot(b1.dataOrNull!.id));
+        // 3. Add second bookmark at different location char:140 in same chapter (R01)
+        final b2 = await repository.addBookmark(
+          bookId: testBookId,
+          chapterId: testCh1Id,
+          chapterIndex: 0,
+          chapterTitle: 'Chapter I',
+          location: 'char:140',
+          label: 'Second passage',
+        );
+        expect(b2.isSuccess, isTrue);
+        expect(b2.dataOrNull!.id, isNot(b1.dataOrNull!.id));
 
-      // Verify both bookmarks exist in the chapter
-      final all = (await repository.getBookmarksForBook(testBookId)).dataOrNull!;
-      expect(all.length, 2);
-    });
+        // Verify both bookmarks exist in the chapter
+        final all = (await repository.getBookmarksForBook(testBookId))
+            .dataOrNull!;
+        expect(all.length, 2);
+      });
 
-    test('R03: Removing one bookmark does not remove other bookmarks in the same chapter', () async {
-      final b1 = (await repository.addBookmark(
-        bookId: testBookId,
-        chapterId: testCh1Id,
-        location: 'char:30',
-      )).dataOrNull!;
+      test('R03: Removing one bookmark does not remove other bookmarks in the same chapter', () async {
+        final b1 = (await repository.addBookmark(
+          bookId: testBookId,
+          chapterId: testCh1Id,
+          location: 'char:30',
+        )).dataOrNull!;
 
-      final b2 = (await repository.addBookmark(
-        bookId: testBookId,
-        chapterId: testCh1Id,
-        location: 'char:110',
-      )).dataOrNull!;
+        final b2 = (await repository.addBookmark(
+          bookId: testBookId,
+          chapterId: testCh1Id,
+          location: 'char:110',
+        )).dataOrNull!;
 
-      expect((await repository.getBookmarksForBook(testBookId)).dataOrNull!.length, 2);
+        expect(
+          (await repository.getBookmarksForBook(testBookId)).dataOrNull!.length,
+          2,
+        );
 
-      // Delete b1
-      final delRes = await repository.deleteBookmark(b1.id);
-      expect(delRes.isSuccess, isTrue);
+        // Delete b1
+        final delRes = await repository.deleteBookmark(b1.id);
+        expect(delRes.isSuccess, isTrue);
 
-      // Verify b2 remains intact
-      final remaining = (await repository.getBookmarksForBook(testBookId)).dataOrNull!;
-      expect(remaining.length, 1);
-      expect(remaining.first.id, b2.id);
-      expect(remaining.first.location, 'char:110');
-    });
+        // Verify b2 remains intact
+        final remaining = (await repository.getBookmarksForBook(testBookId))
+            .dataOrNull!;
+        expect(remaining.length, 1);
+        expect(remaining.first.id, b2.id);
+        expect(remaining.first.location, 'char:110');
+      });
 
-    test('R04: Bookmark anchors parse stable character offsets cleanly', () {
-      final now = DateTime.now();
-      final b1 = BookmarkEntity(
-        id: 'bm-1',
-        bookId: testBookId,
-        location: 'char:1250',
-        createdAt: now,
-      );
-      expect(b1.charOffset, 1250);
+      test('R04: Bookmark anchors parse stable character offsets cleanly', () {
+        final now = DateTime.now();
+        final b1 = BookmarkEntity(
+          id: 'bm-1',
+          bookId: testBookId,
+          location: 'char:1250',
+          createdAt: now,
+        );
+        expect(b1.charOffset, 1250);
 
-      final b2 = BookmarkEntity(
-        id: 'bm-2',
-        bookId: testBookId,
-        location: '450',
-        createdAt: now,
-      );
-      expect(b2.charOffset, 450);
+        final b2 = BookmarkEntity(
+          id: 'bm-2',
+          bookId: testBookId,
+          location: '450',
+          createdAt: now,
+        );
+        expect(b2.charOffset, 450);
 
-      expect(BookmarkEntity.formatLocation(800), 'char:800');
-    });
-  });
+        expect(BookmarkEntity.formatLocation(800), 'char:800');
+      });
+    },
+  );
 
   group('Workstream B & C: Reader Scroll Mapping & Position Calculation', () {
     test('R07, R08, R09: Character offsets are mapped to rendered pixel positions with text layout and font scale', () {
@@ -216,19 +224,22 @@ void main() {
       expect(derivedChar, closeTo(300, 30));
     });
 
-    test('ParsedLocation distinguishes char offsets from legacy pixel offsets', () {
-      final loc1 = ReaderScrollMapper.parseLocation('char:1250');
-      expect(loc1.isCharOffset, isTrue);
-      expect(loc1.charOffset, 1250);
+    test(
+      'ParsedLocation distinguishes char offsets from legacy pixel offsets',
+      () {
+        final loc1 = ReaderScrollMapper.parseLocation('char:1250');
+        expect(loc1.isCharOffset, isTrue);
+        expect(loc1.charOffset, 1250);
 
-      final loc2 = ReaderScrollMapper.parseLocation('500');
-      expect(loc2.isCharOffset, isTrue);
-      expect(loc2.charOffset, 500);
+        final loc2 = ReaderScrollMapper.parseLocation('500');
+        expect(loc2.isCharOffset, isTrue);
+        expect(loc2.charOffset, 500);
 
-      final loc3 = ReaderScrollMapper.parseLocation('350.5');
-      expect(loc3.isCharOffset, isFalse);
-      expect(loc3.pixelOffset, 350.5);
-    });
+        final loc3 = ReaderScrollMapper.parseLocation('350.5');
+        expect(loc3.isCharOffset, isFalse);
+        expect(loc3.pixelOffset, 350.5);
+      },
+    );
   });
 
   group('Workstream D: Proximity-Aware Highlight Anchor Reconciliation', () {
@@ -304,39 +315,53 @@ void main() {
   });
 
   group('Workstream E: Standalone Chapter Notes CRUD & Filtering', () {
-    test('R14 & R15: Standalone chapter notes can be created, edited, and deleted', () async {
-      // Create chapter note without selected text (R14)
-      final created = await repository.createChapterNote(
-        bookId: testBookId,
-        chapterId: testCh1Id,
-        chapterIndex: 0,
-        chapterTitle: 'Chapter I',
-        content: 'Reflections on the opening theme of wind and memory.',
-      );
-      expect(created.isSuccess, isTrue);
-      final note = created.dataOrNull!;
-      expect(note.content, 'Reflections on the opening theme of wind and memory.');
+    test(
+      'R14 & R15: Standalone chapter notes can be created, edited, and deleted',
+      () async {
+        // Create chapter note without selected text (R14)
+        final created = await repository.createChapterNote(
+          bookId: testBookId,
+          chapterId: testCh1Id,
+          chapterIndex: 0,
+          chapterTitle: 'Chapter I',
+          content: 'Reflections on the opening theme of wind and memory.',
+        );
+        expect(created.isSuccess, isTrue);
+        final note = created.dataOrNull!;
+        expect(
+          note.content,
+          'Reflections on the opening theme of wind and memory.',
+        );
 
-      // Update chapter note (R15)
-      final updated = await repository.updateChapterNote(
-        id: note.id,
-        content: 'Revised reflections on nostalgia and soundscapes.',
-      );
-      expect(updated.isSuccess, isTrue);
-      expect(updated.dataOrNull!.content, 'Revised reflections on nostalgia and soundscapes.');
+        // Update chapter note (R15)
+        final updated = await repository.updateChapterNote(
+          id: note.id,
+          content: 'Revised reflections on nostalgia and soundscapes.',
+        );
+        expect(updated.isSuccess, isTrue);
+        expect(
+          updated.dataOrNull!.content,
+          'Revised reflections on nostalgia and soundscapes.',
+        );
 
-      // Verify list
-      final list = (await repository.getChapterNotesForBook(testBookId)).dataOrNull!;
-      expect(list.length, 1);
-      expect(list.first.content, 'Revised reflections on nostalgia and soundscapes.');
+        // Verify list
+        final list = (await repository.getChapterNotesForBook(testBookId))
+            .dataOrNull!;
+        expect(list.length, 1);
+        expect(
+          list.first.content,
+          'Revised reflections on nostalgia and soundscapes.',
+        );
 
-      // Delete chapter note (R15)
-      final del = await repository.deleteChapterNote(note.id);
-      expect(del.isSuccess, isTrue);
+        // Delete chapter note (R15)
+        final del = await repository.deleteChapterNote(note.id);
+        expect(del.isSuccess, isTrue);
 
-      final afterDel = (await repository.getChapterNotesForBook(testBookId)).dataOrNull!;
-      expect(afterDel.isEmpty, isTrue);
-    });
+        final afterDel = (await repository.getChapterNotesForBook(testBookId))
+            .dataOrNull!;
+        expect(afterDel.isEmpty, isTrue);
+      },
+    );
 
     test('R16 & R17: Both passage notes and chapter notes appear in filtering and search', () async {
       // 1. Passage highlight with note
@@ -378,7 +403,10 @@ void main() {
       state = cubit.state as AnnotationLoaded;
       expect(state.displayedHighlights.isEmpty, isTrue);
       expect(state.displayedChapterNotes.length, 1);
-      expect(state.displayedChapterNotes.first.content, contains('melancholic'));
+      expect(
+        state.displayedChapterNotes.first.content,
+        contains('melancholic'),
+      );
 
       // Search matching passage note
       cubit.setSearchQuery('ancestral');

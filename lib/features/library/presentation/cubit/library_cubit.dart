@@ -1,13 +1,14 @@
 import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../domain/entities/book_entity.dart';
 import '../../domain/repositories/book_repository.dart';
 import 'library_state.dart';
 
 /// Cubit managing bookshelf state and reactive updates.
 class LibraryCubit extends Cubit<LibraryState> {
-  LibraryCubit({required this.bookRepository})
-      : super(const LibraryInitial());
+  LibraryCubit({required this.bookRepository}) : super(const LibraryInitial());
 
   final BookRepository bookRepository;
   StreamSubscription<List<BookEntity>>? _booksSubscription;

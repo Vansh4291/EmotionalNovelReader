@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
+
 import '../../../../core/database/app_database.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/bookmark_entity.dart';
@@ -8,10 +9,8 @@ import '../../domain/entities/highlight_entity.dart';
 import '../../domain/repositories/annotation_repository.dart';
 
 class AnnotationRepositoryImpl implements AnnotationRepository {
-  AnnotationRepositoryImpl({
-    required this.database,
-    Uuid? uuid,
-  }) : _uuid = uuid ?? const Uuid();
+  AnnotationRepositoryImpl({required this.database, Uuid? uuid})
+    : _uuid = uuid ?? const Uuid();
 
   final AppDatabase database;
   final Uuid _uuid;
@@ -73,7 +72,11 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
   }) async {
     try {
       // Prevent duplicate bookmark for the same chapter & location
-      final existing = await database.getBookmarkForLocation(bookId, chapterId, location);
+      final existing = await database.getBookmarkForLocation(
+        bookId,
+        chapterId,
+        location,
+      );
       if (existing != null) {
         return Result.success(
           _mapBookmark(
@@ -129,11 +132,15 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
     try {
       final rows = await database.deleteBookmark(bookmarkId);
       if (rows == 0) {
-        return Result.error(NotFoundFailure('Bookmark "$bookmarkId" not found to delete'));
+        return Result.error(
+          NotFoundFailure('Bookmark "$bookmarkId" not found to delete'),
+        );
       }
       return const Result.success(null);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to delete bookmark "$bookmarkId"', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to delete bookmark "$bookmarkId"', e, stack),
+      );
     }
   }
 
@@ -147,7 +154,9 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
       await database.deleteBookmarkAtLocation(bookId, chapterId, location);
       return const Result.success(null);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to delete bookmark at location', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to delete bookmark at location', e, stack),
+      );
     }
   }
 
@@ -160,12 +169,16 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
       await database.deleteBookmarkForChapter(bookId, chapterId);
       return const Result.success(null);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to delete bookmark for chapter', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to delete bookmark for chapter', e, stack),
+      );
     }
   }
 
   @override
-  Future<Result<List<BookmarkEntity>>> getBookmarksForBook(String bookId) async {
+  Future<Result<List<BookmarkEntity>>> getBookmarksForBook(
+    String bookId,
+  ) async {
     try {
       final bookmarks = await database.getBookmarksForBook(bookId);
       final chapters = await database.getChaptersForBook(bookId);
@@ -178,7 +191,9 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
 
       return Result.success(entities);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to get bookmarks for book "$bookId"', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to get bookmarks for book "$bookId"', e, stack),
+      );
     }
   }
 
@@ -200,10 +215,15 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
     required String chapterId,
   }) async {
     try {
-      final bookmarks = await database.getBookmarksForChapter(bookId, chapterId);
+      final bookmarks = await database.getBookmarksForChapter(
+        bookId,
+        chapterId,
+      );
       return Result.success(bookmarks.isNotEmpty);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to check chapter bookmark status', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to check chapter bookmark status', e, stack),
+      );
     }
   }
 
@@ -214,10 +234,16 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
     required String location,
   }) async {
     try {
-      final bookmark = await database.getBookmarkForLocation(bookId, chapterId, location);
+      final bookmark = await database.getBookmarkForLocation(
+        bookId,
+        chapterId,
+        location,
+      );
       return Result.success(bookmark != null);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to check location bookmark status', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to check location bookmark status', e, stack),
+      );
     }
   }
 
@@ -239,7 +265,9 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
   }) async {
     try {
       if (startOffset < 0 || endOffset < startOffset) {
-        return const Result.error(ValidationFailure('Invalid selection offsets'));
+        return const Result.error(
+          ValidationFailure('Invalid selection offsets'),
+        );
       }
 
       final id = _uuid.v4();
@@ -275,7 +303,9 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
         ),
       );
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to create highlight', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to create highlight', e, stack),
+      );
     }
   }
 
@@ -287,14 +317,18 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
     try {
       final existing = await database.getHighlightById(highlightId);
       if (existing == null) {
-        return Result.error(NotFoundFailure('Highlight "$highlightId" not found'));
+        return Result.error(
+          NotFoundFailure('Highlight "$highlightId" not found'),
+        );
       }
 
       await database.updateHighlightNote(highlightId, note);
       final updated = existing.copyWith(note: Value(note));
       return Result.success(_mapHighlight(updated));
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to update highlight note', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to update highlight note', e, stack),
+      );
     }
   }
 
@@ -306,14 +340,18 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
     try {
       final existing = await database.getHighlightById(highlightId);
       if (existing == null) {
-        return Result.error(NotFoundFailure('Highlight "$highlightId" not found'));
+        return Result.error(
+          NotFoundFailure('Highlight "$highlightId" not found'),
+        );
       }
 
       await database.updateHighlightColor(highlightId, colorValue);
       final updated = existing.copyWith(colorValue: colorValue);
       return Result.success(_mapHighlight(updated));
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to update highlight color', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to update highlight color', e, stack),
+      );
     }
   }
 
@@ -322,16 +360,22 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
     try {
       final rows = await database.deleteHighlight(highlightId);
       if (rows == 0) {
-        return Result.error(NotFoundFailure('Highlight "$highlightId" not found to delete'));
+        return Result.error(
+          NotFoundFailure('Highlight "$highlightId" not found to delete'),
+        );
       }
       return const Result.success(null);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to delete highlight "$highlightId"', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to delete highlight "$highlightId"', e, stack),
+      );
     }
   }
 
   @override
-  Future<Result<List<HighlightEntity>>> getHighlightsForBook(String bookId) async {
+  Future<Result<List<HighlightEntity>>> getHighlightsForBook(
+    String bookId,
+  ) async {
     try {
       final highlights = await database.getHighlightsForBook(bookId);
       final chapters = await database.getChaptersForBook(bookId);
@@ -344,7 +388,13 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
 
       return Result.success(entities);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to get highlights for book "$bookId"', e, stack));
+      return Result.error(
+        DatabaseFailure(
+          'Failed to get highlights for book "$bookId"',
+          e,
+          stack,
+        ),
+      );
     }
   }
 
@@ -354,11 +404,18 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
     required String chapterId,
   }) async {
     try {
-      final highlights = await database.getHighlightsForChapter(bookId, chapterId);
+      final highlights = await database.getHighlightsForChapter(
+        bookId,
+        chapterId,
+      );
       final chapter = await database.getChapterById(chapterId);
-      return Result.success(highlights.map((h) => _mapHighlight(h, chapter)).toList());
+      return Result.success(
+        highlights.map((h) => _mapHighlight(h, chapter)).toList(),
+      );
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to get highlights for chapter', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to get highlights for chapter', e, stack),
+      );
     }
   }
 
@@ -367,7 +424,9 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
     required String bookId,
     required String chapterId,
   }) {
-    return database.watchHighlightsForChapter(bookId, chapterId).asyncMap((highlights) async {
+    return database.watchHighlightsForChapter(bookId, chapterId).asyncMap((
+      highlights,
+    ) async {
       final chapter = await database.getChapterById(chapterId);
       return highlights.map((h) => _mapHighlight(h, chapter)).toList();
     });
@@ -425,7 +484,9 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
         ),
       );
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to create chapter note', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to create chapter note', e, stack),
+      );
     }
   }
 
@@ -448,7 +509,9 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
       final chapter = await database.getChapterById(existing.chapterId);
       return Result.success(_mapChapterNote(updated, chapter));
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to update chapter note', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to update chapter note', e, stack),
+      );
     }
   }
 
@@ -457,16 +520,22 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
     try {
       final rows = await database.deleteChapterNote(id);
       if (rows == 0) {
-        return Result.error(NotFoundFailure('Chapter note "$id" not found to delete'));
+        return Result.error(
+          NotFoundFailure('Chapter note "$id" not found to delete'),
+        );
       }
       return const Result.success(null);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to delete chapter note "$id"', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to delete chapter note "$id"', e, stack),
+      );
     }
   }
 
   @override
-  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForBook(String bookId) async {
+  Future<Result<List<ChapterNoteEntity>>> getChapterNotesForBook(
+    String bookId,
+  ) async {
     try {
       final notes = await database.getChapterNotesForBook(bookId);
       final chapters = await database.getChaptersForBook(bookId);
@@ -479,7 +548,13 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
 
       return Result.success(entities);
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to get chapter notes for book "$bookId"', e, stack));
+      return Result.error(
+        DatabaseFailure(
+          'Failed to get chapter notes for book "$bookId"',
+          e,
+          stack,
+        ),
+      );
     }
   }
 
@@ -491,9 +566,13 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
     try {
       final notes = await database.getChapterNotesForChapter(bookId, chapterId);
       final chapter = await database.getChapterById(chapterId);
-      return Result.success(notes.map((cn) => _mapChapterNote(cn, chapter)).toList());
+      return Result.success(
+        notes.map((cn) => _mapChapterNote(cn, chapter)).toList(),
+      );
     } catch (e, stack) {
-      return Result.error(DatabaseFailure('Failed to get chapter notes for chapter', e, stack));
+      return Result.error(
+        DatabaseFailure('Failed to get chapter notes for chapter', e, stack),
+      );
     }
   }
 
@@ -509,4 +588,3 @@ class AnnotationRepositoryImpl implements AnnotationRepository {
     });
   }
 }
-

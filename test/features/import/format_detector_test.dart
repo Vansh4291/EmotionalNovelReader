@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:archive/archive.dart';
 import 'package:emotional_novel_reader/features/import/domain/entities/detected_format.dart';
 import 'package:emotional_novel_reader/features/import/domain/services/format_detector.dart';
@@ -10,7 +11,16 @@ void main() {
 
   group('FormatDetector signature sniffing tests', () {
     test('Detects PDF from %PDF- magic bytes', () async {
-      final bytes = Uint8List.fromList([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x35]);
+      final bytes = Uint8List.fromList([
+        0x25,
+        0x50,
+        0x44,
+        0x46,
+        0x2D,
+        0x31,
+        0x2E,
+        0x35,
+      ]);
       final result = await detector.detectFromBytes(bytes);
 
       expect(result.format, DocumentFormat.pdf);
@@ -28,7 +38,15 @@ void main() {
     });
 
     test('Detects CBR from Rar! magic bytes', () async {
-      final bytes = Uint8List.fromList([0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00]);
+      final bytes = Uint8List.fromList([
+        0x52,
+        0x61,
+        0x72,
+        0x21,
+        0x1A,
+        0x07,
+        0x00,
+      ]);
       final result = await detector.detectFromBytes(bytes);
 
       expect(result.format, DocumentFormat.cbr);
@@ -59,7 +77,8 @@ void main() {
       final zipBytes = Uint8List.fromList(ZipEncoder().encode(archive));
 
       final tempDir = Directory.systemTemp.createTempSync('epub_test_');
-      final epubFile = File('${tempDir.path}/test.epub')..writeAsBytesSync(zipBytes);
+      final epubFile = File('${tempDir.path}/test.epub')
+        ..writeAsBytesSync(zipBytes);
 
       try {
         final result = await detector.detect(epubFile);
@@ -71,27 +90,37 @@ void main() {
       }
     });
 
-    test('Detects DOCX from ZIP archive containing word/document.xml', () async {
-      final archive = Archive();
-      archive.addFile(
-        ArchiveFile('word/document.xml', 20, '<w:document></w:document>'.codeUnits),
-      );
-      final zipBytes = Uint8List.fromList(ZipEncoder().encode(archive));
+    test(
+      'Detects DOCX from ZIP archive containing word/document.xml',
+      () async {
+        final archive = Archive();
+        archive.addFile(
+          ArchiveFile(
+            'word/document.xml',
+            20,
+            '<w:document></w:document>'.codeUnits,
+          ),
+        );
+        final zipBytes = Uint8List.fromList(ZipEncoder().encode(archive));
 
-      final tempDir = Directory.systemTemp.createTempSync('docx_test_');
-      final docxFile = File('${tempDir.path}/test.docx')..writeAsBytesSync(zipBytes);
+        final tempDir = Directory.systemTemp.createTempSync('docx_test_');
+        final docxFile = File('${tempDir.path}/test.docx')
+          ..writeAsBytesSync(zipBytes);
 
-      try {
-        final result = await detector.detect(docxFile);
-        expect(result.format, DocumentFormat.docx);
-        expect(result.isSupported, isTrue);
-      } finally {
-        tempDir.deleteSync(recursive: true);
-      }
-    });
+        try {
+          final result = await detector.detect(docxFile);
+          expect(result.format, DocumentFormat.docx);
+          expect(result.isSupported, isTrue);
+        } finally {
+          tempDir.deleteSync(recursive: true);
+        }
+      },
+    );
 
     test('Detects HTML from <!DOCTYPE html or <html> tag', () async {
-      final bytes = Uint8List.fromList('<!DOCTYPE html><html><body>Novel</body></html>'.codeUnits);
+      final bytes = Uint8List.fromList(
+        '<!DOCTYPE html><html><body>Novel</body></html>'.codeUnits,
+      );
       final result = await detector.detectFromBytes(bytes);
 
       expect(result.format, DocumentFormat.html);
@@ -100,28 +129,43 @@ void main() {
     });
 
     test('Detects Markdown from file extension and valid text', () async {
-      final bytes = Uint8List.fromList('# Chapter 1: The Rebirth\n\nIt was a quiet night.'.codeUnits);
-      final result = await detector.detectFromBytes(bytes, fileName: 'novel.md');
+      final bytes = Uint8List.fromList(
+        '# Chapter 1: The Rebirth\n\nIt was a quiet night.'.codeUnits,
+      );
+      final result = await detector.detectFromBytes(
+        bytes,
+        fileName: 'novel.md',
+      );
 
       expect(result.format, DocumentFormat.markdown);
       expect(result.isSupported, isTrue);
     });
 
-    test('Detects Plain Text from valid UTF-8 without binary null bytes', () async {
-      final bytes = Uint8List.fromList('Chapter 1\nOnce upon a time in a fantasy world.'.codeUnits);
-      final result = await detector.detectFromBytes(bytes, fileName: 'novel.txt');
+    test(
+      'Detects Plain Text from valid UTF-8 without binary null bytes',
+      () async {
+        final bytes = Uint8List.fromList(
+          'Chapter 1\nOnce upon a time in a fantasy world.'.codeUnits,
+        );
+        final result = await detector.detectFromBytes(
+          bytes,
+          fileName: 'novel.txt',
+        );
 
-      expect(result.format, DocumentFormat.txt);
-      expect(result.isSupported, isTrue);
-    });
+        expect(result.format, DocumentFormat.txt);
+        expect(result.isSupported, isTrue);
+      },
+    );
 
-    test('Returns unsupported for unknown binary files containing null bytes', () async {
-      final bytes = Uint8List.fromList([0x00, 0x11, 0x22, 0x33, 0x44, 0x55]);
-      final result = await detector.detectFromBytes(bytes);
+    test(
+      'Returns unsupported for unknown binary files containing null bytes',
+      () async {
+        final bytes = Uint8List.fromList([0x00, 0x11, 0x22, 0x33, 0x44, 0x55]);
+        final result = await detector.detectFromBytes(bytes);
 
-      expect(result.format, DocumentFormat.unsupported);
-      expect(result.isSupported, isFalse);
-    });
+        expect(result.format, DocumentFormat.unsupported);
+        expect(result.isSupported, isFalse);
+      },
+    );
   });
 }
-

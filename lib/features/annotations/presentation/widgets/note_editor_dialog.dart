@@ -4,10 +4,7 @@ import '../../domain/entities/highlight_entity.dart';
 import 'highlight_color_picker.dart';
 
 class NoteEditorResult {
-  const NoteEditorResult({
-    required this.note,
-    required this.colorValue,
-  });
+  const NoteEditorResult({required this.note, required this.colorValue});
 
   final String note;
   final int colorValue;
@@ -91,10 +88,7 @@ class _NoteEditorDialogState extends State<NoteEditorDialog> {
                 decoration: BoxDecoration(
                   color: Color(_currentColor).withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Color(_currentColor),
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: Color(_currentColor), width: 1.5),
                 ),
                 child: Text(
                   previewText,
@@ -163,4 +157,3 @@ class _NoteEditorDialogState extends State<NoteEditorDialog> {
     );
   }
 }
-

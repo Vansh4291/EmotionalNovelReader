@@ -1,14 +1,14 @@
 import 'dart:async';
+
 import 'package:bloc/bloc.dart';
+
 import '../../domain/entities/search_result_entity.dart';
 import '../../domain/repositories/search_repository.dart';
 import 'search_state.dart';
 
 class SearchCubit extends Cubit<SearchState> {
-  SearchCubit({
-    required this.searchRepository,
-    this.scopedBookId,
-  }) : super(const SearchInitial());
+  SearchCubit({required this.searchRepository, this.scopedBookId})
+    : super(const SearchInitial());
 
   final SearchRepository searchRepository;
   final String? scopedBookId;
@@ -21,7 +21,10 @@ class SearchCubit extends Cubit<SearchState> {
   SearchScope get currentScope => _scope;
   String get currentQuery => _currentQuery;
 
-  void onQueryChanged(String query, {Duration debounceDuration = const Duration(milliseconds: 300)}) {
+  void onQueryChanged(
+    String query, {
+    Duration debounceDuration = const Duration(milliseconds: 300),
+  }) {
     _debounceTimer?.cancel();
     final trimmed = query.trim();
     _currentQuery = trimmed;
@@ -58,7 +61,11 @@ class SearchCubit extends Cubit<SearchState> {
           final booksRes = await searchRepository.searchBooks(cleanQuery);
           if (queryId != _querySequence) return; // Stale query suppression
           if (booksRes.isError) {
-            emit(SearchError(booksRes.failureOrNull?.message ?? 'Book search failed'));
+            emit(
+              SearchError(
+                booksRes.failureOrNull?.message ?? 'Book search failed',
+              ),
+            );
             return;
           }
           bookResults = booksRes.dataOrNull!;
@@ -73,7 +80,11 @@ class SearchCubit extends Cubit<SearchState> {
         );
         if (queryId != _querySequence) return; // Stale query suppression
         if (contentRes.isError) {
-          emit(SearchError(contentRes.failureOrNull?.message ?? 'Content search failed'));
+          emit(
+            SearchError(
+              contentRes.failureOrNull?.message ?? 'Content search failed',
+            ),
+          );
           return;
         }
         contentResults = contentRes.dataOrNull!;
@@ -85,7 +96,8 @@ class SearchCubit extends Cubit<SearchState> {
         final message = switch (_scope) {
           SearchScope.books => 'No books found matching "$cleanQuery"',
           SearchScope.content => 'No chapter text found matching "$cleanQuery"',
-          SearchScope.all => 'No books or chapter text found matching "$cleanQuery"',
+          SearchScope.all =>
+            'No books or chapter text found matching "$cleanQuery"',
         };
         emit(SearchEmpty(query: cleanQuery, scope: _scope, message: message));
       } else {
@@ -125,7 +137,11 @@ class SearchCubit extends Cubit<SearchState> {
     emit(SearchLoading(query: _currentQuery, scope: _scope));
     final res = await searchRepository.reindexAllContent();
     if (res.isError) {
-      emit(SearchError(res.failureOrNull?.message ?? 'Failed to rebuild search index.'));
+      emit(
+        SearchError(
+          res.failureOrNull?.message ?? 'Failed to rebuild search index.',
+        ),
+      );
     } else if (_currentQuery.isNotEmpty) {
       await executeSearch(_currentQuery);
     } else {

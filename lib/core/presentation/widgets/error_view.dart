@@ -33,17 +33,15 @@ class ErrorView extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: colorScheme.error,
-                  ),
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(color: colorScheme.error),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
             if (onRetry != null) ...[
@@ -63,4 +61,3 @@ class ErrorView extends StatelessWidget {
     );
   }
 }
-

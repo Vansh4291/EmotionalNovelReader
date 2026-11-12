@@ -579,6 +579,96 @@ Example structure:
 ## [Unreleased]
 
 ### Added
+- **Phase 11: Product Hardening and Release Candidate (ENR-0110, ENR-0111)**:
+  - **Release Scope Verification & Quality Gates (ENR-0110)**:
+    - Executed complete automated regression test suite: 214 tests passing with 0 failures across 31 test files.
+    - Verified static analysis cleanliness: 0 issues across all packages in `flutter analyze`.
+    - Enforced uniform code formatting across all codebase files (`dart format lib test`).
+  - **Android Release Packaging & ProGuard Configuration (ENR-0111)**:
+    - Added `android/app/proguard-rules.pro` protecting native SQLite/Drift, AndroidX Security Crypto, and Flutter TTS platform channels.
+    - Configured release build type in `android/app/build.gradle.kts` targeting Android 12+ (minSdk 31, targetSdk 36).
+    - Verified release APK build assembly.
+- **Phase 10: Optional Cloud AI and External Services (ENR-0100, ENR-0101)**:
+  - **Cloud Provider Architecture & User Consent (ENR-0100)**:
+    - Designed and implemented `CloudAiConfig` and `CloudAiService` supporting OpenAI-compatible endpoints and Google Gemini.
+    - Explicit user consent and disclosure modal: user must explicitly review and accept data transfer disclosures before Cloud AI can be enabled.
+    - Zero silent cloud fallback (ENR-0100-S05): Local AI and offline reading never silently route requests to remote servers; cloud invocation requires explicit user action.
+    - Encrypted credentials: API keys are securely stored in Android KeyStore via EncryptedSharedPreferences (`SecureStorageService`).
+    - Privacy-safe logging: API keys and query text are never exposed in logs or unhandled exceptions.
+  - **Optional Cloud AI Capabilities & Integration (ENR-0101)**:
+    - Implemented `CloudAiCubit` and `CloudAiScreen` (`/cloud-ai` route) with provider selection, endpoint configuration, model specification, key management, and connection testing.
+    - Integrated with `AiCompanionSheet`: allows users to toggle between on-device GGUF and configured remote Cloud AI, displaying clear attribution badges on responses.
+    - Added automated unit tests (`test/features/ai/cloud_ai_service_test.dart` and `test/features/ai/cloud_ai_cubit_test.dart`).
+- **Phase 9: RAG, Spoiler-Aware AI, and Novel Companion (ENR-0090, ENR-0091, ENR-0092, ENR-0093)**:
+  - **Deterministic Spoiler Protection (ENR-0091)**:
+    - Enforced hard application-level boundaries: RAG retrieval strictly excludes any passages from chapters beyond the user's current reading position (`chapterIndex <= currentChapterIndex`).
+    - Grounded prompt engineering: includes chapter bounds and strict instructions preventing future plot, character death, or spoiler revelations.
+  - **Novel Reading Companion & Contextual RAG (ENR-0090, ENR-0092, ENR-0093)**:
+    - Implemented `ReaderRagServiceImpl` leveraging SQLite FTS5 index for fast on-device passage retrieval.
+    - Built `AiChatCubit` and `AiCompanionSheet` interactive bottom sheet with streaming response tokens, referenced passage citations, and conversational memory.
+    - Verified spoiler boundaries with comprehensive unit tests in `test/features/ai/reader_rag_service_test.dart` and `test/features/ai/ai_chat_cubit_test.dart`.
+- **Phase 8: Local AI Foundation & Model Lifecycle (ENR-0080, ENR-0081, ENR-0082)**:
+  - **On-Device Inference Runtime & Interfaces (ENR-0080)**:
+    - Implemented `LocalAiRuntime` abstraction and `LocalAiRuntimeImpl` supporting token streaming, prompt parameterization, generation cancellation, and memory unloading.
+  - **Local Model Management & GGUF Validation (ENR-0081)**:
+    - Implemented `ModelManagerServiceImpl` supporting local GGUF model imports with header magic bytes verification (`0x47, 0x47, 0x55, 0x46`), SHA-256 calculation, and sandboxed file storage.
+    - Built `ModelManagerCubit` and `ModelManagerScreen` (`/ai-models` route) displaying recommended catalog models, imported models, and runtime activation.
+  - **Resource & Device Capability Management (ENR-0082)**:
+    - Implemented device capability evaluation assessing RAM tiers and recommending appropriate model sizes (Compact 1.5B vs Standard 2B–3B vs Unsupported).
+    - Verified model lifecycle and cubit behavior in `test/features/ai/model_manager_service_test.dart` and `test/features/ai/model_manager_cubit_test.dart`.
+- **Phase 7: Text-to-Speech & Android Media Integration (ENR-0070, ENR-0071, ENR-0072)**:
+  - **Native Android Text-to-Speech Engine Integration (ENR-0070)**:
+    - Integrated native Android `TextToSpeech` via `flutter_tts` package and `FlutterTtsServiceImpl`.
+    - Added text parser (`TtsTextParser`) safely stripping markup and segmenting chapter content into playable sentences with exact start and end character offsets.
+    - Implemented `TtsCubit` supporting play, pause, resume, stop, sentence skipping, speech rate customization (0.5x to 2.0x), pitch, and volume adjustments.
+  - **Android Platform Integration & Lifecycle Handling (ENR-0071)**:
+    - Configured Android 11+ Package Visibility query (`android.intent.action.TTS_SERVICE`) in `AndroidManifest.xml` to discover installed on-device TTS engines (Google TTS, Samsung TTS, etc.).
+    - Handled audio focus and interruptions: automatically pauses narration when reader transitions to background or is closed.
+    - Implemented `TtsControlSheet` modal bottom sheet offering accessible, touch-friendly narration controls, active sentence feedback, and speed adjustments directly within the reader.
+  - **Narration Position Synchronization & Chapter Auto-Progression (ENR-0072)**:
+    - Synchronized reader scroll viewport with active spoken sentence using `ReaderScrollMapper.calculatePixelOffset`, smoothly following the narrator.
+    - Implemented automatic chapter transitions: completing the final sentence of a chapter automatically loads the next chapter and continues narration seamlessly without manual intervention.
+    - Extended automated test suite to 181 passing tests across 27 test files (`test/features/tts/tts_text_parser_test.dart`, `test/features/tts/tts_cubit_test.dart`, and DI/routing integration tests).
+- **Phase 6: Data Protection, Backup, and Recovery (ENR-0060, ENR-0061, ENR-0062)**:
+  - **Portable Archive Format & Manifest Specification (ENR-0060)**:
+    - Designed and implemented `.enrbk` ZIP-based archive structure encapsulating versioned `manifest.json`, UTF-8 encoded `data.json`, and optional `files/<bookId>/...` book assets.
+    - Added comprehensive metadata schema (`BackupManifestEntity`) with app version, database schema version, payload checksum, and granular item counts (books, chapters, bookmarks, highlights, notes, reading sessions).
+    - Enforced uncompressed byte budget (500MB max) and file entry limit (10,000 max) to prevent ZIP-bomb and decompression denial-of-service vulnerabilities.
+    - Explicit unencrypted export disclosures: clear user-facing warnings in UI cards, export dialogs, and manifest payload.
+  - **Manual Backup Export & Checksum Validation (ENR-0061)**:
+    - Implemented `BackupService.createBackup` exporting books, chapters, bookmarks, highlights, chapter notes, reading progress, reading sessions, and reading goals.
+    - Added SHA-256 payload integrity calculation and post-export self-inspection before confirming export success.
+    - Added option to include or exclude raw book source files (`includeBookFiles`).
+  - **Pre-Restore Inspection, Recovery & Conflict Resolution (ENR-0062)**:
+    - Implemented `BackupService.inspectBackup` verifying archive integrity, payload SHA-256 checksum, schema version compatibility, and parsing preview statistics before applying changes.
+    - Implemented `BackupService.restoreBackup` running inside atomic SQLite transactions (`database.transaction`) to prevent partial or corrupted states on failure.
+    - Implemented dual conflict modes:
+      - `Merge (Safe)`: Additive import preserving existing non-conflicting books and reading data while cleanly updating conflicting records.
+      - `Replace (Clean Slate)`: Clean slate restoration with explicit destructive confirmation dialog warning users that current library data will be wiped prior to restore.
+    - Added automatic FTS5 full-text search reindexing for all restored chapters.
+    - Implemented `BackupCubit`, `BackupScreen` (`/backup` route), and linked seamlessly into `SettingsScreen`.
+    - Extended test suite to 169 passing automated tests (`test/features/backup/backup_service_test.dart`, `test/features/backup/backup_cubit_test.dart`, and DI/routing integration tests).
+- **Phase 5: ENR-0052 Reading Statistics and Basic Goals**:
+  - **Drift SQLite Schema v5 Migration**:
+    - Created `ReadingSessions` table (`reading_sessions`) tracking `durationSeconds`, `chaptersCompleted`, `charactersRead`, `startTime`, and `endTime` with cascading foreign keys to `books` and `chapters`.
+    - Created `ReadingGoals` table (`reading_goals`) storing user-defined targets (`time_minutes`, `chapters`) with active state tracking.
+    - Added non-destructive database migration from v4 to v5, preserving all previous book, chapter, bookmark, highlight, note, and reading progress records.
+    - Verified migration v4 to v5 via comprehensive automated integration tests.
+  - **Active Session Tracking & App Lifecycle Handling**:
+    - Implemented `ReadingSessionTracker` tracking reading time with active duration accumulation.
+    - Integrated with `WidgetsBindingObserver` in `ReaderScreen` to cleanly pause tracking on backgrounding (`AppLifecycleState.paused`/`inactive`) and resume on foregrounding (`AppLifecycleState.resumed`).
+    - Added micro-session bounce filtering to prevent corrupting statistics with momentary accidental taps (<3 seconds).
+  - **Reading Statistics & Goals Presentation**:
+    - Implemented `StatisticsCubit` and `StatisticsScreen` (`/statistics` route accessible from the Library screen AppBar).
+    - Added comprehensive metric cards: Today, This Week, This Month, All Time, Lifetime Chapters Read, and Lifetime Sessions.
+    - Implemented 7-day visual activity distribution chart displaying active daily reading minutes.
+    - Added basic goal management (daily time goals and daily chapter goals) with live progress bars, avoiding streak pressure or motivational push notifications in accordance with PRD non-goals.
+- **Phase 5: ENR-0053 Offline Reliability & Interruption Verification**:
+  - Implemented end-to-end automated offline test suite in `test/features/offline/offline_reliability_test.dart` verifying all core reader workflows (importing, reading, navigating, bookmarking, highlighting, notes, SQLite trigram FTS5 search, and statistics tracking) function without network access.
+  - Verified process termination and restart durability: simulated abrupt termination and confirmed persistent SQLite restoration of books, reading progress, and multi-script annotations.
+  - Verified storage failure resilience: missing book files on disk are handled gracefully without application crashes.
+  - Verified high-volume library performance with 20 books and 200 chapters.
+  - Expanded automated test suite to 161 tests across 24 test files passing with 100% success rate.
 - **Phase 5: ENR-0051 Bookmarks, Highlights, Notes, and Annotations (Implementation & Remediation)**:
   - **Location-Level Bookmarks (Workstream A)**:
     - Supported multiple distinct bookmarks per chapter using character-offset anchors (`char:<offset>`), allowing users to mark specific locations within lengthy chapters.

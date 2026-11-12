@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../library/domain/entities/chapter_entity.dart';
 
 class TableOfContentsDrawer extends StatelessWidget {
@@ -31,7 +32,9 @@ class TableOfContentsDrawer extends StatelessWidget {
                 children: [
                   Text(
                     'Table of Contents',
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -63,7 +66,8 @@ class TableOfContentsDrawer extends StatelessWidget {
 
                   return ListTile(
                     selected: isCurrent,
-                    selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                    selectedTileColor: theme.colorScheme.primaryContainer
+                        .withValues(alpha: 0.4),
                     leading: CircleAvatar(
                       radius: 14,
                       backgroundColor: isCurrent
@@ -82,7 +86,9 @@ class TableOfContentsDrawer extends StatelessWidget {
                     title: Text(
                       chapter.title,
                       style: TextStyle(
-                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isCurrent
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

@@ -1,10 +1,5 @@
 /// Themes available in the reader.
-enum ReaderThemeMode {
-  system,
-  light,
-  dark,
-  sepia,
-}
+enum ReaderThemeMode { system, light, dark, sepia }
 
 /// User preferences for the reader display and typography.
 class ReaderPreferences {
@@ -45,6 +40,6 @@ class ReaderPreferences {
           themeMode == other.themeMode;
 
   @override
-  int get hashCode => Object.hash(fontSize, lineHeight, horizontalMargin, themeMode);
+  int get hashCode =>
+      Object.hash(fontSize, lineHeight, horizontalMargin, themeMode);
 }
-

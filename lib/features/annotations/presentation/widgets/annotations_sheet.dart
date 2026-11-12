@@ -69,7 +69,9 @@ class AnnotationsSheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.4,
+                  ),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -101,7 +103,9 @@ class AnnotationsSheet extends StatelessWidget {
                         if (res != null &&
                             res.note.trim().isNotEmpty &&
                             context.mounted) {
-                          await context.read<AnnotationCubit>().createChapterNote(
+                          await context
+                              .read<AnnotationCubit>()
+                              .createChapterNote(
                                 chapterId: currentChapterId!,
                                 chapterIndex: currentChapterIndex,
                                 chapterTitle: currentChapterTitle,
@@ -169,7 +173,8 @@ class AnnotationsSheet extends StatelessWidget {
                         _FilterChip(
                           label: 'Bookmarks',
                           icon: Icons.bookmark_outline,
-                          isSelected: activeFilter == AnnotationFilter.bookmarks,
+                          isSelected:
+                              activeFilter == AnnotationFilter.bookmarks,
                           onSelected: () => context
                               .read<AnnotationCubit>()
                               .setFilter(AnnotationFilter.bookmarks),
@@ -178,7 +183,8 @@ class AnnotationsSheet extends StatelessWidget {
                         _FilterChip(
                           label: 'Highlights',
                           icon: Icons.format_paint_outlined,
-                          isSelected: activeFilter == AnnotationFilter.highlights,
+                          isSelected:
+                              activeFilter == AnnotationFilter.highlights,
                           onSelected: () => context
                               .read<AnnotationCubit>()
                               .setFilter(AnnotationFilter.highlights),
@@ -204,7 +210,8 @@ class AnnotationsSheet extends StatelessWidget {
             Expanded(
               child: BlocBuilder<AnnotationCubit, AnnotationState>(
                 builder: (context, state) {
-                  if (state is AnnotationLoading || state is AnnotationInitial) {
+                  if (state is AnnotationLoading ||
+                      state is AnnotationInitial) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
@@ -248,9 +255,9 @@ class AnnotationsSheet extends StatelessWidget {
                                 onNavigate(b.chapterIndex ?? 0, b.location);
                               },
                               onDelete: () {
-                                context
-                                    .read<AnnotationCubit>()
-                                    .deleteBookmark(b.id);
+                                context.read<AnnotationCubit>().deleteBookmark(
+                                  b.id,
+                                );
                               },
                             ),
                           ),
@@ -311,9 +318,9 @@ class AnnotationsSheet extends StatelessWidget {
                                 );
                               },
                               onDelete: () {
-                                context
-                                    .read<AnnotationCubit>()
-                                    .deleteHighlight(h.id);
+                                context.read<AnnotationCubit>().deleteHighlight(
+                                  h.id,
+                                );
                               },
                               onEditNote: () async {
                                 final res = await NoteEditorDialog.show(
@@ -327,7 +334,8 @@ class AnnotationsSheet extends StatelessWidget {
                                   await context
                                       .read<AnnotationCubit>()
                                       .updateNote(h.id, res.note);
-                                  if (res.colorValue != h.colorValue && context.mounted) {
+                                  if (res.colorValue != h.colorValue &&
+                                      context.mounted) {
                                     await context
                                         .read<AnnotationCubit>()
                                         .updateColor(h.id, res.colorValue);
@@ -383,10 +391,10 @@ class AnnotationsSheet extends StatelessWidget {
     } else if (state.filter == AnnotationFilter.bookmarks) {
       message = 'No bookmarks added yet.\nTap the bookmark icon while reading.';
     } else if (state.filter == AnnotationFilter.highlights) {
-      message = 'No highlights created yet.\nSelect text while reading to highlight.';
-    } else if (state.filter == AnnotationFilter.notes) {
       message =
-          'No notes written yet.\nAdd a chapter note or attach notes to highlighted passages.';
+          'No highlights created yet.\nSelect text while reading to highlight.';
+    } else if (state.filter == AnnotationFilter.notes) {
+      message = 'No notes written yet.\nAdd a chapter note or attach notes to highlighted passages.';
     }
 
     return Center(
@@ -463,8 +471,8 @@ class _BookmarkTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final title = bookmark.chapterTitle ??
-        'Chapter ${(bookmark.chapterIndex ?? 0) + 1}';
+    final title =
+        bookmark.chapterTitle ?? 'Chapter ${(bookmark.chapterIndex ?? 0) + 1}';
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -472,10 +480,7 @@ class _BookmarkTile extends StatelessWidget {
       color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: ListTile(
-        leading: Icon(
-          Icons.bookmark,
-          color: theme.colorScheme.primary,
-        ),
+        leading: Icon(Icons.bookmark, color: theme.colorScheme.primary),
         title: Text(
           title,
           style: theme.textTheme.titleSmall?.copyWith(
@@ -521,7 +526,8 @@ class _HighlightTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final chapterText = highlight.chapterTitle ??
+    final chapterText =
+        highlight.chapterTitle ??
         'Chapter ${(highlight.chapterIndex ?? 0) + 1}';
 
     return Card(
@@ -577,7 +583,10 @@ class _HighlightTile extends StatelessWidget {
               // Highlighted text excerpt
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Color(highlight.colorValue).withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(6),
@@ -593,7 +602,10 @@ class _HighlightTile extends StatelessWidget {
               if (highlight.isAmbiguous) ...[
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.orange.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
@@ -601,11 +613,17 @@ class _HighlightTile extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.warning_amber_rounded, size: 14, color: Colors.orange),
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        size: 14,
+                        color: Colors.orange,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         'Multiple matching passages found (ambiguous anchor)',
-                        style: theme.textTheme.labelSmall?.copyWith(color: Colors.orange.shade800),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.orange.shade800,
+                        ),
                       ),
                     ],
                   ),
@@ -614,7 +632,10 @@ class _HighlightTile extends StatelessWidget {
               if (highlight.isUnresolved) ...[
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(4),
@@ -622,11 +643,17 @@ class _HighlightTile extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.help_outline_rounded, size: 14, color: Colors.red),
+                      const Icon(
+                        Icons.help_outline_rounded,
+                        size: 14,
+                        color: Colors.red,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         'Passage text changed or missing',
-                        style: theme.textTheme.labelSmall?.copyWith(color: Colors.red.shade800),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.red.shade800,
+                        ),
                       ),
                     ],
                   ),
@@ -680,7 +707,8 @@ class _ChapterNoteTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final chapterText = chapterNote.chapterTitle ??
+    final chapterText =
+        chapterNote.chapterTitle ??
         'Chapter ${(chapterNote.chapterIndex ?? 0) + 1}';
 
     return Card(

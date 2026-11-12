@@ -4,9 +4,8 @@ import '../../domain/repositories/annotation_repository.dart';
 import 'annotation_state.dart';
 
 class AnnotationCubit extends Cubit<AnnotationState> {
-  AnnotationCubit({
-    required this.repository,
-  }) : super(const AnnotationInitial());
+  AnnotationCubit({required this.repository})
+    : super(const AnnotationInitial());
 
   final AnnotationRepository repository;
 
@@ -29,12 +28,14 @@ class AnnotationCubit extends Cubit<AnnotationState> {
       return;
     }
 
-    emit(AnnotationLoaded(
-      bookId: bookId,
-      allBookmarks: bookmarksResult.dataOrNull ?? [],
-      allHighlights: highlightsResult.dataOrNull ?? [],
-      allChapterNotes: chapterNotesResult.dataOrNull ?? [],
-    ));
+    emit(
+      AnnotationLoaded(
+        bookId: bookId,
+        allBookmarks: bookmarksResult.dataOrNull ?? [],
+        allHighlights: highlightsResult.dataOrNull ?? [],
+        allChapterNotes: chapterNotesResult.dataOrNull ?? [],
+      ),
+    );
   }
 
   void setFilter(AnnotationFilter filter) {
@@ -87,9 +88,11 @@ class AnnotationCubit extends Cubit<AnnotationState> {
     );
     if (result.isSuccess) {
       final updatedEntity = result.dataOrNull!;
-      final updated = current.allHighlights.map((h) {
-        return h.id == highlightId ? updatedEntity : h;
-      }).toList(growable: false);
+      final updated = current.allHighlights
+          .map((h) {
+            return h.id == highlightId ? updatedEntity : h;
+          })
+          .toList(growable: false);
       emit(current.copyWith(allHighlights: updated));
     }
   }
@@ -104,9 +107,11 @@ class AnnotationCubit extends Cubit<AnnotationState> {
     );
     if (result.isSuccess) {
       final updatedEntity = result.dataOrNull!;
-      final updated = current.allHighlights.map((h) {
-        return h.id == highlightId ? updatedEntity : h;
-      }).toList(growable: false);
+      final updated = current.allHighlights
+          .map((h) {
+            return h.id == highlightId ? updatedEntity : h;
+          })
+          .toList(growable: false);
       emit(current.copyWith(allHighlights: updated));
     }
   }
@@ -143,9 +148,11 @@ class AnnotationCubit extends Cubit<AnnotationState> {
     );
     if (result.isSuccess) {
       final updatedEntity = result.dataOrNull!;
-      final updated = current.allChapterNotes.map((cn) {
-        return cn.id == noteId ? updatedEntity : cn;
-      }).toList(growable: false);
+      final updated = current.allChapterNotes
+          .map((cn) {
+            return cn.id == noteId ? updatedEntity : cn;
+          })
+          .toList(growable: false);
       emit(current.copyWith(allChapterNotes: updated));
     }
   }

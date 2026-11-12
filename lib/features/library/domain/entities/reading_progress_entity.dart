@@ -45,6 +45,10 @@ class ReadingProgressEntity {
           progressPercentage == other.progressPercentage;
 
   @override
-  int get hashCode => Object.hash(bookId, currentLocation, currentChapterId, progressPercentage);
+  int get hashCode => Object.hash(
+    bookId,
+    currentLocation,
+    currentChapterId,
+    progressPercentage,
+  );
 }
-

@@ -12,7 +12,8 @@ class EmotionalNovelReaderApp extends StatefulWidget {
   final GoRouter? router;
 
   @override
-  State<EmotionalNovelReaderApp> createState() => _EmotionalNovelReaderAppState();
+  State<EmotionalNovelReaderApp> createState() =>
+      _EmotionalNovelReaderAppState();
 }
 
 class _EmotionalNovelReaderAppState extends State<EmotionalNovelReaderApp> {

@@ -1,9 +1,4 @@
-enum AnchorStatus {
-  exact,
-  reconciled,
-  ambiguous,
-  unresolved,
-}
+enum AnchorStatus { exact, reconciled, ambiguous, unresolved }
 
 class HighlightEntity {
   const HighlightEntity({
@@ -23,10 +18,10 @@ class HighlightEntity {
 
   /// Standard Material 3 reader highlight colors
   static const int defaultHighlightColor = 0xFFFFF59D; // Soft Yellow
-  static const int greenHighlightColor = 0xFFA5D6A7;   // Soft Green
-  static const int blueHighlightColor = 0xFF90CAF9;    // Soft Blue
-  static const int pinkHighlightColor = 0xFFF48FB1;    // Soft Pink
-  static const int orangeHighlightColor = 0xFFFFCC80;  // Soft Orange
+  static const int greenHighlightColor = 0xFFA5D6A7; // Soft Green
+  static const int blueHighlightColor = 0xFF90CAF9; // Soft Blue
+  static const int pinkHighlightColor = 0xFFF48FB1; // Soft Pink
+  static const int orangeHighlightColor = 0xFFFFCC80; // Soft Orange
 
   static const List<int> availableColors = [
     defaultHighlightColor,
@@ -113,8 +108,9 @@ class HighlightEntity {
     }
 
     // Multiple matches: sort by proximity to the original startOffset
-    matches.sort((a, b) =>
-        (a - startOffset).abs().compareTo((b - startOffset).abs()));
+    matches.sort(
+      (a, b) => (a - startOffset).abs().compareTo((b - startOffset).abs()),
+    );
     final bestMatch = matches[0];
     final bestDist = (bestMatch - startOffset).abs();
     final secondBestDist = (matches[1] - startOffset).abs();
@@ -178,14 +174,14 @@ class HighlightEntity {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        bookId,
-        chapterId,
-        startOffset,
-        endOffset,
-        selectedText,
-        note,
-        colorValue,
-        anchorStatus,
-      );
+    id,
+    bookId,
+    chapterId,
+    startOffset,
+    endOffset,
+    selectedText,
+    note,
+    colorValue,
+    anchorStatus,
+  );
 }

@@ -25,11 +25,7 @@ class EmptyView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 64,
-              color: Theme.of(context).colorScheme.outline,
-            ),
+            Icon(icon, size: 64, color: Theme.of(context).colorScheme.outline),
             const SizedBox(height: 16),
             Text(
               title,
@@ -40,8 +36,8 @@ class EmptyView extends StatelessWidget {
             Text(
               message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
             if (actionLabel != null && onAction != null) ...[
@@ -60,4 +56,3 @@ class EmptyView extends StatelessWidget {
     );
   }
 }
-

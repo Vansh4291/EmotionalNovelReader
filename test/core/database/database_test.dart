@@ -16,54 +16,93 @@ void main() {
   });
 
   group('Drift SQLite Database tests', () {
-    test('Initializes schema version 4 successfully', () {
-      expect(db.schemaVersion, 4);
+    test('Initializes schema version 5 successfully', () {
+      expect(db.schemaVersion, 5);
     });
 
-    test('Inserts and retrieves chapters with content, count, and SHA lookup', () async {
+    test('Reading sessions and goals CRUD and cascading deletion when book deleted', () async {
       final now = DateTime.now().toUtc();
       await db.insertBook(
         BooksCompanion.insert(
-          id: 'book-ch-test',
-          title: 'Overlord',
-          author: const Value('Kugane Maruyama'),
-          originalFileName: 'overlord.txt',
-          filePath: '/app/library/books/book-ch-test/original.txt',
-          format: 'txt',
-          sha256: 'unique-sha-123',
-          fileSizeBytes: 1024,
+          id: 'book-sess-test',
+          title: 'Mushoku Tensei',
+          originalFileName: 'mt.epub',
+          filePath: '/data/mt.epub',
+          format: 'epub',
+          sha256: 'sha-mt',
+          fileSizeBytes: 2048,
           createdAt: now,
         ),
       );
 
-      // Verify SHA lookup
-      final foundBook = await db.getBookBySha('unique-sha-123');
-      expect(foundBook, isNotNull);
-      expect(foundBook!.id, 'book-ch-test');
-
-      // Insert chapter with content
-      await db.insertChapters([
-        ChaptersCompanion.insert(
-          id: 'ch-test-1',
-          bookId: 'book-ch-test',
-          chapterIndex: 0,
-          title: 'Prologue',
-          content: const Value('In the world of Yggdrasil...'),
-          wordCount: const Value(5),
-          characterCount: const Value(29),
+      await db.insertReadingSession(
+        ReadingSessionsCompanion.insert(
+          id: 'sess-cascade-1',
+          bookId: 'book-sess-test',
+          startTime: now,
+          endTime: now,
+          durationSeconds: 120,
         ),
-      ]);
+      );
 
-      final count = await db.getChapterCountForBook('book-ch-test');
-      expect(count, 1);
+      final sessionsBefore = await db.getAllReadingSessions();
+      expect(sessionsBefore.any((s) => s.id == 'sess-cascade-1'), isTrue);
 
-      final ch = await db.getChapterById('ch-test-1');
-      expect(ch, isNotNull);
-      expect(ch!.title, 'Prologue');
-      expect(ch.content, 'In the world of Yggdrasil...');
-      expect(ch.wordCount, 5);
-      expect(ch.characterCount, 29);
+      // Delete the book
+      await db.deleteBook('book-sess-test');
+
+      // Verify cascading delete removed the session
+      final sessionsAfter = await db.getAllReadingSessions();
+      expect(sessionsAfter.any((s) => s.id == 'sess-cascade-1'), isFalse);
     });
+
+    test(
+      'Inserts and retrieves chapters with content, count, and SHA lookup',
+      () async {
+        final now = DateTime.now().toUtc();
+        await db.insertBook(
+          BooksCompanion.insert(
+            id: 'book-ch-test',
+            title: 'Overlord',
+            author: const Value('Kugane Maruyama'),
+            originalFileName: 'overlord.txt',
+            filePath: '/app/library/books/book-ch-test/original.txt',
+            format: 'txt',
+            sha256: 'unique-sha-123',
+            fileSizeBytes: 1024,
+            createdAt: now,
+          ),
+        );
+
+        // Verify SHA lookup
+        final foundBook = await db.getBookBySha('unique-sha-123');
+        expect(foundBook, isNotNull);
+        expect(foundBook!.id, 'book-ch-test');
+
+        // Insert chapter with content
+        await db.insertChapters([
+          ChaptersCompanion.insert(
+            id: 'ch-test-1',
+            bookId: 'book-ch-test',
+            chapterIndex: 0,
+            title: 'Prologue',
+            content: const Value('In the world of Yggdrasil...'),
+            wordCount: const Value(5),
+            characterCount: const Value(29),
+          ),
+        ]);
+
+        final count = await db.getChapterCountForBook('book-ch-test');
+        expect(count, 1);
+
+        final ch = await db.getChapterById('ch-test-1');
+        expect(ch, isNotNull);
+        expect(ch!.title, 'Prologue');
+        expect(ch.content, 'In the world of Yggdrasil...');
+        expect(ch.wordCount, 5);
+        expect(ch.characterCount, 29);
+      },
+    );
 
     test('Inserts and retrieves a book entity', () async {
       final now = DateTime.now().toUtc();
@@ -88,53 +127,56 @@ void main() {
       expect(book.format, 'epub');
     });
 
-    test('Cascading delete purges chapters and bookmarks when book is deleted', () async {
-      final now = DateTime.now().toUtc();
-      await db.insertBook(
-        BooksCompanion.insert(
-          id: 'book-cascade',
-          title: 'Test Novel',
-          originalFileName: 'test.epub',
-          filePath: '/path/test.epub',
-          format: 'epub',
-          sha256: 'sha-test',
-          fileSizeBytes: 1000,
-          createdAt: now,
-        ),
-      );
+    test(
+      'Cascading delete purges chapters and bookmarks when book is deleted',
+      () async {
+        final now = DateTime.now().toUtc();
+        await db.insertBook(
+          BooksCompanion.insert(
+            id: 'book-cascade',
+            title: 'Test Novel',
+            originalFileName: 'test.epub',
+            filePath: '/path/test.epub',
+            format: 'epub',
+            sha256: 'sha-test',
+            fileSizeBytes: 1000,
+            createdAt: now,
+          ),
+        );
 
-      await db.insertChapters([
-        ChaptersCompanion.insert(
-          id: 'ch-1',
-          bookId: 'book-cascade',
-          chapterIndex: 0,
-          title: 'Chapter 1: The Beginning',
-        ),
-      ]);
+        await db.insertChapters([
+          ChaptersCompanion.insert(
+            id: 'ch-1',
+            bookId: 'book-cascade',
+            chapterIndex: 0,
+            title: 'Chapter 1: The Beginning',
+          ),
+        ]);
 
-      await db.insertBookmark(
-        BookmarksCompanion.insert(
-          id: 'bm-1',
-          bookId: 'book-cascade',
-          location: 'epubcfi(/6/4[chap1]!/4/2/1:0)',
-          createdAt: now,
-        ),
-      );
+        await db.insertBookmark(
+          BookmarksCompanion.insert(
+            id: 'bm-1',
+            bookId: 'book-cascade',
+            location: 'epubcfi(/6/4[chap1]!/4/2/1:0)',
+            createdAt: now,
+          ),
+        );
 
-      // Verify records exist
-      var chapters = await db.getChaptersForBook('book-cascade');
-      expect(chapters.length, 1);
+        // Verify records exist
+        var chapters = await db.getChaptersForBook('book-cascade');
+        expect(chapters.length, 1);
 
-      // Delete parent book
-      await db.deleteBook('book-cascade');
+        // Delete parent book
+        await db.deleteBook('book-cascade');
 
-      // Verify cascading deletion removed chapters and bookmarks
-      chapters = await db.getChaptersForBook('book-cascade');
-      expect(chapters, isEmpty);
+        // Verify cascading deletion removed chapters and bookmarks
+        chapters = await db.getChaptersForBook('book-cascade');
+        expect(chapters, isEmpty);
 
-      final book = await db.getBookById('book-cascade');
-      expect(book, isNull);
-    });
+        final book = await db.getBookById('book-cascade');
+        expect(book, isNull);
+      },
+    );
 
     test('Reading progress insert and update works atomically', () async {
       final now = DateTime.now().toUtc();
@@ -227,7 +269,10 @@ void main() {
       expect(notes.first.content, 'My standalone chapter note');
 
       // Update note
-      final updated = await db.updateChapterNoteContent('cn-1', 'Updated note content');
+      final updated = await db.updateChapterNoteContent(
+        'cn-1',
+        'Updated note content',
+      );
       expect(updated, isTrue);
 
       final note = await db.getChapterNoteById('cn-1');

@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:emotional_novel_reader/app/router/app_router.dart';
 import 'package:emotional_novel_reader/core/database/app_database.dart';
@@ -34,6 +35,20 @@ class IntegrationTestStorageService implements StorageService {
 
   @override
   Future<Directory> getTempDirectory() async => rootDir;
+
+  @override
+  Future<Directory> getBackupDirectory() async {
+    final d = Directory(p.join(rootDir.path, 'backups'));
+    if (!await d.exists()) await d.create(recursive: true);
+    return d;
+  }
+
+  @override
+  Future<Directory> getModelsDirectory() async {
+    final d = Directory(p.join(rootDir.path, 'ai_models'));
+    if (!await d.exists()) await d.create(recursive: true);
+    return d;
+  }
 
   @override
   Future<void> cleanupTempDirectory() async {}
@@ -76,7 +91,8 @@ class IntegrationTestStorageService implements StorageService {
   }
 
   @override
-  Future<String> calculateSha256(File file) async => 'dummy-sha-${file.path.hashCode}';
+  Future<String> calculateSha256(File file) async =>
+      'dummy-sha-${file.path.hashCode}';
 
   @override
   Future<void> deleteBookDirectory(String bookId) async {}
@@ -172,7 +188,10 @@ void main() {
       expect(contentSearch.dataOrNull!.first.snippet, contains('<mark>'));
 
       // 5. Scoped book content search
-      final scopedMatch = await searchRepo.searchContent('Decanting Room', bookId: 'integration-book-1');
+      final scopedMatch = await searchRepo.searchContent(
+        'Decanting Room',
+        bookId: 'integration-book-1',
+      );
       expect(scopedMatch.isSuccess, isTrue);
       expect(scopedMatch.dataOrNull!.length, 1);
       expect(scopedMatch.dataOrNull!.first.chapterTitle, 'Chapter Two');
@@ -185,77 +204,81 @@ void main() {
       final postDeleteBookSearch = await searchRepo.searchBooks('Huxley');
       expect(postDeleteBookSearch.dataOrNull!, isEmpty);
 
-      final postDeleteContentSearch = await searchRepo.searchContent('CENTRAL LONDON');
+      final postDeleteContentSearch = await searchRepo.searchContent(
+        'CENTRAL LONDON',
+      );
       expect(postDeleteContentSearch.dataOrNull!, isEmpty);
     });
 
-    testWidgets('Full UI Search & Navigation: Tapping content result navigates to Reader with initialChapterIndex', (tester) async {
-      final now = DateTime.now().toUtc();
+    testWidgets(
+      'Full UI Search & Navigation: Tapping content result navigates to Reader with initialChapterIndex',
+      (tester) async {
+        final now = DateTime.now().toUtc();
 
-      // Seed book and chapter
-      await bookRepo.saveBook(
-        BookEntity(
-          id: 'nav-book-1',
-          title: 'Solaris',
-          author: 'Stanislaw Lem',
-          originalFileName: 'solaris.epub',
-          filePath: '/mock/storage/books/nav-book-1/original.epub',
-          format: 'epub',
-          sha256: 'sha-nav-1',
-          fileSizeBytes: 4000,
-          createdAt: now,
-        ),
-      );
-      await bookRepo.saveChapters([
-        const ChapterEntity(
-          id: 'sol-ch-1',
-          bookId: 'nav-book-1',
-          chapterIndex: 0,
-          title: 'The Cosmonauts',
-          content: 'At 19:00 hours, Kelvin entered the shuttle preparing for descent toward Solaris station.',
-          wordCount: 13,
-          characterCount: 88,
-        ),
-        const ChapterEntity(
-          id: 'sol-ch-2',
-          bookId: 'nav-book-1',
-          chapterIndex: 1,
-          title: 'The Oceanic Living Brain',
-          content: 'The living cytoplasmic colloidal ocean stretched thousands of miles across the planetary surface.',
-          wordCount: 13,
-          characterCount: 100,
-        ),
-      ]);
+        // Seed book and chapter
+        await bookRepo.saveBook(
+          BookEntity(
+            id: 'nav-book-1',
+            title: 'Solaris',
+            author: 'Stanislaw Lem',
+            originalFileName: 'solaris.epub',
+            filePath: '/mock/storage/books/nav-book-1/original.epub',
+            format: 'epub',
+            sha256: 'sha-nav-1',
+            fileSizeBytes: 4000,
+            createdAt: now,
+          ),
+        );
+        await bookRepo.saveChapters([
+          const ChapterEntity(
+            id: 'sol-ch-1',
+            bookId: 'nav-book-1',
+            chapterIndex: 0,
+            title: 'The Cosmonauts',
+            content: 'At 19:00 hours, Kelvin entered the shuttle preparing for descent toward Solaris station.',
+            wordCount: 13,
+            characterCount: 88,
+          ),
+          const ChapterEntity(
+            id: 'sol-ch-2',
+            bookId: 'nav-book-1',
+            chapterIndex: 1,
+            title: 'The Oceanic Living Brain',
+            content: 'The living cytoplasmic colloidal ocean stretched thousands of miles across the planetary surface.',
+            wordCount: 13,
+            characterCount: 100,
+          ),
+        ]);
 
-      final router = createAppRouter(initialLocation: '/search');
+        final router = createAppRouter(initialLocation: '/search');
 
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: router,
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+        await tester.pumpAndSettle();
 
-      // Verify we are on SearchScreen
-      expect(find.byType(TextField), findsOneWidget);
+        // Verify we are on SearchScreen
+        expect(find.byType(TextField), findsOneWidget);
 
-      // Enter search query targeting Chapter 2
-      await tester.enterText(find.byType(TextField), 'colloidal ocean');
-      // Wait for debounce 300ms
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pumpAndSettle();
+        // Enter search query targeting Chapter 2
+        await tester.enterText(find.byType(TextField), 'colloidal ocean');
+        // Wait for debounce 300ms
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pumpAndSettle();
 
-      // Verify result found
-      expect(find.textContaining('The Oceanic Living Brain'), findsOneWidget);
-      expect(find.textContaining('colloidal'), findsOneWidget);
+        // Verify result found
+        expect(find.textContaining('The Oceanic Living Brain'), findsOneWidget);
+        expect(find.textContaining('colloidal'), findsOneWidget);
 
-      // Tap the content search result
-      await tester.tap(find.textContaining('The Oceanic Living Brain'));
-      await tester.pumpAndSettle();
+        // Tap the content search result
+        await tester.tap(find.textContaining('The Oceanic Living Brain'));
+        await tester.pumpAndSettle();
 
-      // Verify navigated to ReaderScreen with Chapter 2 loaded!
-      expect(find.text('The Oceanic Living Brain'), findsWidgets);
-      expect(find.textContaining('living cytoplasmic colloidal ocean'), findsOneWidget);
-    });
+        // Verify navigated to ReaderScreen with Chapter 2 loaded!
+        expect(find.text('The Oceanic Living Brain'), findsWidgets);
+        expect(
+          find.textContaining('living cytoplasmic colloidal ocean'),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

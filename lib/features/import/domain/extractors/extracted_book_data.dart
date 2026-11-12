@@ -35,4 +35,3 @@ class ExtractedBookData {
   final Uint8List? coverImageBytes;
   final List<ExtractedChapterData> chapters;
 }
-

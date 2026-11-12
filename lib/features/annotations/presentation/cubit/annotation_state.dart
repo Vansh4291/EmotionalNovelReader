@@ -2,12 +2,7 @@ import '../../domain/entities/bookmark_entity.dart';
 import '../../domain/entities/chapter_note_entity.dart';
 import '../../domain/entities/highlight_entity.dart';
 
-enum AnnotationFilter {
-  all,
-  bookmarks,
-  highlights,
-  notes,
-}
+enum AnnotationFilter { all, bookmarks, highlights, notes }
 
 sealed class AnnotationState {
   const AnnotationState();
@@ -39,7 +34,8 @@ class AnnotationLoaded extends AnnotationState {
   final String searchQuery;
 
   List<BookmarkEntity> get displayedBookmarks {
-    if (filter == AnnotationFilter.highlights || filter == AnnotationFilter.notes) {
+    if (filter == AnnotationFilter.highlights ||
+        filter == AnnotationFilter.notes) {
       return [];
     }
     if (searchQuery.trim().isEmpty) {
@@ -74,7 +70,8 @@ class AnnotationLoaded extends AnnotationState {
   }
 
   List<ChapterNoteEntity> get displayedChapterNotes {
-    if (filter == AnnotationFilter.bookmarks || filter == AnnotationFilter.highlights) {
+    if (filter == AnnotationFilter.bookmarks ||
+        filter == AnnotationFilter.highlights) {
       return [];
     }
     if (searchQuery.trim().isEmpty) {
@@ -116,4 +113,3 @@ class AnnotationError extends AnnotationState {
   const AnnotationError(this.message);
   final String message;
 }
-

@@ -30,7 +30,10 @@ void main() {
 
       expect(logOutput.events, isNotEmpty);
       final loggedLines = logOutput.events.first.lines.join(' ');
-      expect(loggedLines, contains('C:\\Users\\<REDACTED_USER>\\Documents\\book.epub'));
+      expect(
+        loggedLines,
+        contains('C:\\Users\\<REDACTED_USER>\\Documents\\book.epub'),
+      );
       expect(loggedLines, isNot(contains('Alice')));
     });
 
@@ -39,7 +42,10 @@ void main() {
 
       expect(logOutput.events, isNotEmpty);
       final loggedLines = logOutput.events.first.lines.join(' ');
-      expect(loggedLines, contains('/Users/<REDACTED_USER>/Downloads/novel.txt'));
+      expect(
+        loggedLines,
+        contains('/Users/<REDACTED_USER>/Downloads/novel.txt'),
+      );
       expect(loggedLines, isNot(contains('Bob')));
     });
 
@@ -52,4 +58,3 @@ void main() {
     });
   });
 }
-

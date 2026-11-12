@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:path/path.dart' as p;
+
 import '../../../../core/errors/failures.dart';
 import 'document_extractor.dart';
 import 'extracted_book_data.dart';
@@ -31,7 +33,10 @@ class TxtExtractor implements DocumentExtractor {
         rawText = latin1.decode(bytes);
       }
 
-      final normalizedText = rawText.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
+      final normalizedText = rawText
+          .replaceAll('\r\n', '\n')
+          .replaceAll('\r', '\n')
+          .trim();
       if (normalizedText.isEmpty) {
         return const Result.error(DocumentParsingFailure('Text file is empty'));
       }
@@ -48,9 +53,13 @@ class TxtExtractor implements DocumentExtractor {
           final match = matches[i];
           final chapterTitle = match.group(0)!.trim();
           final startIndex = match.start;
-          final endIndex = i + 1 < matches.length ? matches[i + 1].start : normalizedText.length;
+          final endIndex = i + 1 < matches.length
+              ? matches[i + 1].start
+              : normalizedText.length;
 
-          final chapterBody = normalizedText.substring(startIndex, endIndex).trim();
+          final chapterBody = normalizedText
+              .substring(startIndex, endIndex)
+              .trim();
           final wordCount = _calculateWordCount(chapterBody);
 
           chapters.add(
@@ -64,7 +73,10 @@ class TxtExtractor implements DocumentExtractor {
           );
 
           final progress = 0.3 + (0.6 * ((i + 1) / matches.length));
-          onProgress?.call(progress, 'Indexed chapter ${i + 1} of ${matches.length}');
+          onProgress?.call(
+            progress,
+            'Indexed chapter ${i + 1} of ${matches.length}',
+          );
         }
       } else {
         // No explicit chapter markers; chunk into ~2,500 word sections on paragraph breaks
@@ -102,7 +114,9 @@ class TxtExtractor implements DocumentExtractor {
           chapters.add(
             ExtractedChapterData(
               index: currentSectionIndex,
-              title: chapters.isEmpty ? 'Full Text' : 'Section ${currentSectionIndex + 1}',
+              title: chapters.isEmpty
+                  ? 'Full Text'
+                  : 'Section ${currentSectionIndex + 1}',
               content: content,
               wordCount: currentWordCount,
               characterCount: content.length,
@@ -113,15 +127,15 @@ class TxtExtractor implements DocumentExtractor {
 
       onProgress?.call(1.0, 'Text extraction complete.');
       return Result.success(
-        ExtractedBookData(
-          title: title,
-          format: 'txt',
-          chapters: chapters,
-        ),
+        ExtractedBookData(title: title, format: 'txt', chapters: chapters),
       );
     } catch (e, stack) {
       return Result.error(
-        DocumentParsingFailure('Failed to extract text file: ${e.toString()}', e, stack),
+        DocumentParsingFailure(
+          'Failed to extract text file: ${e.toString()}',
+          e,
+          stack,
+        ),
       );
     }
   }
@@ -131,4 +145,3 @@ class TxtExtractor implements DocumentExtractor {
     return text.trim().split(RegExp(r'\s+')).length;
   }
 }
-

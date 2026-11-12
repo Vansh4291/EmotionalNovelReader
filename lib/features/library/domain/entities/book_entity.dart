@@ -88,4 +88,3 @@ class BookEntity {
   @override
   String toString() => 'BookEntity(id: $id, title: "$title", format: $format)';
 }
-

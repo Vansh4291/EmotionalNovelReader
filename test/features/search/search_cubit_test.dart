@@ -69,7 +69,10 @@ void main() {
       final states = <SearchState>[];
       final subscription = cubit.stream.listen(states.add);
 
-      cubit.onQueryChanged('Dune', debounceDuration: const Duration(milliseconds: 50));
+      cubit.onQueryChanged(
+        'Dune',
+        debounceDuration: const Duration(milliseconds: 50),
+      );
       // Immediately after call, query is recorded but search has not executed
       expect(cubit.currentQuery, 'Dune');
 
@@ -86,24 +89,32 @@ void main() {
       await subscription.cancel();
     });
 
-    test('Empty query resets state to SearchInitial immediately without debounce', () {
-      cubit.onQueryChanged('   ');
-      expect(cubit.state, isA<SearchInitial>());
-    });
+    test(
+      'Empty query resets state to SearchInitial immediately without debounce',
+      () {
+        cubit.onQueryChanged('   ');
+        expect(cubit.state, isA<SearchInitial>());
+      },
+    );
 
-    test('Emits SearchEmpty when both books and content return empty lists', () async {
-      mockRepository.booksToReturn = [];
-      mockRepository.contentToReturn = [];
+    test(
+      'Emits SearchEmpty when both books and content return empty lists',
+      () async {
+        mockRepository.booksToReturn = [];
+        mockRepository.contentToReturn = [];
 
-      await cubit.executeSearch('nonexistent query');
+        await cubit.executeSearch('nonexistent query');
 
-      expect(cubit.state, isA<SearchEmpty>());
-      final empty = cubit.state as SearchEmpty;
-      expect(empty.query, 'nonexistent query');
-    });
+        expect(cubit.state, isA<SearchEmpty>());
+        final empty = cubit.state as SearchEmpty;
+        expect(empty.query, 'nonexistent query');
+      },
+    );
 
     test('Emits SearchError on repository failure', () async {
-      mockRepository.failureToReturn = const DatabaseFailure('SQLite disk I/O error');
+      mockRepository.failureToReturn = const DatabaseFailure(
+        'SQLite disk I/O error',
+      );
 
       await cubit.executeSearch('fail');
 
@@ -114,7 +125,12 @@ void main() {
 
     test('setScope updates scope and re-executes active search', () async {
       mockRepository.booksToReturn = [
-        const BookSearchResult(id: 'b1', title: 'Book 1', author: 'Author 1', format: 'epub'),
+        const BookSearchResult(
+          id: 'b1',
+          title: 'Book 1',
+          author: 'Author 1',
+          format: 'epub',
+        ),
       ];
       mockRepository.contentToReturn = [
         const ContentSearchResult(
@@ -148,7 +164,12 @@ void main() {
       // Query 1 will be slow (delay 100ms)
       mockRepository.delay = const Duration(milliseconds: 100);
       mockRepository.booksToReturn = [
-        const BookSearchResult(id: 'b1', title: 'Old Result', author: 'Old', format: 'epub'),
+        const BookSearchResult(
+          id: 'b1',
+          title: 'Old Result',
+          author: 'Old',
+          format: 'epub',
+        ),
       ];
 
       final future1 = cubit.executeSearch('slow');
@@ -156,7 +177,12 @@ void main() {
       // Immediately trigger Query 2 which is fast (no delay)
       mockRepository.delay = Duration.zero;
       mockRepository.booksToReturn = [
-        const BookSearchResult(id: 'b2', title: 'New Result', author: 'New', format: 'epub'),
+        const BookSearchResult(
+          id: 'b2',
+          title: 'New Result',
+          author: 'New',
+          format: 'epub',
+        ),
       ];
       final future2 = cubit.executeSearch('fast');
 
@@ -177,7 +203,12 @@ void main() {
 
     test('reindex rebuilds index and re-executes search', () async {
       mockRepository.booksToReturn = [
-        const BookSearchResult(id: 'b1', title: 'Indexed Title', author: 'Author', format: 'epub'),
+        const BookSearchResult(
+          id: 'b1',
+          title: 'Indexed Title',
+          author: 'Author',
+          format: 'epub',
+        ),
       ];
 
       // Reindex with active query

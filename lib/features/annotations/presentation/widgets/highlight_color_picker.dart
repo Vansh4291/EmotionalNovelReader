@@ -44,11 +44,7 @@ class HighlightColorPicker extends StatelessWidget {
                   : null,
             ),
             child: isSelected
-                ? const Icon(
-                    Icons.check,
-                    size: 20,
-                    color: Colors.black87,
-                  )
+                ? const Icon(Icons.check, size: 20, color: Colors.black87)
                 : null,
           ),
         );
@@ -56,4 +52,3 @@ class HighlightColorPicker extends StatelessWidget {
     );
   }
 }
-

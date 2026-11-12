@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+
 import '../errors/failures.dart';
 
 /// Storage service managing sandboxed book files, cache lifecycle, and path safety.
@@ -9,6 +11,8 @@ abstract interface class StorageService {
   Future<Directory> getAppLibraryDirectory();
   Future<Directory> getBookDirectory(String bookId);
   Future<Directory> getTempDirectory();
+  Future<Directory> getBackupDirectory();
+  Future<Directory> getModelsDirectory();
   Future<void> cleanupTempDirectory();
   Future<String> saveBookFile({
     required String bookId,
@@ -42,7 +46,11 @@ class DefaultStorageService implements StorageService {
       }
       return libraryDir;
     } catch (e, stack) {
-      throw StorageFailure('Failed to access application library directory', e, stack);
+      throw StorageFailure(
+        'Failed to access application library directory',
+        e,
+        stack,
+      );
     }
   }
 
@@ -56,7 +64,11 @@ class DefaultStorageService implements StorageService {
       }
       return bookDir;
     } catch (e, stack) {
-      throw StorageFailure('Failed to create book storage directory for $bookId', e, stack);
+      throw StorageFailure(
+        'Failed to create book storage directory for $bookId',
+        e,
+        stack,
+      );
     }
   }
 
@@ -70,7 +82,39 @@ class DefaultStorageService implements StorageService {
       }
       return tempStagingDir;
     } catch (e, stack) {
-      throw StorageFailure('Failed to access temporary staging directory', e, stack);
+      throw StorageFailure(
+        'Failed to access temporary staging directory',
+        e,
+        stack,
+      );
+    }
+  }
+
+  @override
+  Future<Directory> getBackupDirectory() async {
+    try {
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final backupDir = Directory(p.join(appDocDir.path, 'backups'));
+      if (!await backupDir.exists()) {
+        await backupDir.create(recursive: true);
+      }
+      return backupDir;
+    } catch (e, stack) {
+      throw StorageFailure('Failed to access backup directory', e, stack);
+    }
+  }
+
+  @override
+  Future<Directory> getModelsDirectory() async {
+    try {
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final modelsDir = Directory(p.join(appDocDir.path, 'ai_models'));
+      if (!await modelsDir.exists()) {
+        await modelsDir.create(recursive: true);
+      }
+      return modelsDir;
+    } catch (e, stack) {
+      throw StorageFailure('Failed to access AI models directory', e, stack);
     }
   }
 
@@ -83,7 +127,11 @@ class DefaultStorageService implements StorageService {
         await tempStagingDir.delete(recursive: true);
       }
     } catch (e, stack) {
-      throw StorageFailure('Failed to clean up temporary staging directory', e, stack);
+      throw StorageFailure(
+        'Failed to clean up temporary staging directory',
+        e,
+        stack,
+      );
     }
   }
 
@@ -100,7 +148,11 @@ class DefaultStorageService implements StorageService {
       await destinationFile.writeAsBytes(bytes, flush: true);
       return destinationFile.path;
     } catch (e, stack) {
-      throw StorageFailure('Failed to save imported book file for $bookId', e, stack);
+      throw StorageFailure(
+        'Failed to save imported book file for $bookId',
+        e,
+        stack,
+      );
     }
   }
 
@@ -119,7 +171,11 @@ class DefaultStorageService implements StorageService {
       await reader.pipe(writer);
       return destinationFile.path;
     } catch (e, stack) {
-      throw StorageFailure('Failed to stream copy imported book file for $bookId', e, stack);
+      throw StorageFailure(
+        'Failed to stream copy imported book file for $bookId',
+        e,
+        stack,
+      );
     }
   }
 
@@ -149,7 +205,11 @@ class DefaultStorageService implements StorageService {
       return digest.toString();
     } catch (e, stack) {
       if (e is Failure) rethrow;
-      throw StorageFailure('Failed to calculate SHA-256 for ${file.path}', e, stack);
+      throw StorageFailure(
+        'Failed to calculate SHA-256 for ${file.path}',
+        e,
+        stack,
+      );
     }
   }
 
@@ -162,7 +222,11 @@ class DefaultStorageService implements StorageService {
         await bookDir.delete(recursive: true);
       }
     } catch (e, stack) {
-      throw StorageFailure('Failed to delete book directory for $bookId', e, stack);
+      throw StorageFailure(
+        'Failed to delete book directory for $bookId',
+        e,
+        stack,
+      );
     }
   }
 
@@ -171,7 +235,9 @@ class DefaultStorageService implements StorageService {
     final canonicalBase = p.canonicalize(basePath);
     final targetPath = p.canonicalize(p.join(basePath, relativePath));
     final separator = p.separator;
-    final baseWithSep = canonicalBase.endsWith(separator) ? canonicalBase : '$canonicalBase$separator';
+    final baseWithSep = canonicalBase.endsWith(separator)
+        ? canonicalBase
+        : '$canonicalBase$separator';
     if (!targetPath.startsWith(baseWithSep) && targetPath != canonicalBase) {
       throw SecurityFailure(
         'Path traversal detected: "$relativePath" attempts to escape base directory "$basePath"',
@@ -179,4 +245,3 @@ class DefaultStorageService implements StorageService {
     }
   }
 }
-

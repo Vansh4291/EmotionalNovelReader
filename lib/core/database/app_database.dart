@@ -1,35 +1,45 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+
 import 'tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Books, Chapters, Bookmarks, Highlights, ReadingProgressTable, ChapterNotes])
+@DriftDatabase(
+  tables: [
+    Books,
+    Chapters,
+    Bookmarks,
+    Highlights,
+    ReadingProgressTable,
+    ChapterNotes,
+    ReadingSessions,
+    ReadingGoals,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   static QueryExecutor _openConnection() {
     return driftDatabase(
       name: 'enr_database',
-      native: const DriftNativeOptions(
-        shareAcrossIsolates: false,
-      ),
+      native: const DriftNativeOptions(shareAcrossIsolates: false),
     );
   }
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        beforeOpen: (details) async {
-          // Strictly enforce foreign keys in SQLite WAL mode
-          await customStatement('PRAGMA foreign_keys = ON;');
-          await customStatement('PRAGMA journal_mode = WAL;');
-        },
-        onCreate: (m) async {
-          await m.createAll();
-          await customStatement('''
+    beforeOpen: (details) async {
+      // Strictly enforce foreign keys in SQLite WAL mode
+      await customStatement('PRAGMA foreign_keys = ON;');
+      await customStatement('PRAGMA journal_mode = WAL;');
+    },
+    onCreate: (m) async {
+      await m.createAll();
+      await customStatement('''
             CREATE VIRTUAL TABLE IF NOT EXISTS chapter_fts USING fts5(
               chapter_id UNINDEXED,
               book_id UNINDEXED,
@@ -40,13 +50,13 @@ class AppDatabase extends _$AppDatabase {
               tokenize="trigram"
             );
           ''');
-        },
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.addColumn(chapters, chapters.content);
-          }
-          if (from < 3) {
-            await customStatement('''
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.addColumn(chapters, chapters.content);
+      }
+      if (from < 3) {
+        await customStatement('''
               CREATE VIRTUAL TABLE IF NOT EXISTS chapter_fts USING fts5(
                 chapter_id UNINDEXED,
                 book_id UNINDEXED,
@@ -57,29 +67,37 @@ class AppDatabase extends _$AppDatabase {
                 tokenize="trigram"
               );
             ''');
-            await customStatement('''
+        await customStatement('''
               INSERT INTO chapter_fts(chapter_id, book_id, chapter_index, book_title, chapter_title, content)
               SELECT c.id, c.book_id, c.chapter_index, b.title, c.title, c.content
               FROM chapters c
               JOIN books b ON b.id = c.book_id;
             ''');
-          }
-          if (from < 4) {
-            await m.createTable(chapterNotes);
-          }
-        },
-      );
+      }
+      if (from < 4) {
+        await m.createTable(chapterNotes);
+      }
+      if (from < 5) {
+        await m.createTable(readingSessions);
+        await m.createTable(readingGoals);
+      }
+    },
+  );
 
   // ==========================================
   // Books CRUD & Reactive Stream Methods
   // ==========================================
 
   Stream<List<Book>> watchAllBooks() {
-    return (select(books)..orderBy([(b) => OrderingTerm.desc(b.createdAt)])).watch();
+    return (select(
+      books,
+    )..orderBy([(b) => OrderingTerm.desc(b.createdAt)])).watch();
   }
 
   Future<List<Book>> getAllBooks() {
-    return (select(books)..orderBy([(b) => OrderingTerm.desc(b.createdAt)])).get();
+    return (select(
+      books,
+    )..orderBy([(b) => OrderingTerm.desc(b.createdAt)])).get();
   }
 
   Future<Book?> getBookById(String id) {
@@ -87,7 +105,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<Book?> getBookBySha(String sha256) {
-    return (select(books)..where((b) => b.sha256.equals(sha256))).getSingleOrNull();
+    return (select(
+      books,
+    )..where((b) => b.sha256.equals(sha256))).getSingleOrNull();
   }
 
   Future<int> insertBook(BooksCompanion book) {
@@ -137,13 +157,15 @@ class AppDatabase extends _$AppDatabase {
   // ==========================================
 
   Stream<ReadingProgressTableData?> watchReadingProgress(String bookId) {
-    return (select(readingProgressTable)..where((p) => p.bookId.equals(bookId)))
-        .watchSingleOrNull();
+    return (select(
+      readingProgressTable,
+    )..where((p) => p.bookId.equals(bookId))).watchSingleOrNull();
   }
 
   Future<ReadingProgressTableData?> getReadingProgress(String bookId) {
-    return (select(readingProgressTable)..where((p) => p.bookId.equals(bookId)))
-        .getSingleOrNull();
+    return (select(
+      readingProgressTable,
+    )..where((p) => p.bookId.equals(bookId))).getSingleOrNull();
   }
 
   Future<void> saveReadingProgress(ReadingProgressTableCompanion progress) {
@@ -169,22 +191,30 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<Bookmark?> getBookmarkById(String bookmarkId) {
-    return (select(bookmarks)..where((b) => b.id.equals(bookmarkId))).getSingleOrNull();
+    return (select(
+      bookmarks,
+    )..where((b) => b.id.equals(bookmarkId))).getSingleOrNull();
   }
 
   Future<Bookmark?> getBookmarkForChapter(String bookId, String chapterId) {
-    return (select(bookmarks)
-          ..where((b) => b.bookId.equals(bookId) & b.chapterId.equals(chapterId)))
+    return (select(bookmarks)..where(
+          (b) => b.bookId.equals(bookId) & b.chapterId.equals(chapterId),
+        ))
         .getSingleOrNull();
   }
 
-  Future<Bookmark?> getBookmarkForLocation(String bookId, String? chapterId, String location) {
+  Future<Bookmark?> getBookmarkForLocation(
+    String bookId,
+    String? chapterId,
+    String location,
+  ) {
     if (chapterId != null) {
-      return (select(bookmarks)
-            ..where((b) =>
+      return (select(bookmarks)..where(
+            (b) =>
                 b.bookId.equals(bookId) &
                 b.chapterId.equals(chapterId) &
-                b.location.equals(location)))
+                b.location.equals(location),
+          ))
           .getSingleOrNull();
     }
     return (select(bookmarks)
@@ -192,9 +222,14 @@ class AppDatabase extends _$AppDatabase {
         .getSingleOrNull();
   }
 
-  Future<List<Bookmark>> getBookmarksForChapter(String bookId, String chapterId) {
+  Future<List<Bookmark>> getBookmarksForChapter(
+    String bookId,
+    String chapterId,
+  ) {
     return (select(bookmarks)
-          ..where((b) => b.bookId.equals(bookId) & b.chapterId.equals(chapterId))
+          ..where(
+            (b) => b.bookId.equals(bookId) & b.chapterId.equals(chapterId),
+          )
           ..orderBy([(b) => OrderingTerm.asc(b.location)]))
         .get();
   }
@@ -207,13 +242,18 @@ class AppDatabase extends _$AppDatabase {
     return (delete(bookmarks)..where((b) => b.id.equals(bookmarkId))).go();
   }
 
-  Future<int> deleteBookmarkAtLocation(String bookId, String? chapterId, String location) {
+  Future<int> deleteBookmarkAtLocation(
+    String bookId,
+    String? chapterId,
+    String location,
+  ) {
     if (chapterId != null) {
-      return (delete(bookmarks)
-            ..where((b) =>
+      return (delete(bookmarks)..where(
+            (b) =>
                 b.bookId.equals(bookId) &
                 b.chapterId.equals(chapterId) &
-                b.location.equals(location)))
+                b.location.equals(location),
+          ))
           .go();
     }
     return (delete(bookmarks)
@@ -222,8 +262,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<int> deleteBookmarkForChapter(String bookId, String chapterId) {
-    return (delete(bookmarks)
-          ..where((b) => b.bookId.equals(bookId) & b.chapterId.equals(chapterId)))
+    return (delete(bookmarks)..where(
+          (b) => b.bookId.equals(bookId) & b.chapterId.equals(chapterId),
+        ))
         .go();
   }
 
@@ -241,22 +282,34 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
-  Future<List<Highlight>> getHighlightsForChapter(String bookId, String chapterId) {
+  Future<List<Highlight>> getHighlightsForChapter(
+    String bookId,
+    String chapterId,
+  ) {
     return (select(highlights)
-          ..where((h) => h.bookId.equals(bookId) & h.chapterId.equals(chapterId))
+          ..where(
+            (h) => h.bookId.equals(bookId) & h.chapterId.equals(chapterId),
+          )
           ..orderBy([(h) => OrderingTerm.asc(h.startLocation)]))
         .get();
   }
 
-  Stream<List<Highlight>> watchHighlightsForChapter(String bookId, String chapterId) {
+  Stream<List<Highlight>> watchHighlightsForChapter(
+    String bookId,
+    String chapterId,
+  ) {
     return (select(highlights)
-          ..where((h) => h.bookId.equals(bookId) & h.chapterId.equals(chapterId))
+          ..where(
+            (h) => h.bookId.equals(bookId) & h.chapterId.equals(chapterId),
+          )
           ..orderBy([(h) => OrderingTerm.asc(h.startLocation)]))
         .watch();
   }
 
   Future<Highlight?> getHighlightById(String highlightId) {
-    return (select(highlights)..where((h) => h.id.equals(highlightId))).getSingleOrNull();
+    return (select(
+      highlights,
+    )..where((h) => h.id.equals(highlightId))).getSingleOrNull();
   }
 
   Future<int> insertHighlight(HighlightsCompanion highlight) {
@@ -268,13 +321,15 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<int> updateHighlightNote(String highlightId, String? note) {
-    return (update(highlights)..where((h) => h.id.equals(highlightId)))
-        .write(HighlightsCompanion(note: Value(note)));
+    return (update(highlights)..where((h) => h.id.equals(highlightId))).write(
+      HighlightsCompanion(note: Value(note)),
+    );
   }
 
   Future<int> updateHighlightColor(String highlightId, int colorValue) {
-    return (update(highlights)..where((h) => h.id.equals(highlightId)))
-        .write(HighlightsCompanion(colorValue: Value(colorValue)));
+    return (update(highlights)..where((h) => h.id.equals(highlightId))).write(
+      HighlightsCompanion(colorValue: Value(colorValue)),
+    );
   }
 
   Future<int> deleteHighlight(String highlightId) {
@@ -299,15 +354,22 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
-  Future<List<ChapterNote>> getChapterNotesForChapter(String bookId, String chapterId) {
+  Future<List<ChapterNote>> getChapterNotesForChapter(
+    String bookId,
+    String chapterId,
+  ) {
     return (select(chapterNotes)
-          ..where((cn) => cn.bookId.equals(bookId) & cn.chapterId.equals(chapterId))
+          ..where(
+            (cn) => cn.bookId.equals(bookId) & cn.chapterId.equals(chapterId),
+          )
           ..orderBy([(cn) => OrderingTerm.desc(cn.createdAt)]))
         .get();
   }
 
   Future<ChapterNote?> getChapterNoteById(String id) {
-    return (select(chapterNotes)..where((cn) => cn.id.equals(id))).getSingleOrNull();
+    return (select(
+      chapterNotes,
+    )..where((cn) => cn.id.equals(id))).getSingleOrNull();
   }
 
   Future<int> insertChapterNote(ChapterNotesCompanion note) {
@@ -315,12 +377,13 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<bool> updateChapterNoteContent(String id, String content) async {
-    final rows = await (update(chapterNotes)..where((cn) => cn.id.equals(id))).write(
-      ChapterNotesCompanion(
-        content: Value(content),
-        updatedAt: Value(DateTime.now().toUtc()),
-      ),
-    );
+    final rows = await (update(chapterNotes)..where((cn) => cn.id.equals(id)))
+        .write(
+          ChapterNotesCompanion(
+            content: Value(content),
+            updatedAt: Value(DateTime.now().toUtc()),
+          ),
+        );
     return rows > 0;
   }
 
@@ -351,7 +414,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deleteFtsForBook(String bookId) async {
-    await customStatement('DELETE FROM chapter_fts WHERE book_id = ?', [bookId]);
+    await customStatement('DELETE FROM chapter_fts WHERE book_id = ?', [
+      bookId,
+    ]);
   }
 
   Future<void> rebuildFtsIndex() async {
@@ -386,7 +451,8 @@ class AppDatabase extends _$AppDatabase {
       // In FTS5, escape double quotes
       final escaped = cleanQuery.replaceAll('"', '""');
       final matchClause = '"$escaped"';
-      final sql = '''
+      final sql =
+          '''
         SELECT 
           chapter_id,
           book_id,
@@ -401,16 +467,29 @@ class AppDatabase extends _$AppDatabase {
         ORDER BY rank
         LIMIT ?;
       ''';
-      final params = bookId != null ? [matchClause, bookId, limit] : [matchClause, limit];
+      final params = bookId != null
+          ? [matchClause, bookId, limit]
+          : [matchClause, limit];
       try {
-        final rows = await customSelect(sql, variables: params.map((p) => Variable(p)).toList()).get();
+        final rows = await customSelect(
+          sql,
+          variables: params.map((p) => Variable(p)).toList(),
+        ).get();
         if (rows.isNotEmpty) {
           return rows.map((r) => r.data).toList();
         }
         // If FTS returned 0 results, also try substring fallback for edge cases
-        return await _searchContentLike(cleanQuery, bookId: bookId, limit: limit);
+        return await _searchContentLike(
+          cleanQuery,
+          bookId: bookId,
+          limit: limit,
+        );
       } catch (_) {
-        return await _searchContentLike(cleanQuery, bookId: bookId, limit: limit);
+        return await _searchContentLike(
+          cleanQuery,
+          bookId: bookId,
+          limit: limit,
+        );
       }
     } else {
       // For short queries (<3 chars), use LIKE fallback
@@ -424,7 +503,8 @@ class AppDatabase extends _$AppDatabase {
     int limit = 50,
   }) async {
     final pattern = '%$query%';
-    final sql = '''
+    final sql =
+        '''
       SELECT 
         c.id as chapter_id,
         c.book_id,
@@ -442,7 +522,10 @@ class AppDatabase extends _$AppDatabase {
     final params = bookId != null
         ? [pattern, pattern, pattern, bookId, limit]
         : [pattern, pattern, pattern, limit];
-    final rows = await customSelect(sql, variables: params.map((p) => Variable(p)).toList()).get();
+    final rows = await customSelect(
+      sql,
+      variables: params.map((p) => Variable(p)).toList(),
+    ).get();
 
     return rows.map((r) {
       final content = r.data['content'] as String? ?? '';
@@ -459,7 +542,11 @@ class AppDatabase extends _$AppDatabase {
     }).toList();
   }
 
-  static String _createSnippet(String text, String term, {int contextLength = 40}) {
+  static String _createSnippet(
+    String text,
+    String term, {
+    int contextLength = 40,
+  }) {
     final lowerText = text.toLowerCase();
     final lowerTerm = term.toLowerCase();
     final index = lowerText.indexOf(lowerTerm);
@@ -475,5 +562,65 @@ class AppDatabase extends _$AppDatabase {
     final after = text.substring(index + term.length, end);
     return '$prefix$before<mark>$match</mark>$after$suffix';
   }
-}
 
+  // ==========================================
+  // Reading Sessions CRUD & Statistics
+  // ==========================================
+
+  Future<int> insertReadingSession(ReadingSessionsCompanion session) {
+    return into(readingSessions).insert(session);
+  }
+
+  Future<List<ReadingSession>> getAllReadingSessions() {
+    return (select(
+      readingSessions,
+    )..orderBy([(s) => OrderingTerm.desc(s.startTime)])).get();
+  }
+
+  Stream<List<ReadingSession>> watchAllReadingSessions() {
+    return (select(
+      readingSessions,
+    )..orderBy([(s) => OrderingTerm.desc(s.startTime)])).watch();
+  }
+
+  Future<List<ReadingSession>> getReadingSessionsForBook(String bookId) {
+    return (select(readingSessions)
+          ..where((s) => s.bookId.equals(bookId))
+          ..orderBy([(s) => OrderingTerm.desc(s.startTime)]))
+        .get();
+  }
+
+  Future<List<ReadingSession>> getReadingSessionsBetween(
+    DateTime start,
+    DateTime end,
+  ) {
+    return (select(readingSessions)
+          ..where(
+            (s) =>
+                s.startTime.isBiggerOrEqualValue(start) &
+                s.startTime.isSmallerOrEqualValue(end),
+          )
+          ..orderBy([(s) => OrderingTerm.desc(s.startTime)]))
+        .get();
+  }
+
+  // ==========================================
+  // Reading Goals CRUD
+  // ==========================================
+
+  Future<void> insertOrUpdateReadingGoal(ReadingGoalsCompanion goal) {
+    return into(readingGoals).insertOnConflictUpdate(goal);
+  }
+
+  Future<List<ReadingGoal>> getAllReadingGoals() {
+    return select(readingGoals).get();
+  }
+
+  Stream<List<ReadingGoal>> watchAllReadingGoals() {
+    return select(readingGoals).watch();
+  }
+
+  Future<int> deleteReadingGoal(String id) {
+    return (delete(readingGoals)..where((g) => g.id.equals(id))).go();
+  }
+}

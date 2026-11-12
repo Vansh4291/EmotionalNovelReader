@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:crypto/crypto.dart';
 import 'package:drift/native.dart';
 import 'package:emotional_novel_reader/core/database/app_database.dart';
@@ -34,6 +35,20 @@ class TestStorageService implements StorageService {
   @override
   Future<Directory> getTempDirectory() async {
     final dir = Directory(p.join(rootDir.path, 'temp'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  @override
+  Future<Directory> getBackupDirectory() async {
+    final dir = Directory(p.join(rootDir.path, 'backups'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  @override
+  Future<Directory> getModelsDirectory() async {
+    final dir = Directory(p.join(rootDir.path, 'ai_models'));
     if (!await dir.exists()) await dir.create(recursive: true);
     return dir;
   }
@@ -153,60 +168,65 @@ void main() {
   });
 
   group('ImportService Pipeline tests', () {
-    test('Successfully imports a TXT novel with chapters and initial progress', () async {
-      final sampleTxt = File('${tempDir.path}/sample_novel.txt');
-      await sampleTxt.writeAsString('''Chapter 1: The Awakening
+    test(
+      'Successfully imports a TXT novel with chapters and initial progress',
+      () async {
+        final sampleTxt = File('${tempDir.path}/sample_novel.txt');
+        await sampleTxt.writeAsString('''Chapter 1: The Awakening
 The morning sun beamed across the quiet valley.
 
 Chapter 2: The Departure
 He picked up his pack and stepped outside into the unknown.
 ''');
 
-      final progressEvents = <double>[];
-      final result = await importService.importDocument(
-        sampleTxt,
-        onProgress: (p, status) => progressEvents.add(p),
-      );
+        final progressEvents = <double>[];
+        final result = await importService.importDocument(
+          sampleTxt,
+          onProgress: (p, status) => progressEvents.add(p),
+        );
 
-      expect(result.isSuccess, isTrue);
-      final book = result.dataOrNull!;
-      expect(book.title, 'sample_novel');
-      expect(book.format, 'txt');
-      expect(book.sha256, isNotEmpty);
-      expect(progressEvents, isNotEmpty);
+        expect(result.isSuccess, isTrue);
+        final book = result.dataOrNull!;
+        expect(book.title, 'sample_novel');
+        expect(book.format, 'txt');
+        expect(book.sha256, isNotEmpty);
+        expect(progressEvents, isNotEmpty);
 
-      // Verify stored book in repository
-      final allBooksResult = await bookRepository.getAllBooks();
-      expect(allBooksResult.isSuccess, isTrue);
-      final allBooks = allBooksResult.dataOrNull!;
-      expect(allBooks.length, 1);
-      expect(allBooks.first.id, book.id);
+        // Verify stored book in repository
+        final allBooksResult = await bookRepository.getAllBooks();
+        expect(allBooksResult.isSuccess, isTrue);
+        final allBooks = allBooksResult.dataOrNull!;
+        expect(allBooks.length, 1);
+        expect(allBooks.first.id, book.id);
 
-      // Verify chapters in repository
-      final chaptersResult = await bookRepository.getChapters(book.id);
-      expect(chaptersResult.isSuccess, isTrue);
-      final chapters = chaptersResult.dataOrNull!;
-      expect(chapters.length, 2);
-      expect(chapters[0].title, 'Chapter 1: The Awakening');
-      expect(chapters[0].content, contains('The morning sun beamed'));
-      expect(chapters[1].title, 'Chapter 2: The Departure');
+        // Verify chapters in repository
+        final chaptersResult = await bookRepository.getChapters(book.id);
+        expect(chaptersResult.isSuccess, isTrue);
+        final chapters = chaptersResult.dataOrNull!;
+        expect(chapters.length, 2);
+        expect(chapters[0].title, 'Chapter 1: The Awakening');
+        expect(chapters[0].content, contains('The morning sun beamed'));
+        expect(chapters[1].title, 'Chapter 2: The Departure');
 
-      // Verify initial reading progress in repository
-      final progressResult = await bookRepository.getReadingProgress(book.id);
-      expect(progressResult.isSuccess, isTrue);
-      final progress = progressResult.dataOrNull;
-      expect(progress, isNotNull);
-      expect(progress!.currentLocation, '0');
-      expect(progress.progressPercentage, 0.0);
+        // Verify initial reading progress in repository
+        final progressResult = await bookRepository.getReadingProgress(book.id);
+        expect(progressResult.isSuccess, isTrue);
+        final progress = progressResult.dataOrNull;
+        expect(progress, isNotNull);
+        expect(progress!.currentLocation, '0');
+        expect(progress.progressPercentage, 0.0);
 
-      // Verify original file exists in storage sandbox
-      final storedFile = File(book.filePath);
-      expect(await storedFile.exists(), isTrue);
-    });
+        // Verify original file exists in storage sandbox
+        final storedFile = File(book.filePath);
+        expect(await storedFile.exists(), isTrue);
+      },
+    );
 
     test('Rejects duplicate book import with matching SHA-256', () async {
       final sampleTxt = File('${tempDir.path}/dup_test.txt');
-      await sampleTxt.writeAsString('Unique story content that should not be duplicated.');
+      await sampleTxt.writeAsString(
+        'Unique story content that should not be duplicated.',
+      );
 
       final firstResult = await importService.importDocument(sampleTxt);
       expect(firstResult.isSuccess, isTrue);
@@ -214,7 +234,10 @@ He picked up his pack and stepped outside into the unknown.
       // Attempt importing the exact same file
       final secondResult = await importService.importDocument(sampleTxt);
       expect(secondResult.isSuccess, isFalse);
-      expect(secondResult.failureOrNull?.message, contains('already been imported into your library'));
+      expect(
+        secondResult.failureOrNull?.message,
+        contains('already been imported into your library'),
+      );
 
       // Ensure library still has only 1 book
       final allBooksResult = await bookRepository.getAllBooks();

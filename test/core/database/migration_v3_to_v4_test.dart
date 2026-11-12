@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:emotional_novel_reader/core/database/app_database.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,7 +11,9 @@ void main() {
   AppDatabase? appDb;
 
   setUp(() {
-    tempDir = Directory.systemTemp.createTempSync('enr_migration_v3_to_v4_test_');
+    tempDir = Directory.systemTemp.createTempSync(
+      'enr_migration_v3_to_v4_test_',
+    );
     dbFile = File('${tempDir.path}/legacy_v3.db');
   });
 
@@ -121,10 +124,10 @@ void main() {
 
       rawDb.dispose();
 
-      // 2. Open via AppDatabase, triggering migration to v4
+      // 2. Open via AppDatabase, triggering migration to current schema
       appDb = AppDatabase(NativeDatabase(dbFile));
 
-      expect(appDb!.schemaVersion, 4);
+      expect(appDb!.schemaVersion, 5);
 
       // 3. Verify existing data preserved
       final book = await appDb!.getBookById('book-v3-1');
@@ -162,7 +165,10 @@ void main() {
 
       final chapterNotes = await appDb!.getChapterNotesForBook('book-v3-1');
       expect(chapterNotes.length, 1);
-      expect(chapterNotes.first.content, 'Important thoughts on cosmic imagery in chapter 1.');
+      expect(
+        chapterNotes.first.content,
+        'Important thoughts on cosmic imagery in chapter 1.',
+      );
 
       // 5. Verify cascading deletion works
       await appDb!.deleteBook('book-v3-1');
