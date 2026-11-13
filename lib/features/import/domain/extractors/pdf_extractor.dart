@@ -4,19 +4,37 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:path/path.dart' as p;
+import 'package:pdfrx/pdfrx.dart';
 
 import '../../../../core/errors/failures.dart';
 import 'document_extractor.dart';
 import 'extracted_book_data.dart';
 
-/// Extractor for PDF documents supporting both uncompressed and FlateDecode compressed text streams.
+/// Extractor for PDF documents supporting high-fidelity PDFium text extraction via pdfrx,
+/// with graceful fallback to content stream scanning.
 ///
-/// Implements page-aware, font-scoped CMap resolution to eliminate cross-font character code collisions
-/// in multi-subset PDF documents, with graceful fallback to content stream scanning.
-/// Scanned and image-only PDFs containing no extractable text streams fail safely with an explicit
-/// [DocumentParsingFailure], maintaining truthful capability reporting without claiming OCR support.
+/// Handles multi-subset font encodings, CIDFont/Identity-H tables, PUA font ligatures,
+/// and kerning layouts. Scanned and image-only PDFs containing no extractable text streams
+/// fail safely with an explicit [DocumentParsingFailure], maintaining truthful capability
+/// reporting without claiming OCR support.
 class PdfExtractor implements DocumentExtractor {
   const PdfExtractor();
+
+  static bool _pdfiumInitialized = false;
+
+  static Future<void> _ensurePdfiumInitialized() async {
+    if (_pdfiumInitialized) return;
+    if (Platform.environment.containsKey('FLUTTER_TEST')) {
+      await pdfrxInitialize(tmpPath: Directory.systemTemp.path);
+    } else {
+      try {
+        await pdfrxFlutterInitialize();
+      } catch (_) {
+        await pdfrxInitialize(tmpPath: Directory.systemTemp.path);
+      }
+    }
+    _pdfiumInitialized = true;
+  }
 
   @override
   Future<Result<ExtractedBookData>> extract(
@@ -24,7 +42,7 @@ class PdfExtractor implements DocumentExtractor {
     void Function(double progress, String status)? onProgress,
   }) async {
     try {
-      onProgress?.call(0.1, 'Validating PDF structure...');
+      onProgress?.call(0.05, 'Validating PDF structure...');
       final bytes = await file.readAsBytes();
 
       if (bytes.length < 5 ||
@@ -40,81 +58,195 @@ class PdfExtractor implements DocumentExtractor {
         );
       }
 
-      onProgress?.call(
-        0.3,
-        'Extracting content streams and page structures...',
-      );
-      // Strategy 1: Page-aware extraction with font-scoped CMaps (eliminates cross-font collisions)
-      final textBlocks = List<String>.from(_extractPdfPages(bytes));
-
-      // Strategy 2: Content stream fallback for object-stream / cross-reference stream PDFs
-      if (textBlocks.isEmpty) {
-        onProgress?.call(0.5, 'Parsing content streams via fallback...');
-        final decompressedStreams = _extractContentStreams(bytes);
-        final cmap = _extractCMapTables(decompressedStreams);
-
-        for (final streamContent in decompressedStreams) {
-          final extractedFromStream = _extractTextFromStream(
-            streamContent,
-            cmap,
-          );
-          if (extractedFromStream.isNotEmpty) {
-            textBlocks.add(extractedFromStream);
-          }
-        }
-
-        // Strategy 3: Inspect raw uncompressed document if no streams found
-        if (textBlocks.isEmpty) {
-          final rawFallback = _extractTextFromStream(
-            latin1.decode(bytes),
-            cmap,
-          );
-          if (rawFallback.isNotEmpty) {
-            textBlocks.add(rawFallback);
-          }
-        }
-      }
-
       final title = p.basenameWithoutExtension(file.path);
 
-      if (textBlocks.isEmpty) {
-        return const Result.error(
-          DocumentParsingFailure(
-            'Scanned or image-only PDF has no extractable text. OCR extraction is currently unsupported in offline MVP.',
-          ),
-        );
+      // Strategy 1: Production-grade PDFium extraction via pdfrx
+      try {
+        final pdfiumData = await _extractWithPdfium(file, title, onProgress);
+        if (pdfiumData != null && pdfiumData.chapters.isNotEmpty) {
+          onProgress?.call(1.0, 'PDF extraction complete.');
+          return Result.success(pdfiumData);
+        }
+      } catch (_) {
+        // Fall back gracefully to legacy content stream parsing
       }
 
-      onProgress?.call(0.8, 'Assembling PDF pages...');
-      final chapters = <ExtractedChapterData>[];
-      var pageIndex = 0;
-      final buffer = StringBuffer();
-      var wordCount = 0;
+      // Strategy 2: Legacy fallback stream parsing
+      return _extractLegacy(bytes, title, onProgress);
+    } catch (e, stack) {
+      return Result.error(
+        DocumentParsingFailure(
+          'Failed to extract PDF file: ${e.toString()}',
+          e,
+          stack,
+        ),
+      );
+    }
+  }
 
-      for (final block in textBlocks) {
-        final words = block.split(RegExp(r'\s+')).length;
-        if (wordCount + words > 500 && buffer.isNotEmpty) {
-          final content = buffer.toString().trim();
+  Future<ExtractedBookData?> _extractWithPdfium(
+    File file,
+    String title,
+    void Function(double progress, String status)? onProgress,
+  ) async {
+    await _ensurePdfiumInitialized();
+
+    PdfDocument? doc;
+    try {
+      doc = await PdfDocument.openFile(file.path);
+      final totalPages = doc.pages.length;
+      if (totalPages == 0) return null;
+
+      final chapters = <ExtractedChapterData>[];
+      var chapterIndex = 0;
+
+      for (var i = 0; i < totalPages; i++) {
+        final progressFraction = 0.1 + (0.8 * ((i + 1) / totalPages));
+        onProgress?.call(
+          progressFraction,
+          'Extracting page ${i + 1} of $totalPages...',
+        );
+
+        final page = doc.pages[i];
+        final rawText = await page.loadText();
+        final rawStr = rawText?.fullText ?? '';
+        final cleanText = normalizePdfiumText(rawStr);
+
+        if (cleanText.isNotEmpty) {
+          final words = cleanText.split(RegExp(r'\s+')).length;
           chapters.add(
             ExtractedChapterData(
-              index: pageIndex,
-              title: 'Page ${pageIndex + 1}',
-              content: content,
-              wordCount: wordCount,
-              characterCount: content.length,
+              index: chapterIndex,
+              title: 'Page ${page.pageNumber}',
+              content: cleanText,
+              wordCount: words,
+              characterCount: cleanText.length,
             ),
           );
-          pageIndex++;
-          buffer.clear();
-          wordCount = 0;
+          chapterIndex++;
         }
-
-        if (buffer.isNotEmpty) buffer.write('\n\n');
-        buffer.write(block);
-        wordCount += words;
       }
 
-      if (buffer.isNotEmpty) {
+      if (chapters.isEmpty) return null;
+
+      return ExtractedBookData(
+        title: title,
+        format: 'pdf',
+        chapters: chapters,
+      );
+    } finally {
+      await doc?.dispose();
+    }
+  }
+
+  /// Normalizes PDFium-extracted text: cleans PUA font ligatures, resolves NUL-prefixed
+  /// ligatures (fi / fl), and removes orphaned binary NULs while preserving punctuation and spacing.
+  static String normalizePdfiumText(String text) {
+    if (text.isEmpty) return text;
+
+    var s = text
+        .replaceAll('\uE062', 'Th')
+        .replaceAll('\uE09D', 'ft')
+        .replaceAll('\uE0BB', 'fl')
+        .replaceAll('\uE117', 'fi')
+        .replaceAll('\uFB00', 'ff')
+        .replaceAll('\uFB01', 'fi')
+        .replaceAll('\uFB02', 'fl')
+        .replaceAll('\uFB03', 'ffi')
+        .replaceAll('\uFB04', 'ffl');
+
+    // Handle embedded font NUL-mapped ligatures (fi / fl)
+    s = s.replaceAllMapped(RegExp(r'\u0000([a-zA-Z]+)'), (m) {
+      final next = m.group(1)!;
+      const flPrefixes = [
+        'y',
+        'oor',
+        'ight',
+        'ow',
+        'ame',
+        'at',
+        'eet',
+        'esh',
+        'ag',
+        'uid',
+        'ex',
+        'oat',
+        'ew',
+        'own',
+      ];
+      if (flPrefixes.any((p) => next.startsWith(p))) {
+        return 'fl$next';
+      } else {
+        return 'fi$next';
+      }
+    });
+
+    // Remove any remaining NUL bytes
+    s = s.replaceAll('\u0000', '');
+
+    // Normalize carriage returns (\r\n -> \n)
+    s = s.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+
+    return s.trim();
+  }
+
+  Result<ExtractedBookData> _extractLegacy(
+    Uint8List bytes,
+    String title,
+    void Function(double progress, String status)? onProgress,
+  ) {
+    onProgress?.call(
+      0.3,
+      'Extracting content streams and page structures...',
+    );
+    // Strategy 1: Page-aware extraction with font-scoped CMaps (eliminates cross-font collisions)
+    final textBlocks = List<String>.from(_extractPdfPages(bytes));
+
+    // Strategy 2: Content stream fallback for object-stream / cross-reference stream PDFs
+    if (textBlocks.isEmpty) {
+      onProgress?.call(0.5, 'Parsing content streams via fallback...');
+      final decompressedStreams = _extractContentStreams(bytes);
+      final cmap = _extractCMapTables(decompressedStreams);
+
+      for (final streamContent in decompressedStreams) {
+        final extractedFromStream = _extractTextFromStream(
+          streamContent,
+          cmap,
+        );
+        if (extractedFromStream.isNotEmpty) {
+          textBlocks.add(extractedFromStream);
+        }
+      }
+
+      // Strategy 3: Inspect raw uncompressed document if no streams found
+      if (textBlocks.isEmpty) {
+        final rawFallback = _extractTextFromStream(
+          latin1.decode(bytes),
+          cmap,
+        );
+        if (rawFallback.isNotEmpty) {
+          textBlocks.add(rawFallback);
+        }
+      }
+    }
+
+    if (textBlocks.isEmpty) {
+      return const Result.error(
+        DocumentParsingFailure(
+          'Scanned or image-only PDF has no extractable text. OCR extraction is currently unsupported in offline MVP.',
+        ),
+      );
+    }
+
+    onProgress?.call(0.8, 'Assembling PDF pages...');
+    final chapters = <ExtractedChapterData>[];
+    var pageIndex = 0;
+    final buffer = StringBuffer();
+    var wordCount = 0;
+
+    for (final block in textBlocks) {
+      final words = block.split(RegExp(r'\s+')).length;
+      if (wordCount + words > 500 && buffer.isNotEmpty) {
         final content = buffer.toString().trim();
         chapters.add(
           ExtractedChapterData(
@@ -125,21 +257,33 @@ class PdfExtractor implements DocumentExtractor {
             characterCount: content.length,
           ),
         );
+        pageIndex++;
+        buffer.clear();
+        wordCount = 0;
       }
 
-      onProgress?.call(1.0, 'PDF extraction complete.');
-      return Result.success(
-        ExtractedBookData(title: title, format: 'pdf', chapters: chapters),
-      );
-    } catch (e, stack) {
-      return Result.error(
-        DocumentParsingFailure(
-          'Failed to extract PDF file: ${e.toString()}',
-          e,
-          stack,
+      if (buffer.isNotEmpty) buffer.write('\n\n');
+      buffer.write(block);
+      wordCount += words;
+    }
+
+    if (buffer.isNotEmpty) {
+      final content = buffer.toString().trim();
+      chapters.add(
+        ExtractedChapterData(
+          index: pageIndex,
+          title: 'Page ${pageIndex + 1}',
+          content: content,
+          wordCount: wordCount,
+          characterCount: content.length,
         ),
       );
     }
+
+    onProgress?.call(1.0, 'PDF extraction complete.');
+    return Result.success(
+      ExtractedBookData(title: title, format: 'pdf', chapters: chapters),
+    );
   }
 
   /// Extracts text page-by-page while scoping CMap character mappings to their respective fonts.

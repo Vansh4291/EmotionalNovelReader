@@ -630,8 +630,11 @@ class _ReaderScreenState extends State<ReaderScreen>
                 const SizedBox(height: 60),
 
                 // End of Chapter Navigation Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     TextButton.icon(
                       onPressed: state.hasPreviousChapter
