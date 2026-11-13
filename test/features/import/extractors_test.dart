@@ -416,7 +416,8 @@ BT
 [(Custom) -250 (Spacing) -20 (Test)] TJ
 ET''';
 
-      const pdfContent = '''%PDF-1.4
+      const pdfContent =
+          '''%PDF-1.4
 1 0 obj
 << /Length ${cmapStream.length} >>
 stream

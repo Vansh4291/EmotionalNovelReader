@@ -161,9 +161,16 @@ class PdfExtractor implements DocumentExtractor {
       if (dataEnd > dataStart && bytes[dataEnd - 1] == 0x0A) dataEnd--;
       if (dataEnd > dataStart && bytes[dataEnd - 1] == 0x0D) dataEnd--;
 
-      // Inspect preceding dictionary for /FlateDecode filter
+      // Inspect preceding dictionary for /FlateDecode filter and Image subtype
       final dictStart = streamPos > 400 ? streamPos - 400 : 0;
       final dictString = latin1.decode(bytes.sublist(dictStart, streamPos));
+      final isImage =
+          dictString.contains('/Subtype /Image') ||
+          dictString.contains('/Subtype/Image');
+      if (isImage) {
+        searchIndex = endstreamPos + 9;
+        continue;
+      }
       final isFlate = dictString.contains('/FlateDecode');
 
       final rawStreamBytes = bytes.sublist(dataStart, dataEnd);
