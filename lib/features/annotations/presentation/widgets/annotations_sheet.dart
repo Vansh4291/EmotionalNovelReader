@@ -83,14 +83,18 @@ class AnnotationsSheet extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  Text(
-                    'Annotations & Bookmarks',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      'Annotations & Bookmarks',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
-                  const Spacer(),
-                  if (currentChapterId != null)
+                  if (currentChapterId != null) ...[
+                    const SizedBox(width: 8),
                     TextButton.icon(
                       icon: const Icon(Icons.add_comment_outlined, size: 18),
                       label: const Text('Add Note'),
@@ -114,6 +118,7 @@ class AnnotationsSheet extends StatelessWidget {
                         }
                       },
                     ),
+                  ],
                   IconButton(
                     icon: const Icon(Icons.close),
                     tooltip: 'Close',

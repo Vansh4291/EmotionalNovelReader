@@ -11,6 +11,8 @@ import 'extracted_book_data.dart';
 
 /// Extractor for PDF documents supporting both uncompressed and FlateDecode compressed text streams.
 ///
+/// Implements page-aware, font-scoped CMap resolution to eliminate cross-font character code collisions
+/// in multi-subset PDF documents, with graceful fallback to content stream scanning.
 /// Scanned and image-only PDFs containing no extractable text streams fail safely with an explicit
 /// [DocumentParsingFailure], maintaining truthful capability reporting without claiming OCR support.
 class PdfExtractor implements DocumentExtractor {
@@ -38,25 +40,38 @@ class PdfExtractor implements DocumentExtractor {
         );
       }
 
-      onProgress?.call(0.3, 'Extracting content streams...');
-      final decompressedStreams = _extractContentStreams(bytes);
-      final cmap = _extractCMapTables(decompressedStreams);
+      onProgress?.call(
+        0.3,
+        'Extracting content streams and page structures...',
+      );
+      // Strategy 1: Page-aware extraction with font-scoped CMaps (eliminates cross-font collisions)
+      final textBlocks = List<String>.from(_extractPdfPages(bytes));
 
-      onProgress?.call(0.6, 'Parsing text streams...');
-      final textBlocks = <String>[];
-
-      for (final streamContent in decompressedStreams) {
-        final extractedFromStream = _extractTextFromStream(streamContent, cmap);
-        if (extractedFromStream.isNotEmpty) {
-          textBlocks.add(extractedFromStream);
-        }
-      }
-
-      // If no text streams were found in object streams, fallback to inspecting raw document
+      // Strategy 2: Content stream fallback for object-stream / cross-reference stream PDFs
       if (textBlocks.isEmpty) {
-        final rawFallback = _extractTextFromStream(latin1.decode(bytes), cmap);
-        if (rawFallback.isNotEmpty) {
-          textBlocks.add(rawFallback);
+        onProgress?.call(0.5, 'Parsing content streams via fallback...');
+        final decompressedStreams = _extractContentStreams(bytes);
+        final cmap = _extractCMapTables(decompressedStreams);
+
+        for (final streamContent in decompressedStreams) {
+          final extractedFromStream = _extractTextFromStream(
+            streamContent,
+            cmap,
+          );
+          if (extractedFromStream.isNotEmpty) {
+            textBlocks.add(extractedFromStream);
+          }
+        }
+
+        // Strategy 3: Inspect raw uncompressed document if no streams found
+        if (textBlocks.isEmpty) {
+          final rawFallback = _extractTextFromStream(
+            latin1.decode(bytes),
+            cmap,
+          );
+          if (rawFallback.isNotEmpty) {
+            textBlocks.add(rawFallback);
+          }
         }
       }
 
@@ -127,6 +142,213 @@ class PdfExtractor implements DocumentExtractor {
     }
   }
 
+  /// Extracts text page-by-page while scoping CMap character mappings to their respective fonts.
+  List<String> _extractPdfPages(Uint8List bytes) {
+    final text = latin1.decode(bytes);
+
+    if (!text.contains('/Type/Page') && !text.contains('/Type /Page')) {
+      return <String>[];
+    }
+
+    // Build object start offset index
+    final objStarts = <int, int>{};
+    final startRegex = RegExp(r'(\d+)\s+0\s+obj');
+    for (final m in startRegex.allMatches(text)) {
+      final num = int.parse(m.group(1)!);
+      if (!objStarts.containsKey(num)) {
+        objStarts[num] = m.start;
+      }
+    }
+
+    String getHeader(int objNum) {
+      final offset = objStarts[objNum];
+      if (offset == null) return '';
+      final end = text.indexOf('endobj', offset);
+      if (end == -1) return '';
+      return text.substring(offset, end + 6);
+    }
+
+    Uint8List? getStream(int objNum) {
+      final offset = objStarts[objNum];
+      if (offset == null) return null;
+      final streamWord = [0x73, 0x74, 0x72, 0x65, 0x61, 0x6D];
+      var sIdx = -1;
+      for (var i = offset; i < offset + 2000 && i <= bytes.length - 6; i++) {
+        if (bytes[i] == streamWord[0] &&
+            bytes[i + 1] == streamWord[1] &&
+            bytes[i + 2] == streamWord[2] &&
+            bytes[i + 3] == streamWord[3] &&
+            bytes[i + 4] == streamWord[4] &&
+            bytes[i + 5] == streamWord[5]) {
+          sIdx = i;
+          break;
+        }
+      }
+      if (sIdx == -1) return null;
+
+      var dataStart = sIdx + 6;
+      if (dataStart < bytes.length && bytes[dataStart] == 0x0D) dataStart++;
+      if (dataStart < bytes.length && bytes[dataStart] == 0x0A) dataStart++;
+
+      final endWord = [0x65, 0x6E, 0x64, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6D];
+      var eIdx = -1;
+      for (var i = dataStart; i <= bytes.length - endWord.length; i++) {
+        var match = true;
+        for (var j = 0; j < endWord.length; j++) {
+          if (bytes[i + j] != endWord[j]) {
+            match = false;
+            break;
+          }
+        }
+        if (match) {
+          eIdx = i;
+          break;
+        }
+      }
+      if (eIdx == -1) return null;
+
+      var dataEnd = eIdx;
+      if (dataEnd > dataStart && bytes[dataEnd - 1] == 0x0A) dataEnd--;
+      if (dataEnd > dataStart && bytes[dataEnd - 1] == 0x0D) dataEnd--;
+
+      final header = latin1.decode(bytes.sublist(offset, sIdx));
+      final raw = bytes.sublist(dataStart, dataEnd);
+      if (header.contains('/FlateDecode')) {
+        try {
+          return Uint8List.fromList(zlib.decode(raw));
+        } catch (_) {
+          try {
+            return Uint8List.fromList(Inflate(raw).getBytes());
+          } catch (_) {
+            return raw;
+          }
+        }
+      }
+      return raw;
+    }
+
+    // Collect Page objects in sequential order
+    final pageNums = <int>[];
+    for (final entry in objStarts.entries) {
+      final num = entry.key;
+      final header = getHeader(num);
+      if (header.contains('/Type/Page') || header.contains('/Type /Page')) {
+        if (!header.contains('/Type/Pages') &&
+            !header.contains('/Type /Pages')) {
+          pageNums.add(num);
+        }
+      }
+    }
+
+    final extractedPages = <String>[];
+
+    for (final pNum in pageNums) {
+      final header = getHeader(pNum);
+
+      // Collect fonts available to this page
+      var resText = header;
+      final resIndirect = RegExp(r'/Resources\s+(\d+)\s+0\s+R')
+          .firstMatch(header);
+      if (resIndirect != null) {
+        final rNum = int.parse(resIndirect.group(1)!);
+        resText += ' ${getHeader(rNum)}';
+      }
+
+      final fontMap = <String, Map<int, String>>{};
+      final fMatches = RegExp(r'/([A-Za-z0-9_]+)\s+(\d+)\s+0\s+R')
+          .allMatches(resText);
+      for (final fm in fMatches) {
+        final tag = fm.group(1)!;
+        final fNum = int.parse(fm.group(2)!);
+        final fHeader = getHeader(fNum);
+        if (!fHeader.contains('/Font')) continue;
+        final toUni = RegExp(r'/ToUnicode\s+(\d+)\s+0\s+R').firstMatch(fHeader);
+        if (toUni != null) {
+          final uNum = int.parse(toUni.group(1)!);
+          final uStream = getStream(uNum);
+          if (uStream != null) {
+            fontMap[tag] = _parseSingleCMap(latin1.decode(uStream));
+          }
+        }
+      }
+
+      // Collect /Contents streams
+      final contentObjNums = <int>[];
+      final cArray = RegExp(r'/Contents\s*\[([^\]]*)\]').firstMatch(header);
+      if (cArray != null) {
+        for (final cm in RegExp(
+          r'(\d+)\s+0\s+R',
+        ).allMatches(cArray.group(1)!)) {
+          contentObjNums.add(int.parse(cm.group(1)!));
+        }
+      } else {
+        final cSingle = RegExp(r'/Contents\s+(\d+)\s+0\s+R').firstMatch(header);
+        if (cSingle != null) {
+          contentObjNums.add(int.parse(cSingle.group(1)!));
+        }
+      }
+
+      final pageBuffer = StringBuffer();
+      for (final cNum in contentObjNums) {
+        final stream = getStream(cNum);
+        if (stream == null) continue;
+        final content = latin1.decode(stream);
+        final textFromStream = _decodeStreamWithFontMap(content, fontMap);
+        if (textFromStream.isNotEmpty) {
+          if (pageBuffer.isNotEmpty) pageBuffer.write('\n\n');
+          pageBuffer.write(textFromStream);
+        }
+      }
+
+      final pageText = pageBuffer.toString().trim();
+      if (pageText.isNotEmpty) {
+        extractedPages.add(pageText);
+      }
+    }
+
+    return extractedPages;
+  }
+
+  /// Decodes text from a content stream while tracking active font changes (/FontTag size Tf).
+  String _decodeStreamWithFontMap(
+    String content,
+    Map<String, Map<int, String>> fontMap,
+  ) {
+    final buffer = StringBuffer();
+    final btMatches = RegExp(r'BT([\s\S]*?)ET').allMatches(content);
+
+    for (final match in btMatches) {
+      final block = match.group(1)!;
+      Map<int, String>? currentCmap;
+
+      final cmdRegex = RegExp(
+        r'/([A-Za-z0-9_]+)\s+[\d\.]+\s+Tf|\(((?:[^\\)]|\\.)*)\)\s*(?:Tj|[\x27\x22])|\[([\s\S]*?)\]\s*TJ|<([0-9a-fA-F]+)>\s*(?:Tj|[\x27\x22])',
+      );
+      for (final cmd in cmdRegex.allMatches(block)) {
+        if (cmd.group(1) != null) {
+          currentCmap = fontMap[cmd.group(1)!];
+        } else if (cmd.group(2) != null) {
+          final unescaped = _unescapePdfString(cmd.group(2)!);
+          final decoded = _applyCMapToString(unescaped, currentCmap);
+          if (decoded.trim().isNotEmpty) {
+            buffer.write(decoded.trim());
+            buffer.write(' ');
+          }
+        } else if (cmd.group(3) != null) {
+          _extractFromArray(cmd.group(3)!, buffer, currentCmap);
+          buffer.write(' ');
+        } else if (cmd.group(4) != null) {
+          final decoded = _decodeHexString(cmd.group(4)!, currentCmap);
+          if (decoded.trim().isNotEmpty) {
+            buffer.write(decoded.trim());
+            buffer.write(' ');
+          }
+        }
+      }
+    }
+    return buffer.toString().trim();
+  }
+
   /// Locates and extracts all content streams in the PDF bytes, decompressing FlateDecode streams.
   List<String> _extractContentStreams(Uint8List bytes) {
     final streams = <String>[];
@@ -184,7 +406,6 @@ class PdfExtractor implements DocumentExtractor {
             final decompressed = Inflate(rawStreamBytes).getBytes();
             streams.add(latin1.decode(decompressed));
           } catch (_) {
-            // If decompression fails, attempt to read raw
             streams.add(latin1.decode(rawStreamBytes));
           }
         }
@@ -290,108 +511,114 @@ class PdfExtractor implements DocumentExtractor {
     final cmap = <int, String>{};
     for (final s in streams) {
       if (!s.contains('begincmap')) continue;
-
-      // 1. Parse beginbfchar ... endbfchar
-      final bfcharBlocks = RegExp(r'beginbfchar([\s\S]*?)endbfchar')
-          .allMatches(s);
-      for (final block in bfcharBlocks) {
-        final matches = RegExp(r'<([0-9a-fA-F]+)>\s+<([0-9a-fA-F]+)>')
-            .allMatches(block.group(1)!);
-        for (final m in matches) {
-          final srcCode = int.tryParse(m.group(1)!, radix: 16);
-          if (srcCode == null) continue;
-          final dstHex = m.group(2)!;
-          final dstBuf = StringBuffer();
-          for (var j = 0; j < dstHex.length; j += 4) {
-            if (j + 4 <= dstHex.length) {
-              final codeUnit = int.tryParse(
-                dstHex.substring(j, j + 4),
-                radix: 16,
-              );
-              if (codeUnit != null) dstBuf.writeCharCode(codeUnit);
-            } else if (j + 2 <= dstHex.length) {
-              final codeUnit = int.tryParse(
-                dstHex.substring(j, j + 2),
-                radix: 16,
-              );
-              if (codeUnit != null) dstBuf.writeCharCode(codeUnit);
-            }
-          }
-          cmap[srcCode] = dstBuf.toString();
-        }
-      }
-
-      // 2. Parse beginbfrange ... endbfrange
-      final bfrangeBlocks = RegExp(r'beginbfrange([\s\S]*?)endbfrange')
-          .allMatches(s);
-      for (final block in bfrangeBlocks) {
-        final inner = block.group(1)!;
-
-        // Form 1: <srcLo> <srcHi> <dstLo>
-        final rangeMatches = RegExp(
-          r'<([0-9a-fA-F]+)>\s+<([0-9a-fA-F]+)>\s+<([0-9a-fA-F]+)>',
-        ).allMatches(inner);
-        for (final m in rangeMatches) {
-          final srcLo = int.tryParse(m.group(1)!, radix: 16);
-          final srcHi = int.tryParse(m.group(2)!, radix: 16);
-          final dstLo = int.tryParse(m.group(3)!, radix: 16);
-          if (srcLo != null && srcHi != null && dstLo != null) {
-            for (var code = srcLo; code <= srcHi; code++) {
-              cmap[code] = String.fromCharCode(dstLo + (code - srcLo));
-            }
-          }
-        }
-
-        // Form 2: <srcLo> <srcHi> [ <dst1> <dst2> ... ]
-        final arrayMatches = RegExp(
-          r'<([0-9a-fA-F]+)>\s+<([0-9a-fA-F]+)>\s*\[([\s\S]*?)\]',
-        ).allMatches(inner);
-        for (final m in arrayMatches) {
-          final srcLo = int.tryParse(m.group(1)!, radix: 16);
-          final srcHi = int.tryParse(m.group(2)!, radix: 16);
-          if (srcLo == null || srcHi == null) continue;
-          final arrayContent = m.group(3)!;
-          final dstItems = RegExp(r'<([0-9a-fA-F]+)>')
-              .allMatches(arrayContent)
-              .map((item) {
-                final hex = item.group(1)!;
-                final buf = StringBuffer();
-                for (var j = 0; j < hex.length; j += 4) {
-                  if (j + 4 <= hex.length) {
-                    final codeUnit = int.tryParse(
-                      hex.substring(j, j + 4),
-                      radix: 16,
-                    );
-                    if (codeUnit != null) buf.writeCharCode(codeUnit);
-                  } else if (j + 2 <= hex.length) {
-                    final codeUnit = int.tryParse(
-                      hex.substring(j, j + 2),
-                      radix: 16,
-                    );
-                    if (codeUnit != null) buf.writeCharCode(codeUnit);
-                  }
-                }
-                return buf.toString();
-              })
-              .toList();
-          for (
-            var code = srcLo;
-            code <= srcHi && (code - srcLo) < dstItems.length;
-            code++
-          ) {
-            cmap[code] = dstItems[code - srcLo];
-          }
-        }
-      }
+      cmap.addAll(_parseSingleCMap(s));
     }
     return cmap;
   }
 
-  static String _unescapePdfString(String input) {
-    // 1. Temporarily protect literal escaped backslashes
-    var result = input.replaceAll(r'\\', '\u0000');
+  /// Parses a single /ToUnicode CMap stream.
+  static Map<int, String> _parseSingleCMap(String s) {
+    final cmap = <int, String>{};
 
-    // 2. Standard single-character escapes
+    // 1. Parse beginbfchar ... endbfchar
+    final bfcharBlocks = RegExp(r'beginbfchar([\s\S]*?)endbfchar')
+        .allMatches(s);
+    for (final block in bfcharBlocks) {
+      final matches = RegExp(r'<([0-9a-fA-F]+)>\s+<([0-9a-fA-F]+)>')
+          .allMatches(block.group(1)!);
+      for (final m in matches) {
+        final srcCode = int.tryParse(m.group(1)!, radix: 16);
+        if (srcCode == null) continue;
+        final dstHex = m.group(2)!;
+        final dstBuf = StringBuffer();
+        for (var j = 0; j < dstHex.length; j += 4) {
+          if (j + 4 <= dstHex.length) {
+            final codeUnit = int.tryParse(
+              dstHex.substring(j, j + 4),
+              radix: 16,
+            );
+            if (codeUnit != null) dstBuf.writeCharCode(codeUnit);
+          } else if (j + 2 <= dstHex.length) {
+            final codeUnit = int.tryParse(
+              dstHex.substring(j, j + 2),
+              radix: 16,
+            );
+            if (codeUnit != null) dstBuf.writeCharCode(codeUnit);
+          }
+        }
+        cmap[srcCode] = dstBuf.toString();
+      }
+    }
+
+    // 2. Parse beginbfrange ... endbfrange
+    final bfrangeBlocks = RegExp(r'beginbfrange([\s\S]*?)endbfrange')
+        .allMatches(s);
+    for (final block in bfrangeBlocks) {
+      final inner = block.group(1)!;
+
+      // Form 1: <srcLo> <srcHi> <dstLo>
+      final rangeMatches = RegExp(
+        r'<([0-9a-fA-F]+)>\s+<([0-9a-fA-F]+)>\s+<([0-9a-fA-F]+)>',
+      ).allMatches(inner);
+      for (final m in rangeMatches) {
+        final srcLo = int.tryParse(m.group(1)!, radix: 16);
+        final srcHi = int.tryParse(m.group(2)!, radix: 16);
+        final dstLo = int.tryParse(m.group(3)!, radix: 16);
+        if (srcLo != null && srcHi != null && dstLo != null) {
+          for (var code = srcLo; code <= srcHi; code++) {
+            cmap[code] = String.fromCharCode(dstLo + (code - srcLo));
+          }
+        }
+      }
+
+      // Form 2: <srcLo> <srcHi> [ <dst1> <dst2> ... ]
+      final arrayMatches = RegExp(
+        r'<([0-9a-fA-F]+)>\s+<([0-9a-fA-F]+)>\s*\[([\s\S]*?)\]',
+      ).allMatches(inner);
+      for (final m in arrayMatches) {
+        final srcLo = int.tryParse(m.group(1)!, radix: 16);
+        final srcHi = int.tryParse(m.group(2)!, radix: 16);
+        if (srcLo == null || srcHi == null) continue;
+        final arrayContent = m.group(3)!;
+        final dstItems = RegExp(r'<([0-9a-fA-F]+)>')
+            .allMatches(arrayContent)
+            .map((item) {
+              final hex = item.group(1)!;
+              final buf = StringBuffer();
+              for (var j = 0; j < hex.length; j += 4) {
+                if (j + 4 <= hex.length) {
+                  final codeUnit = int.tryParse(
+                    hex.substring(j, j + 4),
+                    radix: 16,
+                  );
+                  if (codeUnit != null) buf.writeCharCode(codeUnit);
+                } else if (j + 2 <= hex.length) {
+                  final codeUnit = int.tryParse(
+                    hex.substring(j, j + 2),
+                    radix: 16,
+                  );
+                  if (codeUnit != null) buf.writeCharCode(codeUnit);
+                }
+              }
+              return buf.toString();
+            })
+            .toList();
+        for (
+          var code = srcLo;
+          code <= srcHi && (code - srcLo) < dstItems.length;
+          code++
+        ) {
+          cmap[code] = dstItems[code - srcLo];
+        }
+      }
+    }
+
+    return cmap;
+  }
+
+  /// Unescapes PDF literal string escape sequences (\n, \r, \t, octal escapes).
+  static String _unescapePdfString(String input) {
+    var result = input.replaceAll(r'\\', '\u0000');
     result = result
         .replaceAll(r'\(', '(')
         .replaceAll(r'\)', ')')
@@ -400,22 +627,24 @@ class PdfExtractor implements DocumentExtractor {
         .replaceAll(r'\t', '\t')
         .replaceAll(r'\b', '\b')
         .replaceAll(r'\f', '\f');
-
-    // 3. Octal character escapes: \d, \dd, or \ddd (base 8)
     result = result.replaceAllMapped(RegExp(r'\\([0-7]{1,3})'), (m) {
       final code = int.parse(m.group(1)!, radix: 8);
       return String.fromCharCode(code);
     });
-
-    // 4. Restore literal backslashes
     return result.replaceAll('\u0000', r'\');
   }
 
+  /// Decodes hexadecimal character string (<48656C6C6F> or <00240031...>).
   static String _decodeHexString(String hex, [Map<int, String>? cmap]) {
     final buffer = StringBuffer();
-    // 2-byte font (CID/Type0) if length is a multiple of 4
-    if (hex.length >= 4 && hex.length % 4 == 0) {
-      for (var i = 0; i < hex.length; i += 4) {
+    final isTwoByte =
+        hex.length >= 4 &&
+        (hex.startsWith('00') ||
+            (cmap != null && cmap.keys.any((k) => k > 255)));
+
+    if (isTwoByte) {
+      final len = (hex.length ~/ 4) * 4;
+      for (var i = 0; i < len; i += 4) {
         final code = int.tryParse(hex.substring(i, i + 4), radix: 16);
         if (code != null) {
           if (cmap != null && cmap.containsKey(code)) {
@@ -426,8 +655,8 @@ class PdfExtractor implements DocumentExtractor {
         }
       }
     } else {
-      // 1-byte font
-      for (var i = 0; i + 1 < hex.length; i += 2) {
+      final len = (hex.length ~/ 2) * 2;
+      for (var i = 0; i < len; i += 2) {
         final code = int.tryParse(hex.substring(i, i + 2), radix: 16);
         if (code != null) {
           if (cmap != null && cmap.containsKey(code)) {
@@ -441,6 +670,7 @@ class PdfExtractor implements DocumentExtractor {
     return buffer.toString();
   }
 
+  /// Finds the index of a byte pattern within source bytes.
   static int _indexOfBytes(Uint8List source, List<int> pattern, int start) {
     if (pattern.isEmpty || start >= source.length) return -1;
     for (var i = start; i <= source.length - pattern.length; i++) {
