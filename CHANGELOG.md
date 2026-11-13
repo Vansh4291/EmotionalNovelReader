@@ -621,9 +621,12 @@ Example structure:
     - Integrated native Android `TextToSpeech` via `flutter_tts` package and `FlutterTtsServiceImpl`.
     - Added text parser (`TtsTextParser`) safely stripping markup and segmenting chapter content into playable sentences with exact start and end character offsets.
     - Implemented `TtsCubit` supporting play, pause, resume, stop, sentence skipping, speech rate customization (0.5x to 2.0x), pitch, and volume adjustments.
-  - **Android Platform Integration & Lifecycle Handling (ENR-0071)**:
-    - Configured Android 11+ Package Visibility query (`android.intent.action.TTS_SERVICE`) in `AndroidManifest.xml` to discover installed on-device TTS engines (Google TTS, Samsung TTS, etc.).
-    - Handled audio focus and interruptions: automatically pauses narration when reader transitions to background or is closed.
+  - **Android Platform Integration & Background Playback (ENR-0071)**:
+    - Integrated `audio_service: ^0.18.19` and `audio_session: ^0.1.21` providing full Android background audio playback, persistent notification media controls, and lock-screen metadata.
+    - Added `android/app/src/main/kotlin/com/emotionalnovelreader/app/MainActivity.kt` extending `AudioServiceActivity`.
+    - Declared `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, and `WAKE_LOCK` permissions in `AndroidManifest.xml` with `AudioService` and `MediaButtonReceiver`.
+    - Implemented `TtsAudioHandler` coordinating sentence progression, MediaSession transport actions (`play`, `pause`, `stop`, `skipToNext`, `skipToPrevious`), and lock-screen chapter/sentence metadata.
+    - Handled audio focus, ducking, and interruptions through `AudioSession.interruptionEventStream`.
     - Implemented `TtsControlSheet` modal bottom sheet offering accessible, touch-friendly narration controls, active sentence feedback, and speed adjustments directly within the reader.
   - **Narration Position Synchronization & Chapter Auto-Progression (ENR-0072)**:
     - Synchronized reader scroll viewport with active spoken sentence using `ReaderScrollMapper.calculatePixelOffset`, smoothly following the narrator.

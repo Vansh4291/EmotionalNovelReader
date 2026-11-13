@@ -4,6 +4,7 @@ class TtsState {
   const TtsState({
     this.status = TtsPlaybackStatus.stopped,
     this.bookId,
+    this.bookTitle = '',
     this.chapterId,
     this.chapterTitle = '',
     this.sentences = const [],
@@ -20,6 +21,7 @@ class TtsState {
 
   final TtsPlaybackStatus status;
   final String? bookId;
+  final String bookTitle;
   final String? chapterId;
   final String chapterTitle;
   final List<TtsSentence> sentences;
@@ -45,6 +47,7 @@ class TtsState {
   TtsState copyWith({
     TtsPlaybackStatus? status,
     String? bookId,
+    String? bookTitle,
     String? chapterId,
     String? chapterTitle,
     List<TtsSentence>? sentences,
@@ -62,6 +65,7 @@ class TtsState {
     return TtsState(
       status: status ?? this.status,
       bookId: bookId ?? this.bookId,
+      bookTitle: bookTitle ?? this.bookTitle,
       chapterId: chapterId ?? this.chapterId,
       chapterTitle: chapterTitle ?? this.chapterTitle,
       sentences: sentences ?? this.sentences,

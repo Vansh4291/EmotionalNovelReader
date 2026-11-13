@@ -13,6 +13,7 @@ import 'package:emotional_novel_reader/features/ai/presentation/cubit/model_mana
 import 'package:emotional_novel_reader/features/backup/domain/services/backup_service.dart';
 import 'package:emotional_novel_reader/features/backup/presentation/cubit/backup_cubit.dart';
 import 'package:emotional_novel_reader/features/library/domain/repositories/book_repository.dart';
+import 'package:emotional_novel_reader/features/tts/data/services/tts_audio_handler.dart';
 import 'package:emotional_novel_reader/features/tts/domain/services/tts_service.dart';
 import 'package:emotional_novel_reader/features/tts/domain/services/tts_text_parser.dart';
 import 'package:emotional_novel_reader/features/tts/presentation/cubit/tts_cubit.dart';
@@ -44,6 +45,7 @@ void main() {
       expect(getIt.isRegistered<BackupCubit>(), isTrue);
       expect(getIt.isRegistered<TtsTextParser>(), isTrue);
       expect(getIt.isRegistered<TtsService>(), isTrue);
+      expect(getIt.isRegistered<TtsAudioHandler>(), isTrue);
       expect(getIt.isRegistered<TtsCubit>(), isTrue);
       expect(getIt.isRegistered<LocalAiRuntime>(), isTrue);
       expect(getIt.isRegistered<ModelManagerService>(), isTrue);

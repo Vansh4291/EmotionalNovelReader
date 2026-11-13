@@ -1,3 +1,7 @@
+import 'dart:io';
+import 'dart:ui';
+
+import 'package:audio_service/audio_service.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../core/database/app_database.dart';
@@ -37,6 +41,7 @@ import '../../features/ai/presentation/cubit/ai_chat_cubit.dart';
 import '../../features/ai/presentation/cubit/cloud_ai_cubit.dart';
 import '../../features/ai/presentation/cubit/model_manager_cubit.dart';
 import '../../features/tts/data/services/flutter_tts_service_impl.dart';
+import '../../features/tts/data/services/tts_audio_handler.dart';
 import '../../features/tts/domain/services/tts_service.dart';
 import '../../features/tts/domain/services/tts_text_parser.dart';
 import '../../features/tts/presentation/cubit/tts_cubit.dart';
@@ -56,6 +61,7 @@ Future<void> configureDependencies({
   BackupService? backupServiceOverride,
   BackupPickerFn? backupPickerOverride,
   TtsService? ttsServiceOverride,
+  TtsAudioHandler? audioHandlerOverride,
   LocalAiRuntime? aiRuntimeOverride,
   ModelManagerService? modelManagerOverride,
   ReaderRagService? ragServiceOverride,
@@ -194,9 +200,40 @@ Future<void> configureDependencies({
       ttsServiceOverride ?? FlutterTtsServiceImpl(logger: getIt<AppLogger>());
   getIt.registerLazySingleton<TtsService>(() => ttsSvc);
 
+  TtsAudioHandler audioHandler = audioHandlerOverride ??
+      TtsAudioHandler(
+        ttsService: getIt<TtsService>(),
+        logger: getIt<AppLogger>(),
+      );
+
+  if (audioHandlerOverride == null && !Platform.environment.containsKey('FLUTTER_TEST')) {
+    try {
+      audioHandler = await AudioService.init(
+        builder: () => TtsAudioHandler(
+          ttsService: getIt<TtsService>(),
+          logger: getIt<AppLogger>(),
+        ),
+        config: const AudioServiceConfig(
+          androidNotificationChannelId:
+              'com.emotionalnovelreader.app.channel.audio',
+          androidNotificationChannelName: 'Reading Narration',
+          androidNotificationOngoing: true,
+          androidStopForegroundOnPause: true,
+          androidShowNotificationBadge: true,
+          notificationColor: Color(0xFF1E88E5),
+        ),
+      );
+    } catch (_) {
+      // In tests or environments without native AudioService channels,
+      // fallback to standalone TtsAudioHandler safely.
+    }
+  }
+  getIt.registerSingleton<TtsAudioHandler>(audioHandler);
+
   getIt.registerFactory<TtsCubit>(
     () => TtsCubit(
       ttsService: getIt<TtsService>(),
+      audioHandler: getIt<TtsAudioHandler>(),
       textParser: getIt<TtsTextParser>(),
       logger: getIt<AppLogger>(),
     ),

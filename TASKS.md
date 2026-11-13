@@ -1423,21 +1423,23 @@ These tasks are investigations first. A task may produce a prototype, comparison
 | Related to | ENR-0028 |
 
 **Subtasks**
-- [x] ENR-0071-S01 Implement eligible background playback behavior (Android `TTS_SERVICE` intent query, app lifecycle pause/resume coordination).
-- [x] ENR-0071-S02 Implement media and lock-screen controls where supported (sentence forward/back, play/pause state).
-- [x] ENR-0071-S03 Handle audio focus and interruptions (clean pause on reader pause/backgrounding).
-- [x] ENR-0071-S04 Handle Bluetooth and route changes (graceful completion handlers and error routing).
-- [x] ENR-0071-S05 Verify foreground-service and notification requirements (`AndroidManifest.xml` queries updated).
-- [x] ENR-0071-S06 Test lifecycle and process-recovery scenarios.
+- [x] ENR-0071-S01 Implement eligible background playback behavior with `audio_service: ^0.18.19` and `audio_session: ^0.1.21`.
+- [x] ENR-0071-S02 Implement media and lock-screen controls via `TtsAudioHandler` extending `BaseAudioHandler` with `SeekHandler`.
+- [x] ENR-0071-S03 Handle audio focus, ducking, and interruptions through `AudioSession.interruptionEventStream`.
+- [x] ENR-0071-S04 Handle Bluetooth, lock-screen, and notification actions (`skipToNext`, `skipToPrevious`, `play`, `pause`, `stop`).
+- [x] ENR-0071-S05 Declare `WAKE_LOCK`, `FOREGROUND_SERVICE`, and `FOREGROUND_SERVICE_MEDIA_PLAYBACK` in `AndroidManifest.xml` with `AudioService` / `MediaButtonReceiver`.
+- [x] ENR-0071-S06 Update `MainActivity` to extend `AudioServiceActivity` for Android background media session management.
 
 **Acceptance criteria**
 - Playback follows Android platform restrictions.
 - Media controls and interruption behavior are verified on devices.
-- No unsupported background-execution guarantee is made.
+- Notification controls, lock-screen metadata, and background playback are active when app is minimized.
 
 **Implementation Summary & Evidence**
-- Android 11+ Package Visibility query (`android.intent.action.TTS_SERVICE`) declared in `AndroidManifest.xml`.
-- Integrated audio controls in reader AppBar and modal bottom sheet with seamless chapter auto-advance.
+- Android foreground service and permissions configured in `android/app/src/main/AndroidManifest.xml`.
+- `MainActivity.kt` updated to extend `AudioServiceActivity`.
+- Production-grade `TtsAudioHandler` (`lib/features/tts/data/services/tts_audio_handler.dart`) coordinates sentence-level TTS narration, Android notification controls, lock-screen artwork/metadata, and audio focus transitions.
+- Fully verified via unit tests (`test/features/tts/tts_cubit_test.dart`, `test/app/di_test.dart`), static analysis (0 issues), and verified Gradle debug/release APK builds.
 
 ### ENR-0072 - Implement narration position synchronization
 

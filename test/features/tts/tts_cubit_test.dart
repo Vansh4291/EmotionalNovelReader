@@ -11,6 +11,7 @@ import 'package:mocktail/mocktail.dart';
 class MockTtsService extends Mock implements TtsService {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late MockTtsService mockTtsService;
   late AppLogger logger;
   late void Function() capturedCompletionHandler;

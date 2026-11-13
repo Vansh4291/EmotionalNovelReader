@@ -395,6 +395,7 @@ class _ReaderScreenState extends State<ReaderScreen>
           if (_ttsCubit.state.chapterId != state.currentChapter.id) {
             _ttsCubit.loadChapter(
               bookId: state.book.id,
+              bookTitle: state.book.title,
               chapterId: state.currentChapter.id,
               chapterTitle: state.currentChapter.title,
               content: state.currentChapter.content,
@@ -547,6 +548,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                     if (_ttsCubit.state.chapterId != state.currentChapter.id) {
                       _ttsCubit.loadChapter(
                         bookId: state.book.id,
+                        bookTitle: state.book.title,
                         chapterId: state.currentChapter.id,
                         chapterTitle: state.currentChapter.title,
                         content: state.currentChapter.content,

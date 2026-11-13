@@ -59,6 +59,8 @@ dependencies:
 
   # Text-to-Speech & Narration (ENR-DEC-039)
   flutter_tts: ^4.2.2
+  audio_service: ^0.18.19
+  audio_session: ^0.1.21
 
   # Document Picking & SAF Integration (ENR-DEC-030, ENR-DEC-040)
   file_picker: ^8.1.7
