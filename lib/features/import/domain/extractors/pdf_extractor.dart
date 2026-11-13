@@ -330,20 +330,19 @@ class PdfExtractor implements DocumentExtractor {
         } else if (cmd.group(2) != null) {
           final unescaped = _unescapePdfString(cmd.group(2)!);
           final decoded = _applyCMapToString(unescaped, currentCmap);
-          if (decoded.trim().isNotEmpty) {
-            buffer.write(decoded.trim());
-            buffer.write(' ');
-          }
+          _appendDecodedText(buffer, decoded);
         } else if (cmd.group(3) != null) {
           _extractFromArray(cmd.group(3)!, buffer, currentCmap);
-          buffer.write(' ');
         } else if (cmd.group(4) != null) {
           final decoded = _decodeHexString(cmd.group(4)!, currentCmap);
-          if (decoded.trim().isNotEmpty) {
-            buffer.write(decoded.trim());
-            buffer.write(' ');
-          }
+          _appendDecodedText(buffer, decoded);
         }
+      }
+
+      if (buffer.isNotEmpty &&
+          !buffer.toString().endsWith(' ') &&
+          !buffer.toString().endsWith('\n')) {
+        buffer.write(' ');
       }
     }
     return buffer.toString().trim();
@@ -433,10 +432,7 @@ class PdfExtractor implements DocumentExtractor {
       for (final tj in tjMatches) {
         final unescaped = _unescapePdfString(tj.group(1)!);
         final decoded = _applyCMapToString(unescaped, cmap);
-        if (decoded.trim().isNotEmpty) {
-          buffer.write(decoded.trim());
-          buffer.write(' ');
-        }
+        _appendDecodedText(buffer, decoded);
       }
 
       // 2. Text array kerning: [(Part 1) -150 (Part 2)] TJ
@@ -444,7 +440,6 @@ class PdfExtractor implements DocumentExtractor {
       for (final arrMatch in tjArrayMatches) {
         final inner = arrMatch.group(1)!;
         _extractFromArray(inner, buffer, cmap);
-        buffer.write(' ');
       }
 
       // 3. Hexadecimal strings: <48656C6C6F> Tj, ', "
@@ -453,14 +448,48 @@ class PdfExtractor implements DocumentExtractor {
       for (final hex in hexMatches) {
         final hexStr = hex.group(1)!;
         final decoded = _decodeHexString(hexStr, cmap);
-        if (decoded.trim().isNotEmpty) {
-          buffer.write(decoded.trim());
-          buffer.write(' ');
-        }
+        _appendDecodedText(buffer, decoded);
+      }
+
+      if (buffer.isNotEmpty &&
+          !buffer.toString().endsWith(' ') &&
+          !buffer.toString().endsWith('\n')) {
+        buffer.write(' ');
       }
     }
 
     return buffer.toString().trim();
+  }
+
+  /// Appends decoded text tokens while preserving word-spacing and discarding binary NUL bytes.
+  static void _appendDecodedText(StringBuffer buffer, String text) {
+    if (text.isEmpty) return;
+    for (var i = 0; i < text.length; i++) {
+      final char = text[i];
+      if (char == ' ' || char == '\t') {
+        if (buffer.isNotEmpty &&
+            !buffer.toString().endsWith(' ') &&
+            !buffer.toString().endsWith('\n')) {
+          buffer.write(' ');
+        }
+      } else if (char != '\u0000') {
+        buffer.write(char);
+      }
+    }
+  }
+
+  /// Normalizes Private Use Area and presentation form ligature glyphs into standard ASCII characters.
+  static String _normalizeLigatures(String text) {
+    return text
+        .replaceAll('\uE062', 'Th')
+        .replaceAll('\uE09D', 'ft')
+        .replaceAll('\uE0BB', 'fl')
+        .replaceAll('\uE117', 'fi')
+        .replaceAll('\uFB00', 'ff')
+        .replaceAll('\uFB01', 'fi')
+        .replaceAll('\uFB02', 'fl')
+        .replaceAll('\uFB03', 'ffi')
+        .replaceAll('\uFB04', 'ffl');
   }
 
   /// Extracts text and preserves word boundaries from elements inside a TJ array.
@@ -478,16 +507,20 @@ class PdfExtractor implements DocumentExtractor {
       if (m.group(1) != null) {
         // Literal string ( ... )
         final unescaped = _unescapePdfString(m.group(1)!);
-        buffer.write(_applyCMapToString(unescaped, cmap));
+        final decoded = _applyCMapToString(unescaped, cmap);
+        _appendDecodedText(buffer, decoded);
       } else if (m.group(2) != null) {
         // Hex string < ... >
-        buffer.write(_decodeHexString(m.group(2)!, cmap));
+        final decoded = _decodeHexString(m.group(2)!, cmap);
+        _appendDecodedText(buffer, decoded);
       } else if (m.group(3) != null) {
         // Kerning displacement number
         final num = double.tryParse(m.group(3)!);
         if (num != null && num <= -120) {
           // Negative kerning represents a space in PDF layout
-          if (buffer.isNotEmpty && !buffer.toString().endsWith(' ')) {
+          if (buffer.isNotEmpty &&
+              !buffer.toString().endsWith(' ') &&
+              !buffer.toString().endsWith('\n')) {
             buffer.write(' ');
           }
         }
@@ -497,11 +530,21 @@ class PdfExtractor implements DocumentExtractor {
 
   /// Maps character codes in a literal string through the CMap dictionary if defined.
   static String _applyCMapToString(String text, [Map<int, String>? cmap]) {
-    if (cmap == null || cmap.isEmpty) return text;
+    if (cmap == null || cmap.isEmpty) return _normalizeLigatures(text);
     final buffer = StringBuffer();
     for (var i = 0; i < text.length; i++) {
       final code = text.codeUnitAt(i);
-      buffer.write(cmap[code] ?? text[i]);
+      var mapped = cmap[code] ?? text[i];
+      if (mapped == '\u0000') {
+        if (code == 0x16) {
+          mapped = 'fi';
+        } else if (code == 0x19) {
+          mapped = 'fl';
+        } else {
+          mapped = '';
+        }
+      }
+      buffer.write(_normalizeLigatures(mapped));
     }
     return buffer.toString();
   }
@@ -642,28 +685,25 @@ class PdfExtractor implements DocumentExtractor {
         (hex.startsWith('00') ||
             (cmap != null && cmap.keys.any((k) => k > 255)));
 
-    if (isTwoByte) {
-      final len = (hex.length ~/ 4) * 4;
-      for (var i = 0; i < len; i += 4) {
-        final code = int.tryParse(hex.substring(i, i + 4), radix: 16);
-        if (code != null) {
-          if (cmap != null && cmap.containsKey(code)) {
-            buffer.write(cmap[code]!);
-          } else if (code >= 32 && code <= 126) {
-            buffer.writeCharCode(code);
+    final step = isTwoByte ? 4 : 2;
+    final len = (hex.length ~/ step) * step;
+    for (var i = 0; i < len; i += step) {
+      final code = int.tryParse(hex.substring(i, i + step), radix: 16);
+      if (code != null) {
+        var mapped = cmap?[code];
+        if (mapped != null) {
+          if (mapped == '\u0000') {
+            if (code == 0x16) {
+              mapped = 'fi';
+            } else if (code == 0x19) {
+              mapped = 'fl';
+            } else {
+              mapped = '';
+            }
           }
-        }
-      }
-    } else {
-      final len = (hex.length ~/ 2) * 2;
-      for (var i = 0; i < len; i += 2) {
-        final code = int.tryParse(hex.substring(i, i + 2), radix: 16);
-        if (code != null) {
-          if (cmap != null && cmap.containsKey(code)) {
-            buffer.write(cmap[code]!);
-          } else if (code >= 32 && code <= 126) {
-            buffer.writeCharCode(code);
-          }
+          buffer.write(_normalizeLigatures(mapped));
+        } else if (code >= 32 && code <= 126) {
+          buffer.writeCharCode(code);
         }
       }
     }
